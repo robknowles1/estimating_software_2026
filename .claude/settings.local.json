@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bundle exec:*)",
+      "Bash(bundle list:*)",
+      "Bash(/Users/robertknowles/repos/estimating_software_2026/bin/importmap audit:*)"
+    ]
+  }
+}
