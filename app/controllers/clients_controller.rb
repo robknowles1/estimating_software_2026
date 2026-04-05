@@ -7,7 +7,6 @@ class ClientsController < ApplicationController
 
   def show
     @contacts = @client.contacts.alphabetical
-    @contact = Contact.new
   end
 
   def new
@@ -36,11 +35,10 @@ class ClientsController < ApplicationController
   end
 
   def destroy
-    if @client.estimates.any?
-      redirect_to @client, alert: t(".blocked")
-    else
-      @client.destroy
+    if @client.destroy
       redirect_to clients_path, notice: t(".notice")
+    else
+      redirect_to @client, alert: t(".blocked")
     end
   end
 

@@ -62,7 +62,6 @@ RSpec.describe Contact, type: :model do
 
       duplicate = build(:contact, client: client, is_primary: true)
       # Bypass the before_save callback to test the DB constraint directly
-      duplicate.instance_variable_set(:@skip_callback, true)
       allow(duplicate).to receive(:clear_sibling_primary_flags)
 
       expect {

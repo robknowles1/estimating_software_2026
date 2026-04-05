@@ -6,7 +6,7 @@ class Contact < ApplicationRecord
   validates :first_name, presence: true
   validates :last_name, presence: true
 
-  before_save :clear_sibling_primary_flags, if: :is_primary?
+  before_save :clear_sibling_primary_flags, if: -> { will_save_change_to_is_primary?(to: true) }
 
   private
 
