@@ -117,8 +117,8 @@ Both `test` and `system-test` jobs require:
 ```
 SPEC-002 (Phase 0: Foundation)                    ✅ done
   └── SPEC-003 (Phase 1: Auth + Users)            ✅ done
-        └── SPEC-004 (Phase 2: Clients)           🔄 in progress
-              └── SPEC-005 (Phase 3: Estimates)   ⏳ ready
+        └── SPEC-004 (Phase 2: Clients)           ✅ done
+              └── SPEC-005 (Phase 3: Estimates)   🔄 next
                     └── SPEC-006 (Phase 4: Line Items + Totals)
                           ├── SPEC-007 (Phase 5: Catalog + Autocomplete)
                           └── SPEC-008 (Phase 6: Document Output)

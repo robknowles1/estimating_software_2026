@@ -90,10 +90,7 @@ RSpec.describe "Clients", type: :request do
     context "with existing estimates" do
       it "blocks deletion and keeps client record intact" do
         client = create(:client)
-
-        # Stub the estimates association so we can test the guard without
-        # needing the Estimate model (built in Phase 3).
-        allow_any_instance_of(Client).to receive_message_chain(:estimates, :any?).and_return(true)
+        create(:estimate, client: client)
 
         expect {
           delete client_path(client)

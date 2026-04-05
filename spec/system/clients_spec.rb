@@ -15,41 +15,21 @@ RSpec.describe "Client and Contact Management", type: :system do
 
   describe "primary contact management" do
     it "marking second contact as primary clears the first contact's primary flag" do
+      client = create(:client, company_name: "Prestige Cabinets")
+      alice  = create(:contact, client: client, first_name: "Alice", last_name: "Smith", is_primary: true)
+      bob    = create(:contact, client: client, first_name: "Bob",   last_name: "Jones", is_primary: false)
+
       login
 
-      # Create client
-      visit new_client_path
-      fill_in "Company name", with: "Prestige Cabinets"
-      click_button "Create Client"
-
-      expect(page).to have_text("Prestige Cabinets")
-      client_id = current_url[/\/clients\/(\d+)/, 1].to_i
-      client = Client.find(client_id)
-
-      # Add first contact (primary)
-      visit new_client_contact_path(client)
-      fill_in "First name", with: "Alice"
-      fill_in "Last name", with: "Smith"
-      check "Is primary"
-      click_button "Create Contact"
-
-      expect(page).to have_text("Alice")
-      expect(page).to have_text("Primary")
-
-      # Add second contact (also primary)
-      visit new_client_contact_path(client)
-      fill_in "First name", with: "Bob"
-      fill_in "Last name", with: "Jones"
-      check "Is primary"
-      click_button "Create Contact"
+      # Edit Bob via the UI and mark him as primary
+      visit edit_client_contact_path(client, bob)
+      find("input[type=checkbox][id='contact_is_primary']").click
+      click_button "Update Contact"
 
       # Bob is now primary, Alice is not
       within("table tbody") do
-        bob_row = find("tr", text: "Bob Jones")
-        expect(bob_row).to have_text("Primary")
-
-        alice_row = find("tr", text: "Alice Smith")
-        expect(alice_row).not_to have_text("Primary")
+        expect(find("tr", text: "Bob Jones")).to have_text("Primary")
+        expect(find("tr", text: "Alice Smith")).not_to have_text("Primary")
       end
     end
   end
@@ -59,38 +39,34 @@ RSpec.describe "Client and Contact Management", type: :system do
       login
 
       client = create(:client, company_name: "Locked Client Co")
-
-      # Simulate estimates existing by stubbing at the model level is not
-      # straightforward in system tests. Instead we verify the controller
-      # guard logic through a direct request stub approach — here we test the
-      # UI path when the guard fires, using allow_any_instance_of stubbing is
-      # not available in system tests. We instead verify that a client without
-      # estimates CAN be deleted (guard is off), and a client with the
-      # restrict_with_error association configured cannot be deleted via
-      # normal Rails AR callbacks once an estimate is present.
-      #
-      # The full end-to-end blocked-delete scenario will be covered once
-      # Estimate model exists (Phase 3). For now we verify the delete
-      # confirmation dialog and successful deletion of a client with no estimates.
+      create(:estimate, client: client)
 
       visit client_path(client)
       expect(page).to have_text("Locked Client Co")
 
-      # Dismiss the confirm dialog and verify client still exists
-      dismiss_confirm do
+      accept_confirm do
         click_button "Delete"
       end
 
-      expect(page).to have_text("Locked Client Co")
+      expect(page).to have_current_path(client_path(client))
+      expect(page).to have_text("Cannot delete")
       expect(Client.find_by(id: client.id)).to be_present
+    end
 
-      # Accept the confirm dialog — client has no estimates so deletion proceeds
+    it "deletes client successfully when no estimates exist" do
+      login
+
+      client = create(:client, company_name: "Removable Client Co")
+
+      visit client_path(client)
+      expect(page).to have_text("Removable Client Co")
+
       accept_confirm do
         click_button "Delete"
       end
 
       expect(page).to have_current_path(clients_path)
-      expect(page).not_to have_text("Locked Client Co")
+      expect(page).not_to have_text("Removable Client Co")
     end
   end
 end

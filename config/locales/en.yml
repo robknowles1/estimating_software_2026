@@ -29,6 +29,7 @@ en:
   common:
     edit: "Edit"
     delete: "Delete"
+    not_provided: "—"
 
   nav:
     estimates: "Estimates"
