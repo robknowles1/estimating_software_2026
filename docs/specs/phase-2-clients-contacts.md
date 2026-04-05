@@ -1,7 +1,7 @@
 # Spec: Phase 2 — Client and Contact Management
 
 **ID:** SPEC-004
-**Status:** ready
+**Status:** done
 **Priority:** high
 **Created:** 2026-04-04
 **Author:** pm-agent
