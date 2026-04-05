@@ -1,6 +1,8 @@
 class Contact < ApplicationRecord
   belongs_to :client
 
+  scope :alphabetical, -> { order(:first_name, :last_name) }
+
   validates :first_name, presence: true
   validates :last_name, presence: true
 

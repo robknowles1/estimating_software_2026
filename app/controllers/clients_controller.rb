@@ -6,7 +6,7 @@ class ClientsController < ApplicationController
   end
 
   def show
-    @contacts = @client.contacts.order(:last_name, :first_name)
+    @contacts = @client.contacts.alphabetical
     @contact = Contact.new
   end
 

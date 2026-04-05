@@ -1,6 +1,17 @@
 require "rails_helper"
 
 RSpec.describe Contact, type: :model do
+  describe ".alphabetical" do
+    it "returns contacts ordered by first name then last name" do
+      client = create(:client)
+      charlie = create(:contact, client: client, first_name: "Charlie", last_name: "Adams")
+      alice   = create(:contact, client: client, first_name: "Alice",   last_name: "Zimmer")
+      bob     = create(:contact, client: client, first_name: "Bob",     last_name: "Adams")
+
+      expect(client.contacts.alphabetical.to_a).to eq([ alice, bob, charlie ])
+    end
+  end
+
   describe "validations" do
     it { is_expected.to validate_presence_of(:first_name) }
     it { is_expected.to validate_presence_of(:last_name) }
