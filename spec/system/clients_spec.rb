@@ -3,12 +3,12 @@ require "rails_helper"
 RSpec.describe "Client and Contact Management", type: :system do
   before { driven_by(:selenium_chrome_headless) }
 
-  let!(:user) { create(:user, email: "estimator@example.com", password: "password123", password_confirmation: "password123") }
+  let!(:user) { create(:user) }
 
-  def login
+  def login(as: user, password: "password123")
     visit new_session_path
-    fill_in "Email", with: "estimator@example.com"
-    fill_in "Password", with: "password123"
+    fill_in "Email", with: as.email
+    fill_in "Password", with: password
     click_button "Sign In"
     expect(page).to have_current_path(estimates_path)
   end

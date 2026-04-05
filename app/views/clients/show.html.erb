@@ -58,9 +58,9 @@
                 <% end %>
               </div>
             </td>
-            <td class="px-6 py-4 text-sm text-slate-500"><%= contact.title.presence || "&mdash;".html_safe %></td>
-            <td class="px-6 py-4 text-sm text-slate-500"><%= contact.email.presence || "&mdash;".html_safe %></td>
-            <td class="px-6 py-4 text-sm text-slate-500"><%= contact.phone.presence || "&mdash;".html_safe %></td>
+            <td class="px-6 py-4 text-sm text-slate-500"><%= contact.title.presence || "—" %></td>
+            <td class="px-6 py-4 text-sm text-slate-500"><%= contact.email.presence || "—" %></td>
+            <td class="px-6 py-4 text-sm text-slate-500"><%= contact.phone.presence || "—" %></td>
             <td class="px-6 py-4 text-right">
               <div class="flex items-center justify-end gap-3">
                 <%= link_to t("common.edit"), edit_client_contact_path(@client, contact),
