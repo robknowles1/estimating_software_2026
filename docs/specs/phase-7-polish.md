@@ -83,6 +83,7 @@ After the core workflow is validated with real estimators (Phases 1–6), this p
 - Email delivery (post-MVP).
 - Mobile native application.
 - `cost_type` UI and cost-category reporting (post-MVP).
+- **User invite / self-service password setup (post-MVP).** Currently an admin sets a temporary password when creating a user and communicates it out-of-band. A proper invite flow (one-time link emailed to the new user to set their own password) requires Action Mailer + a transactional email service (e.g. Postmark or SendGrid). Deferred until email delivery is configured. The Phase 7 password-change feature (AC-5) partially addresses this once a user is logged in, but does not cover first-login setup.
 
 ## Open Questions
 

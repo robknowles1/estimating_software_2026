@@ -43,6 +43,9 @@ You are the reviewer agent. You read code, compare it against the spec, and prod
 - [ ] Tests assert behavior, not implementation details
 - [ ] Edge cases are covered
 - [ ] No trivially-passing tests that wouldn't catch a regression
+- [ ] System spec selectors (button text, link text) match what is actually rendered in the layout
+- [ ] Test helpers that supply credentials do not hard-code passwords — they accept or derive the correct value
+- [ ] System specs use a database cleaning strategy compatible with multi-threaded Selenium (not transactional fixtures)
 
 ### Conventions
 - [ ] Follows the project's existing patterns and style
@@ -97,6 +100,10 @@ Return `REQUEST_CHANGES` to the developer agent with the full issues list. Do no
 - No `params[:id]` used directly in database queries without scoping to the current user's records
 - No redirect to a user-supplied URL without validation (open redirect)
 - ERB output is escaped by default — flag any `html_safe` or `raw` usage and verify it is safe
+- Session fixation: call `reset_session` before assigning `session[:user_id]` on login
+- Session logout: use `reset_session` on sign-out to clear all session state, not just `session.delete(:user_id)`
+- Seeds with fixed credentials (`password123`, `admin@example.com`) must be gated on `Rails.env.development?`; prefer a generated password printed to stdout over a hardcoded one
+- Password update forms: strip blank `:password` / `:password_confirmation` params before calling `update` so "leave blank to keep current" is actually enforced (blank strings overwrite `password_digest` via `has_secure_password`)
 
 **Performance**
 - Controller `index` and `show` actions eager-load associations used in the view (`.includes`, `.eager_load`)
@@ -120,3 +127,18 @@ Return `REQUEST_CHANGES` to the developer agent with the full issues list. Do no
 - No logic-heavy ERB — extract to helpers or view objects if complex
 - Tailwind utility classes used directly; no custom CSS for standard layout/spacing patterns
 - Responsive breakpoints applied consistently across the feature
+- No bare `rescue` in views — use safe navigation (`&.`) or explicit presence checks instead of swallowing errors silently
+- Flash messages: verify that both `alert` and `notice` are rendered in every layout that can receive them; a sign-out `notice` won't display if the login page only renders `alert`
+- Active nav detection: `request.path.start_with?(path)` misses the root path (`/`) — use `current_page?` or a controller/action check
+
+**RSpec / Test Hygiene**
+- System spec selectors must match actual rendered text (e.g. "Sign Out" vs "Log Out") — a mismatch makes the test permanently broken
+- `sign_in` helpers that hard-code a password couple every spec to one factory default; the helper should accept a `password:` keyword argument
+- `config.use_transactional_fixtures = true` is incompatible with Selenium/headless Chrome system specs — the app server runs in a separate thread and cannot see uncommitted records; system specs need a truncation/cleaning strategy
+- Do not toggle `config.use_transactional_fixtures` globally inside a `before`/`after` hook; use an `around` hook with an `ensure` block so the setting is always restored if setup fails
+
+**Documentation Consistency**
+- README testing commands must match the actual test runner (RSpec: `bin/rspec`, not `bin/rails test`)
+- README setup steps must reflect actual seed behavior (e.g. `bin/rails db:seed`, not `db/seed`)
+- CHANGELOG and spec index statuses must agree: if the spec doc says "done", the CHANGELOG row must also say "done"
+- `db/schema.rb` extension names must match valid PostgreSQL identifiers: use `enable_extension "plpgsql"`, not `"pg_catalog.plpgsql"`

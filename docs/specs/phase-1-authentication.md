@@ -1,7 +1,7 @@
 # Spec: Phase 1 — Authentication and User Management
 
 **ID:** SPEC-003
-**Status:** ready
+**Status:** done
 **Priority:** high
 **Created:** 2026-04-04
 **Author:** pm-agent

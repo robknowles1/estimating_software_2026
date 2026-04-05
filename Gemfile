@@ -20,6 +20,9 @@ gem "jbuilder"
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
 
+# Tailwind CSS via standalone CLI [https://github.com/rails/tailwindcss-rails]
+gem "tailwindcss-rails"
+
 # Ordered list management for ActiveRecord models [https://github.com/brendanwhitfield/acts_as_list]
 gem "acts_as_list"
 
@@ -55,6 +58,10 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  gem "rspec-rails"
+  gem "factory_bot_rails"
+  gem "faker"
 end
 
 group :development do
@@ -66,4 +73,6 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  gem "shoulda-matchers"
+  gem "database_cleaner-active_record"
 end
