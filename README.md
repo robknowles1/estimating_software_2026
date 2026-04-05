@@ -22,7 +22,7 @@ bundle install
 bin/rails db:create db:migrate db:seed
 ```
 
-`db/seed` creates a development admin user and **prints the generated password to stdout** — copy it before the terminal scrolls. Sign in at `http://localhost:3000` and change the password via Users → Edit after first login.
+`bin/rails db:seed` creates a development admin user and **prints the generated password to stdout** — copy it before the terminal scrolls. Sign in at `http://localhost:3000` and change the password via Users → Edit after first login.
 
 > **Production:** `db/seeds.rb` is gated to `Rails.env.development?` and will not run in production. Create the first production user via the Rails console with a strong password of your choosing.
 

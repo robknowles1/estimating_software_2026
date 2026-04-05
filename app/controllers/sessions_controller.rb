@@ -9,6 +9,7 @@ class SessionsController < ApplicationController
     user = User.find_by(email: params[:email].to_s.downcase)
 
     if user&.authenticate(params[:password])
+      reset_session                      # prevent session fixation
       session[:user_id] = user.id
       redirect_to estimates_path, notice: "Signed in successfully."
     else
@@ -18,7 +19,7 @@ class SessionsController < ApplicationController
   end
 
   def destroy
-    session.delete(:user_id)
+    reset_session                        # clear all session data, not just user_id
     redirect_to new_session_path, notice: "Signed out."
   end
 end

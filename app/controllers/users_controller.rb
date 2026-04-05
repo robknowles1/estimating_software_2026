@@ -37,6 +37,13 @@ class UsersController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:name, :email, :password, :password_confirmation)
+    permitted = params.require(:user).permit(:name, :email, :password, :password_confirmation)
+    # Strip blank password fields on update so "leave blank to keep current password" is enforced.
+    # has_secure_password would otherwise overwrite password_digest with an empty-string hash.
+    if permitted[:password].blank?
+      permitted.delete(:password)
+      permitted.delete(:password_confirmation)
+    end
+    permitted
   end
 end

@@ -59,15 +59,17 @@ RSpec.configure do |config|
     DatabaseCleaner.clean_with(:truncation)
   end
 
-  config.before(:each, type: :system) do
-    config.use_transactional_fixtures = false
+  # System specs run via Selenium in a separate thread — the server cannot see
+  # records inside an open transaction. Use an around hook with ensure so the
+  # global setting is always restored, even if the example raises or is pending.
+  config.around(:each, type: :system) do |example|
+    RSpec.configuration.use_transactional_fixtures = false
     DatabaseCleaner.strategy = :truncation
     DatabaseCleaner.start
-  end
-
-  config.after(:each, type: :system) do
+    example.run
+  ensure
     DatabaseCleaner.clean
-    config.use_transactional_fixtures = true
+    RSpec.configuration.use_transactional_fixtures = true
   end
 
   # You can uncomment this line to turn off ActiveRecord support entirely.
