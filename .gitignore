@@ -39,3 +39,6 @@ Estimating Template - 3.21.26.xltx
 /estimating_template_xml
 /app/assets/builds/*
 !/app/assets/builds/.keep
+
+# Ignore local Claude Code settings (machine-specific permissions).
+/.claude/settings.local.json
