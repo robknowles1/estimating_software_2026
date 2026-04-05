@@ -18,23 +18,21 @@ cd estimating_software_2026
 # 2. Install gems
 bundle install
 
-# 3. Create and migrate the database
-bin/rails db:create db:migrate
+# 3. Create, migrate, and seed the database
+bin/rails db:create db:migrate db:seed
 ```
 
-`db/seeds.rb` is currently empty. The first user must be created via the Rails console:
+`db/seed` creates a development admin user and **prints the generated password to stdout** — copy it before the terminal scrolls. Sign in at `http://localhost:3000` and change the password via Users → Edit after first login.
 
-```bash
-bin/rails console
-# Then in the console:
-User.create!(name: "Your Name", email: "you@example.com", password: "choose-a-strong-password", password_confirmation: "choose-a-strong-password")
-```
+> **Production:** `db/seeds.rb` is gated to `Rails.env.development?` and will not run in production. Create the first production user via the Rails console with a strong password of your choosing.
 
 ## Running the Application
 
 ```bash
-bin/rails server
+bin/dev
 ```
+
+`bin/dev` starts both the Rails server and the Tailwind CSS watcher via foreman. The app is available at `http://localhost:3000`.
 
 The app starts on `http://localhost:3000`. All routes require login; you will be redirected to the login page automatically.
 
@@ -42,13 +40,16 @@ The app starts on `http://localhost:3000`. All routes require login; you will be
 
 ```bash
 # Run the full test suite
-bin/rails test
+bundle exec rspec
 
-# Run system tests (requires Chrome)
-bin/rails test:system
+# Run a specific file
+bundle exec rspec spec/models/user_spec.rb
+
+# Run system specs only (requires Chrome)
+bundle exec rspec spec/system
 ```
 
-The test suite uses Rails' built-in Minitest. System tests use Capybara with Selenium WebDriver.
+The test suite uses RSpec with FactoryBot, Shoulda Matchers, and DatabaseCleaner. System specs use Capybara with Selenium (headless Chrome).
 
 ## Deployment
 

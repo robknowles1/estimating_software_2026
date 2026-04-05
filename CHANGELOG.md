@@ -9,8 +9,25 @@ This project does not yet use semantic versioning — entries are grouped by pha
 
 ## [Unreleased]
 
-### In Progress
-- Phase 1 — Authentication and User Management (SPEC-003)
+No unreleased changes.
+
+---
+
+## [Phase 1 — Authentication and User Management] - 2026-04-05
+
+**SPEC-003 complete.**
+
+### Added
+- `User` model with `has_secure_password`, email uniqueness/format validations, email downcased on save
+- `Authentication` concern: `require_login` before action, `current_user`, `logged_in?` helpers
+- `SessionsController`: login (`POST /session`) and logout (`DELETE /session`)
+- `UsersController`: full CRUD except destroy (index, new, create, edit, update)
+- Placeholder `EstimatesController` with index action (login redirect target)
+- `db/seeds.rb`: idempotent development-only seed that generates a random admin password on first run
+- RSpec test suite: 23 examples across model, request, and system specs
+- `tailwindcss-rails` gem and full UI redesign: dark `slate-900` sidebar, `amber-600` accent, split-panel login page
+- `bin/dev` + `Procfile.dev` for multi-process development (Rails server + Tailwind watcher)
+- `database_cleaner-active_record` gem for correct system spec isolation
 
 ---
 
@@ -51,7 +68,7 @@ See `docs/architecture/` for full decision records.
 |----|-------|--------|
 | SPEC-001 | Estimating Software MVP | draft |
 | SPEC-002 | Phase 0 — Foundation | done |
-| SPEC-003 | Phase 1 — Authentication and User Management | ready |
+| SPEC-003 | Phase 1 — Authentication and User Management | done |
 | SPEC-004 | Phase 2 — Client and Contact Management | ready |
 | SPEC-005 | Phase 3 — Estimate Scaffold and Sections | ready |
 | SPEC-006 | Phase 4 — Line Items and Real-Time Totals | ready |

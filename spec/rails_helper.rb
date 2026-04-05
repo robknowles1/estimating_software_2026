@@ -49,10 +49,26 @@ RSpec.configure do |config|
     Rails.root.join('spec/fixtures')
   ]
 
-  # If you're not using ActiveRecord, or you'd prefer not to run each of your
-  # examples within a transaction, remove the following line or assign false
-  # instead of true.
+  # Use transactional fixtures for unit/request specs.
+  # System specs run via Selenium in a separate thread — the app server cannot
+  # see records inside an open transaction, so we disable transactions for those
+  # and use DatabaseCleaner truncation instead.
   config.use_transactional_fixtures = true
+
+  config.before(:suite) do
+    DatabaseCleaner.clean_with(:truncation)
+  end
+
+  config.before(:each, type: :system) do
+    config.use_transactional_fixtures = false
+    DatabaseCleaner.strategy = :truncation
+    DatabaseCleaner.start
+  end
+
+  config.after(:each, type: :system) do
+    DatabaseCleaner.clean
+    config.use_transactional_fixtures = true
+  end
 
   # You can uncomment this line to turn off ActiveRecord support entirely.
   # config.use_active_record = false

@@ -22,7 +22,7 @@ RSpec.describe "Authentication", type: :system do
     expect(page).to have_text("Alice Smith")
 
     # Log out
-    click_button "Log Out"
+    click_button "Sign Out"
     expect(page).to have_current_path(new_session_path)
 
     # Cannot access protected page again
