@@ -28,9 +28,11 @@ en:
 
   common:
     edit: "Edit"
+    delete: "Delete"
 
   nav:
     estimates: "Estimates"
+    clients: "Clients"
     users: "Users"
     sign_out: "Sign Out"
 
@@ -79,3 +81,58 @@ en:
       errors:
         one: "1 error prohibited this user from being saved:"
         other: "%{count} errors prohibited this user from being saved:"
+
+  clients:
+    create:
+      notice: "Client was successfully created."
+    update:
+      notice: "Client was successfully updated."
+    destroy:
+      notice: "Client was successfully deleted."
+      blocked: "Cannot delete this client because it has associated estimates."
+    index:
+      title: "Clients"
+      subtitle: "Manage client companies and their contacts."
+      add_button: "Add Client"
+      primary_contact_header: "Primary Contact"
+      empty_title: "No clients yet"
+      empty_description: "Add the first client to get started."
+    new:
+      title: "New Client"
+      subtitle: "Add a new client company."
+    edit:
+      title: "Edit Client"
+      subtitle: "Update details for %{name}."
+    show:
+      notes_heading: "Notes"
+      contacts_heading: "Contacts"
+      add_contact: "Add Contact"
+      no_contacts: "No contacts yet."
+      primary_badge: "Primary"
+      name_header: "Name"
+      confirm_delete: "Are you sure you want to delete %{name}? This cannot be undone."
+    form:
+      cancel: "Cancel"
+      errors:
+        one: "1 error prohibited this client from being saved:"
+        other: "%{count} errors prohibited this client from being saved:"
+
+  contacts:
+    create:
+      notice: "Contact was successfully added."
+    update:
+      notice: "Contact was successfully updated."
+    destroy:
+      notice: "Contact was successfully removed."
+    confirm_delete: "Are you sure you want to delete this contact?"
+    new:
+      title: "New Contact"
+      subtitle: "Add a contact for %{client}."
+    edit:
+      title: "Edit Contact"
+      subtitle: "Update details for %{name}."
+    form:
+      cancel: "Cancel"
+      errors:
+        one: "1 error prohibited this contact from being saved:"
+        other: "%{count} errors prohibited this contact from being saved:"
