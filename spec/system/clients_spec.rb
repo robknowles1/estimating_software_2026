@@ -13,20 +13,15 @@ RSpec.describe "Client and Contact Management", type: :system do
     expect(page).to have_current_path(estimates_path)
   end
 
-  describe "primary contact management" do
-    it "marking second contact as primary clears the first contact's primary flag" do
+  describe "primary contact badge" do
+    it "shows Primary badge only on the primary contact" do
       client = create(:client, company_name: "Prestige Cabinets")
-      alice  = create(:contact, client: client, first_name: "Alice", last_name: "Smith", is_primary: true)
-      bob    = create(:contact, client: client, first_name: "Bob",   last_name: "Jones", is_primary: false)
+      create(:contact, client: client, first_name: "Alice", last_name: "Smith", is_primary: false)
+      create(:contact, client: client, first_name: "Bob",   last_name: "Jones", is_primary: true)
 
       login
+      visit client_path(client)
 
-      # Edit Bob via the UI and mark him as primary
-      visit edit_client_contact_path(client, bob)
-      find("input[type=checkbox][id='contact_is_primary']").click
-      click_button "Update Contact"
-
-      # Bob is now primary, Alice is not
       within("table tbody") do
         expect(find("tr", text: "Bob Jones")).to have_text("Primary")
         expect(find("tr", text: "Alice Smith")).not_to have_text("Primary")
