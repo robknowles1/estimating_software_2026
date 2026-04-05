@@ -1,29 +1,110 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Estimating Software 2026" %></title>
+    <title><%= content_for(:title) || "Project Estimating Tool" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Estimating Software 2026">
+    <meta name="application-name" content="Project Estimating Tool">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <%= yield %>
+  <body class="bg-slate-50 h-screen overflow-hidden">
+    <div class="flex h-full">
+
+      <%# ── Sidebar ── %>
+      <aside class="w-60 bg-slate-900 flex flex-col flex-shrink-0">
+
+        <%# Brand %>
+        <div class="px-6 py-5 border-b border-slate-800">
+          <p class="text-amber-500 text-xs uppercase tracking-widest font-semibold">Trim-Art</p>
+          <p class="text-white font-semibold text-sm leading-snug mt-1">Project Estimating Tool</p>
+        </div>
+
+        <%# Navigation %>
+        <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+
+          <% nav_link = ->(label, path, icon) do
+               active = request.path.start_with?(path)
+               base = "flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors"
+               cls  = active ? "#{base} bg-slate-800 text-white" : "#{base} text-slate-400 hover:bg-slate-800 hover:text-white"
+          %>
+            <%= link_to path, class: cls do %>
+              <%= icon.html_safe %>
+              <%= label %>
+            <% end %>
+          <% end %>
+
+          <%# Estimates %>
+          <% nav_link.call("Estimates", estimates_path,
+               '<svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>') %>
+
+          <%# Users %>
+          <% nav_link.call("Users", users_path,
+               '<svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-5.356-3.779M9 20H4v-2a4 4 0 015.356-3.779M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>') %>
+
+        </nav>
+
+        <%# User + Logout %>
+        <div class="px-4 py-4 border-t border-slate-800">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-7 h-7 rounded-full bg-amber-600 flex items-center justify-center flex-shrink-0">
+              <span class="text-white text-xs font-bold"><%= current_user.name.first.upcase rescue "?" %></span>
+            </div>
+            <span class="text-slate-300 text-sm truncate"><%= current_user.name %></span>
+          </div>
+          <%= button_to session_path, method: :delete,
+              class: "w-full flex items-center gap-2 px-3 py-2 rounded text-sm text-slate-500 hover:bg-slate-800 hover:text-slate-300 transition-colors" do %>
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/>
+            </svg>
+            Sign Out
+          <% end %>
+        </div>
+      </aside>
+
+      <%# ── Main content ── %>
+      <div class="flex-1 flex flex-col overflow-hidden">
+
+        <%# Flash messages %>
+        <% if notice %>
+          <div class="bg-emerald-50 border-b border-emerald-200 text-emerald-800 px-6 py-3 text-sm flex items-center gap-2" role="status">
+            <svg class="w-4 h-4 flex-shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            <%= notice %>
+          </div>
+        <% end %>
+
+        <% if alert %>
+          <div class="bg-red-50 border-b border-red-200 text-red-800 px-6 py-3 text-sm flex items-center gap-2" role="alert">
+            <svg class="w-4 h-4 flex-shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M12 3a9 9 0 110 18A9 9 0 0112 3z"/>
+            </svg>
+            <%= alert %>
+          </div>
+        <% end %>
+
+        <main class="flex-1 overflow-y-auto p-8">
+          <%= yield %>
+        </main>
+      </div>
+
+    </div>
   </body>
 </html>

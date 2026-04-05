@@ -37,3 +37,5 @@ estimating_template.zip
 estimating_template_xml/
 Estimating Template - 3.21.26.xltx
 /estimating_template_xml
+/app/assets/builds/*
+!/app/assets/builds/.keep
