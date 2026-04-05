@@ -33,7 +33,7 @@
               <% if client.primary_contact %>
                 <%= "#{client.primary_contact.first_name} #{client.primary_contact.last_name}" %>
               <% else %>
-                <span class="text-slate-300">&mdash;</span>
+                <span class="text-slate-300"><%= t("common.not_provided") %></span>
               <% end %>
             </td>
             <td class="px-6 py-4 text-right">
