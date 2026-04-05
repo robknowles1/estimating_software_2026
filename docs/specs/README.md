@@ -5,7 +5,7 @@
 | SPEC-001 | [Estimating Software MVP](./estimating_software_mvp.md) | draft | high | 2026-04-01 |
 | SPEC-002 | [Phase 0 — Foundation](./phase-0-foundation.md) | done | high | 2026-04-04 |
 | SPEC-003 | [Phase 1 — Authentication and User Management](./phase-1-authentication.md) | done | high | 2026-04-04 |
-| SPEC-004 | [Phase 2 — Client and Contact Management](./phase-2-clients-contacts.md) | ready | high | 2026-04-04 |
+| SPEC-004 | [Phase 2 — Client and Contact Management](./phase-2-clients-contacts.md) | done | high | 2026-04-04 |
 | SPEC-005 | [Phase 3 — Estimate Scaffold and Sections](./phase-3-estimates-sections.md) | ready | high | 2026-04-04 |
 | SPEC-006 | [Phase 4 — Line Items and Real-Time Totals](./phase-4-line-items-totals.md) | ready | high | 2026-04-04 |
 | SPEC-007 | [Phase 5 — Catalog and Line Item Autocomplete](./phase-5-catalog-autocomplete.md) | draft | medium | 2026-04-04 |
