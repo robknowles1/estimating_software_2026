@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Sign In – Project Estimating Tool</title>
+    <title><%= t("sessions.new.title") %> – <%= t("app.name") %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -19,7 +19,6 @@
 
       <%# ── Left panel (branding) ── %>
       <div class="hidden lg:flex lg:w-1/2 bg-slate-900 flex-col justify-between p-14 relative overflow-hidden">
-        <%# Decorative amber rule %>
         <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
 
         <div>
@@ -29,18 +28,16 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
               </svg>
             </div>
-            <span class="text-amber-500 text-sm font-semibold tracking-widest uppercase">Trim-Art</span>
+            <span class="text-amber-500 text-sm font-semibold tracking-widest uppercase"><%= t("app.company") %></span>
           </div>
 
           <h1 class="text-white text-4xl font-bold leading-tight">
-            Project<br>Estimating Tool
+            <%= t("app.name").gsub(" ", "<br>").html_safe %>
           </h1>
-          <p class="text-slate-400 mt-4 text-base">
-            Custom Cabinets and Fixtures
-          </p>
+          <p class="text-slate-400 mt-4 text-base"><%= t("app.tagline") %></p>
         </div>
 
-        <p class="text-slate-600 text-sm italic">"Bringing Visions to Life"</p>
+        <p class="text-slate-600 text-sm italic"><%= t("app.motto") %></p>
       </div>
 
       <%# ── Right panel (form) ── %>

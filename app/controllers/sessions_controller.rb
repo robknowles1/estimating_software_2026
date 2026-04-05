@@ -11,15 +11,15 @@ class SessionsController < ApplicationController
     if user&.authenticate(params[:password])
       reset_session                      # prevent session fixation
       session[:user_id] = user.id
-      redirect_to estimates_path, notice: "Signed in successfully."
+      redirect_to estimates_path, notice: t(".notice")
     else
-      flash.now[:alert] = "Invalid email or password."
+      flash.now[:alert] = t("flash.invalid_credentials")
       render :new, status: :unprocessable_content
     end
   end
 
   def destroy
     reset_session                        # clear all session data, not just user_id
-    redirect_to new_session_path, notice: "Signed out."
+    redirect_to new_session_path, notice: t(".notice")
   end
 end

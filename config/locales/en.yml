@@ -18,14 +18,64 @@
 #
 # To learn more about the API, please read the Rails Internationalization guide
 # at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
 
 en:
-  hello: "Hello world"
+  app:
+    name: "Project Estimating Tool"
+    company: "Trim-Art"
+    tagline: "Custom Cabinets and Fixtures"
+    motto: "\"Bringing Visions to Life\""
+
+  common:
+    edit: "Edit"
+
+  nav:
+    estimates: "Estimates"
+    users: "Users"
+    sign_out: "Sign Out"
+
+  flash:
+    invalid_credentials: "Invalid email or password."
+
+  sessions:
+    create:
+      notice: "Signed in successfully."
+    destroy:
+      notice: "Signed out."
+    new:
+      title: "Sign in"
+      subtitle: "Enter your credentials to continue."
+      submit: "Sign In"
+
+  estimates:
+    index:
+      title: "Estimates"
+      subtitle: "Manage project estimates for Trim-Art clients."
+      new_button: "New Estimate"
+      empty_title: "No estimates yet"
+      empty_description: "Estimates will appear here once clients are added."
+
+  users:
+    create:
+      notice: "User was successfully created."
+    update:
+      notice: "User was successfully updated."
+    index:
+      title: "Users"
+      subtitle: "Manage who has access to the estimating tool."
+      add_button: "Add User"
+      empty_title: "No users yet"
+      empty_description: "Add the first user to get started."
+    new:
+      title: "New User"
+      subtitle: "Add a new user to the estimating tool."
+    edit:
+      title: "Edit User"
+      subtitle: "Update account details for %{name}."
+    form:
+      password_hint: "Leave blank to keep current password."
+      back: "Back to Users"
+      cancel: "Cancel"
+      errors:
+        one: "1 error prohibited this user from being saved:"
+        other: "%{count} errors prohibited this user from being saved:"
