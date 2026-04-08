@@ -1,0 +1,19 @@
+<%# Append the new line item to the section's line items list %>
+<%= turbo_stream.append "line_items_#{@section.id}",
+    partial: "line_items/line_item",
+    locals: { line_item: @line_item, section: @section, estimate: @estimate } %>
+
+<%# Clear the new line item form %>
+<%= turbo_stream.replace "line_item_form_#{@section.id}",
+    partial: "line_items/new_form",
+    locals: { section: @section, estimate: @estimate } %>
+
+<%# Update the section subtotal %>
+<%= turbo_stream.replace dom_id(@section, :subtotal),
+    partial: "line_items/section_subtotal",
+    locals: { section: @section, subtotals: @totals.section_subtotals } %>
+
+<%# Update the estimate grand total %>
+<%= turbo_stream.replace dom_id(@estimate, :totals),
+    partial: "line_items/estimate_totals",
+    locals: { estimate: @estimate, totals: @totals } %>

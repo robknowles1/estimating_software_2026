@@ -1,7 +1,7 @@
 # Spec: Phase 4 — Line Items and Real-Time Totals
 
 **ID:** SPEC-006
-**Status:** ready
+**Status:** done
 **Priority:** high
 **Created:** 2026-04-04
 **Author:** pm-agent

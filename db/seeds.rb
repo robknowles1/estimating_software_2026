@@ -5,6 +5,24 @@
 # Initial admin user for first login — development only.
 # A random password is generated and printed to stdout on first run.
 # In production, create the first user via the Rails console with a strong password.
+# Default labor rates — seeded in all environments so the calculator has rates to use.
+# Rates are in USD per hour. Update via the admin UI (Phase 5) or directly in the DB.
+LaborRate::CATEGORIES.each do |category|
+  default_rates = {
+    "detail"   => BigDecimal("22.00"),
+    "mill"     => BigDecimal("28.00"),
+    "assembly" => BigDecimal("25.00"),
+    "customs"  => BigDecimal("30.00"),
+    "finish"   => BigDecimal("27.00"),
+    "install"  => BigDecimal("35.00")
+  }
+  LaborRate.find_or_create_by!(labor_category: category) do |lr|
+    lr.hourly_rate = default_rates[category] || BigDecimal("25.00")
+    lr.description = category.capitalize
+  end
+end
+puts "Seeded #{LaborRate.count} labor rates."
+
 if Rails.env.development?
   require "securerandom"
 

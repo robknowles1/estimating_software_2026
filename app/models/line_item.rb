@@ -1,0 +1,54 @@
+class LineItem < ApplicationRecord
+  belongs_to :estimate_section
+  belongs_to :estimate_material, optional: true
+
+  acts_as_list scope: :estimate_section
+
+  LINE_ITEM_CATEGORIES = %w[material labor alternate buy_out other].freeze
+  COMPONENT_TYPES = %w[exterior interior interior_2nd back banding drawers pulls hinges slides locks hardware other_material].freeze
+  LABOR_CATEGORIES = %w[detail mill assembly customs finish install].freeze
+
+  validates :description, presence: true
+  validates :line_item_category, presence: true, inclusion: { in: LINE_ITEM_CATEGORIES }
+  validates :markup_percent, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+
+  # Extended cost routing — three computation paths depending on category
+  def extended_cost
+    case line_item_category
+    when "material" then material_extended_cost
+    when "labor"    then labor_extended_cost
+    else            freeform_extended_cost
+    end
+  end
+
+  # Sell price for buy-out / alternate items only (burden calc does NOT apply)
+  def sell_price
+    pct = markup_percent || BigDecimal("0")
+    extended_cost * (BigDecimal("1") + pct / BigDecimal("100"))
+  end
+
+  private
+
+  def section_quantity
+    estimate_section&.quantity || BigDecimal("1")
+  end
+
+  def material_extended_cost
+    return BigDecimal("0") if estimate_material.nil? || component_quantity.nil?
+
+    component_quantity * section_quantity * estimate_material.price_per_unit
+  end
+
+  def labor_extended_cost
+    return BigDecimal("0") if hours_per_unit.nil? || labor_category.nil?
+
+    rate = LaborRate.rate_for(labor_category)
+    hours_per_unit * section_quantity * rate
+  end
+
+  def freeform_extended_cost
+    qty = freeform_quantity || BigDecimal("0")
+    cost = unit_cost || BigDecimal("0")
+    qty * cost
+  end
+end

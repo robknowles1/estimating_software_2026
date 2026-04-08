@@ -1,0 +1,48 @@
+<%# locals: (estimate:, totals:) %>
+<div id="<%= dom_id(estimate, :totals) %>" class="bg-slate-800 rounded-xl px-6 py-5 mt-6">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-sm font-semibold text-slate-200"><%= t("line_items.estimate_totals_heading") %></h3>
+  </div>
+  <div class="grid grid-cols-2 gap-6">
+    <div>
+      <p class="text-xs text-slate-400 mb-1"><%= t("line_items.grand_total_non_burdened") %></p>
+      <p class="text-2xl font-bold text-white"><%= number_to_currency(totals.grand_total_non_burdened) %></p>
+    </div>
+    <div>
+      <p class="text-xs text-slate-400 mb-1"><%= t("line_items.grand_total_burdened") %></p>
+      <p class="text-2xl font-bold text-amber-400"><%= number_to_currency(totals.grand_total_burdened) %></p>
+    </div>
+  </div>
+
+  <% if totals.alternate_total[:non_burdened] > 0 %>
+    <div class="mt-4 pt-4 border-t border-slate-700">
+      <p class="text-xs text-slate-400 mb-2"><%= t("line_items.alternate_total_heading") %></p>
+      <div class="flex items-center gap-6 text-sm">
+        <div>
+          <span class="text-slate-400">Cost: </span>
+          <span class="text-slate-200 font-medium"><%= number_to_currency(totals.alternate_total[:non_burdened]) %></span>
+        </div>
+        <div>
+          <span class="text-slate-400">Sell: </span>
+          <span class="text-amber-300 font-medium"><%= number_to_currency(totals.alternate_total[:sell]) %></span>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <% if totals.buy_out_total[:cost] > 0 %>
+    <div class="mt-4 pt-4 border-t border-slate-700">
+      <p class="text-xs text-slate-400 mb-2"><%= t("line_items.buy_out_total_heading") %></p>
+      <div class="flex items-center gap-6 text-sm">
+        <div>
+          <span class="text-slate-400">Cost: </span>
+          <span class="text-slate-200 font-medium"><%= number_to_currency(totals.buy_out_total[:cost]) %></span>
+        </div>
+        <div>
+          <span class="text-slate-400">Sell: </span>
+          <span class="text-amber-300 font-medium"><%= number_to_currency(totals.buy_out_total[:sell]) %></span>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
