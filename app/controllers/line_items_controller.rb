@@ -1,14 +1,18 @@
 class LineItemsController < ApplicationController
-  before_action :set_estimate_section
   before_action :set_estimate
+  before_action :set_estimate_section
   before_action :set_line_item, only: [ :edit, :update, :destroy, :move ]
 
   def new
-    @line_item = @section.line_items.build(line_item_category: "material")
+    @line_item = @section.line_items.build(
+      line_item_category: "material",
+      markup_percent: @section.default_markup_percent
+    )
   end
 
   def create
     @line_item = @section.line_items.build(line_item_params)
+    @line_item.markup_percent = @section.default_markup_percent unless line_item_params.key?(:markup_percent)
 
     if @line_item.save
       @totals = calculate_totals
@@ -62,12 +66,13 @@ class LineItemsController < ApplicationController
 
   private
 
-  def set_estimate_section
-    @section = EstimateSection.find(params[:estimate_section_id])
+  def set_estimate
+    # All authenticated users can access all estimates — single-company internal tool.
+    @estimate = Estimate.find(params[:estimate_id])
   end
 
-  def set_estimate
-    @estimate = @section.estimate
+  def set_estimate_section
+    @section = @estimate.estimate_sections.find(params[:estimate_section_id])
   end
 
   def set_line_item

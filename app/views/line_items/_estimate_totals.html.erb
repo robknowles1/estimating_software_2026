@@ -19,11 +19,11 @@
       <p class="text-xs text-slate-400 mb-2"><%= t("line_items.alternate_total_heading") %></p>
       <div class="flex items-center gap-6 text-sm">
         <div>
-          <span class="text-slate-400">Cost: </span>
+          <span class="text-slate-400"><%= t(".cost_label") %></span>
           <span class="text-slate-200 font-medium"><%= number_to_currency(totals.alternate_total[:non_burdened]) %></span>
         </div>
         <div>
-          <span class="text-slate-400">Sell: </span>
+          <span class="text-slate-400"><%= t(".sell_label") %></span>
           <span class="text-amber-300 font-medium"><%= number_to_currency(totals.alternate_total[:sell]) %></span>
         </div>
       </div>
@@ -35,11 +35,11 @@
       <p class="text-xs text-slate-400 mb-2"><%= t("line_items.buy_out_total_heading") %></p>
       <div class="flex items-center gap-6 text-sm">
         <div>
-          <span class="text-slate-400">Cost: </span>
+          <span class="text-slate-400"><%= t(".cost_label") %></span>
           <span class="text-slate-200 font-medium"><%= number_to_currency(totals.buy_out_total[:cost]) %></span>
         </div>
         <div>
-          <span class="text-slate-400">Sell: </span>
+          <span class="text-slate-400"><%= t(".sell_label") %></span>
           <span class="text-amber-300 font-medium"><%= number_to_currency(totals.buy_out_total[:sell]) %></span>
         </div>
       </div>

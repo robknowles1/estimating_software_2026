@@ -64,11 +64,17 @@
     </p>
   </div>
 
-  <%# Extended cost %>
+  <%# Extended cost — labor cost is computed by EstimateTotalsCalculator (with preloaded rates),
+      not per-row here, to avoid N+1 queries. Material cost is safe: estimate_material is preloaded. %>
   <div class="shrink-0 text-right">
-    <p class="text-sm font-semibold text-slate-900"><%= number_to_currency(line_item.extended_cost) %></p>
-    <% if %w[alternate buy_out].include?(line_item.line_item_category) %>
-      <p class="text-xs text-slate-500">sell: <%= number_to_currency(line_item.sell_price) %></p>
+    <% if line_item.line_item_category == "labor" %>
+      <p class="text-sm text-slate-400">—</p>
+      <p class="text-xs text-slate-400"><%= t("line_items.see_section_total") %></p>
+    <% else %>
+      <p class="text-sm font-semibold text-slate-900"><%= number_to_currency(line_item.extended_cost) %></p>
+      <% if %w[alternate buy_out].include?(line_item.line_item_category) %>
+        <p class="text-xs text-slate-500">sell: <%= number_to_currency(line_item.sell_price) %></p>
+      <% end %>
     <% end %>
   </div>
 

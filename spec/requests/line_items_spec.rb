@@ -54,6 +54,15 @@ RSpec.describe "LineItems", type: :request do
 
       expect(LineItem.last.line_item_category).to eq("material")
     end
+
+    it "pre-fills markup_percent from section default when not supplied (AC-11)" do
+      section.update!(default_markup_percent: 15)
+
+      post estimate_estimate_section_line_items_path(estimate, section),
+        params: { line_item: { description: "Test item", line_item_category: "material" } }
+
+      expect(LineItem.last.markup_percent).to eq(BigDecimal("15"))
+    end
   end
 
   describe "PATCH /estimates/:estimate_id/estimate_sections/:id/line_items/:id" do

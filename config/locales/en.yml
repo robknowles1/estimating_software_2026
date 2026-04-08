@@ -161,6 +161,10 @@ en:
     grand_total_burdened: "Total Sell Price (Burdened)"
     alternate_total_heading: "Alternates"
     buy_out_total_heading: "Buy-Outs"
+    see_section_total: "see section total"
+    estimate_totals:
+      cost_label: "Cost: "
+      sell_label: "Sell: "
     category:
       material: "Material"
       labor: "Labor"

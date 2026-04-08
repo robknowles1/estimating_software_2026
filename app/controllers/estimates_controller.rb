@@ -45,9 +45,13 @@ class EstimatesController < ApplicationController
     if @estimate.update(estimate_params)
       redirect_to edit_estimate_path(@estimate), notice: t(".notice")
     else
+      @estimate = Estimate
+        .includes(estimate_sections: { line_items: :estimate_material })
+        .find(@estimate.id)
       @sections = @estimate.estimate_sections
       @new_section = EstimateSection.new
       @clients = Client.alphabetical
+      @totals = EstimateTotalsCalculator.new(@estimate).call
       render :edit, status: :unprocessable_content
     end
   end

@@ -39,6 +39,10 @@ class LineItem < ApplicationRecord
     component_quantity * section_quantity * estimate_material.price_per_unit
   end
 
+  # WARNING: Calls LaborRate.rate_for which issues a SQL query per invocation.
+  # Do NOT call this from views that render many line items — use
+  # EstimateTotalsCalculator instead, which preloads rates upfront.
+  # This method is retained for unit-testing and single-item contexts only.
   def labor_extended_cost
     return BigDecimal("0") if hours_per_unit.nil? || labor_category.nil?
 
