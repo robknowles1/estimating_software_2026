@@ -33,7 +33,7 @@ class EstimatesController < ApplicationController
 
   def edit
     @estimate = Estimate
-      .includes(estimate_sections: { line_items: :estimate_material })
+      .includes(:estimate_materials, estimate_sections: { line_items: :estimate_material })
       .find(params[:id])
     @sections = @estimate.estimate_sections
     @new_section = EstimateSection.new
@@ -46,7 +46,7 @@ class EstimatesController < ApplicationController
       redirect_to edit_estimate_path(@estimate), notice: t(".notice")
     else
       @estimate = Estimate
-        .includes(estimate_sections: { line_items: :estimate_material })
+        .includes(:estimate_materials, estimate_sections: { line_items: :estimate_material })
         .find(@estimate.id)
       @sections = @estimate.estimate_sections
       @new_section = EstimateSection.new

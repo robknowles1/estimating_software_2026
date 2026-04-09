@@ -21,9 +21,13 @@ class Estimate < ApplicationRecord
 
   MATERIAL_CATEGORIES = %w[pl pull hinge slide banding veneer].freeze
 
-  scope :with_status, ->(s) { where(status: s) if s.present? }
+  scope :with_status, ->(s) { s.present? ? where(status: s) : all }
   scope :search, ->(q) {
-    where("estimates.title ILIKE :q OR clients.company_name ILIKE :q", q: "%#{q}%").joins(:client) if q.present?
+    if q.present?
+      where("estimates.title ILIKE :q OR clients.company_name ILIKE :q", q: "%#{q}%").joins(:client)
+    else
+      all
+    end
   }
 
   private

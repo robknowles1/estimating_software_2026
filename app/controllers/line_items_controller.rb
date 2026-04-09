@@ -22,7 +22,7 @@ class LineItemsController < ApplicationController
       end
     else
       respond_to do |format|
-        format.turbo_stream { render turbo_stream: turbo_stream.replace("line_item_form_#{@section.id}", partial: "line_items/form", locals: { line_item: @line_item, section: @section, estimate: @estimate }) }
+        format.turbo_stream { render turbo_stream: turbo_stream.replace("line_item_form_#{@section.id}", partial: "line_items/new_form", locals: { section: @section, estimate: @estimate, line_item: @line_item }) }
         format.html { render :new, status: :unprocessable_content }
       end
     end
@@ -39,10 +39,7 @@ class LineItemsController < ApplicationController
         format.html { redirect_to edit_estimate_path(@estimate), notice: t(".notice") }
       end
     else
-      respond_to do |format|
-        format.turbo_stream { render turbo_stream: turbo_stream.replace(dom_id(@line_item, :edit), partial: "line_items/edit_form", locals: { line_item: @line_item, section: @section, estimate: @estimate }) }
-        format.html { render :edit, status: :unprocessable_content }
-      end
+      render :edit, status: :unprocessable_content
     end
   end
 
