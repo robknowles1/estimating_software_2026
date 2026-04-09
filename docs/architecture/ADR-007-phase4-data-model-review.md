@@ -349,3 +349,60 @@ Do not use `float` for any of these columns. All feed into BigDecimal arithmetic
 ### Key invariant to preserve
 
 The `EstimateTotalsCalculator` must be the only place where burdened totals are computed. No controller, model, or view may contain burden arithmetic. The Stimulus controller (`line_item_calculator_controller.js`) may display real-time `extended_cost` and `sell_price` for buy-out/alternate items, but these are display-only; the canonical values come from the server.
+
+---
+
+## Known Tech Debt — Required Before First Production Deploy
+
+The following items are low-risk in development (no live data, PostgreSQL handles type coercion) but must be resolved before the first production database is provisioned:
+
+### TD-01: `created_by_user_id` column type should be `bigint`
+
+**File:** `db/migrate/20260405213346_add_columns_to_estimates.rb`
+
+`created_by_user_id` was added as `:integer` (32-bit). Rails generates `users.id` as `bigint` (64-bit) by default. While PostgreSQL allows the FK comparison via implicit cast, the column type mismatch is technically incorrect and could cause surprises on DBs with stricter type checking.
+
+**Required fix:** Write a compensating migration before the production schema is loaded:
+```ruby
+change_column :estimates, :created_by_user_id, :bigint
+```
+
+Also remove the `default: 0` — it was needed to add the column with `null: false` on a potentially populated table, but `0` is not a valid user id. In the compensating migration, also drop the default:
+```ruby
+change_column_default :estimates, :created_by_user_id, from: 0, to: nil
+```
+
+### TD-02: `estimate_material_id` column type on `line_items` should be `bigint`
+
+**File:** `db/migrate/20260406000005_create_line_items.rb`
+
+`estimate_material_id` was declared as `t.integer` (32-bit) while `estimate_materials.id` is `bigint`. Same issue as TD-01.
+
+**Required fix:** Write a compensating migration:
+```ruby
+change_column :line_items, :estimate_material_id, :bigint
+```
+
+### TD-03: `RecordNotUnique` rescue on estimate number assignment
+
+**File:** `app/models/estimate.rb` — `assign_estimate_number`
+
+The `FOR UPDATE` lock defends against concurrent creates when rows already exist for the current year. Two simultaneous first-of-year creates could both observe zero rows, assign `EST-YYYY-0001`, and let the unique index reject one with `ActiveRecord::RecordNotUnique` (unhandled → 500).
+
+**Required fix:** Wrap `Estimate.create` at the call site or add a retry loop:
+```ruby
+def create
+  retries = 0
+  begin
+    @estimate.save
+  rescue ActiveRecord::RecordNotUnique => e
+    raise unless e.message.include?("estimate_number") && (retries += 1) <= 3
+    @estimate.estimate_number = nil
+    retry
+  end
+end
+```
+
+This is safe because after the retry `assign_estimate_number` will re-run and now sees the first-of-year row that the other transaction committed.
+
+---
