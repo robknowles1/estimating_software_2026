@@ -4,7 +4,8 @@ class CatalogItem < ApplicationRecord
   validates :description, presence: true
 
   scope :search, ->(query) {
-    where("LOWER(description) LIKE ?", "%#{query.to_s.downcase}%")
+    sanitized = query.to_s.downcase.gsub("%", "\\%").gsub("_", "\\_")
+    where("LOWER(description) LIKE ? ESCAPE '\\'", "%#{sanitized}%")
       .order(:description)
       .limit(10)
   }

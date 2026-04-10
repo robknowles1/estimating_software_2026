@@ -104,8 +104,7 @@ RSpec.describe "Catalog Items", type: :system do
       fill_in "Description", with: "zzzzz custom item"
 
       # No dropdown should appear
-      sleep 0.6  # wait longer than debounce
-      expect(page).not_to have_css("[role='listbox']:not(.hidden)", wait: 1)
+      expect(page).not_to have_css("[role='option']", wait: 2)
 
       fill_in "line_item[freeform_quantity]", with: "5"
       fill_in "line_item[unit_cost]", with: "20.00"

@@ -40,6 +40,22 @@ RSpec.describe CatalogItem, type: :model do
       results = CatalogItem.search("zzz_no_match")
       expect(results).to be_empty
     end
+
+    it "treats % and _ in the query as literals, not LIKE wildcards" do
+      wildcard_item = create(:catalog_item, description: "50% Off Special")
+      underscore_item = create(:catalog_item, description: "Part_Number_123")
+
+      # "%" as a literal — should only match the item with a literal % in the name
+      percent_results = CatalogItem.search("50%")
+      expect(percent_results).to include(wildcard_item)
+      expect(percent_results).not_to include(crown)
+      expect(percent_results).not_to include(door)
+
+      # "_" as a literal — should only match the item with a literal _ in the name
+      underscore_results = CatalogItem.search("Part_")
+      expect(underscore_results).to include(underscore_item)
+      expect(underscore_results).not_to include(crown)
+    end
   end
 
   describe "dependent: :nullify on line_items" do
