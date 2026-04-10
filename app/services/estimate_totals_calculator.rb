@@ -66,7 +66,11 @@ class EstimateTotalsCalculator
       section_subtotals[section.id][:burdened] = burdened
     end
 
-    grand_total_burdened = (grand_total_non_burdened * burden_multiplier) + total_travel_cost
+    # Only add travel cost when there is non-burdened work to prorate it against.
+    # When grand_total_non_burdened is 0, per-section travel_share is also 0 (see above),
+    # so the grand total must match — adding travel here would create an inconsistency.
+    grand_total_travel = grand_total_non_burdened > 0 ? total_travel_cost : BigDecimal("0")
+    grand_total_burdened = (grand_total_non_burdened * burden_multiplier) + grand_total_travel
 
     Result.new(
       section_subtotals: section_subtotals,
