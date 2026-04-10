@@ -12,7 +12,7 @@ class LineItemsController < ApplicationController
 
   def create
     @line_item = @section.line_items.build(line_item_params)
-    @line_item.markup_percent = @section.default_markup_percent unless line_item_params.key?(:markup_percent)
+    @line_item.markup_percent = @section.default_markup_percent if line_item_params[:markup_percent].blank?
 
     if @line_item.save
       @totals = calculate_totals
