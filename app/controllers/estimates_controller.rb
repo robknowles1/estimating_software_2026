@@ -1,5 +1,5 @@
 class EstimatesController < ApplicationController
-  before_action :set_estimate, only: [ :show, :edit, :update, :destroy ]
+  before_action :set_estimate, only: [ :show, :update, :destroy ]
 
   def index
     @estimates = Estimate.includes(:client)

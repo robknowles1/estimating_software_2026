@@ -2,8 +2,9 @@
 <% url = line_item.persisted? ? estimate_estimate_section_line_item_path(estimate, section, line_item) : estimate_estimate_section_line_items_path(estimate, section) %>
 <% method = line_item.persisted? ? :patch : :post %>
 
-<%= form_with model: line_item, url: url, method: method,
-    data: { controller: "line-item-calculator" } do |f| %>
+<% form_data = { controller: "line-item-calculator" } %>
+<% form_data[:turbo] = false if controller_name == "line_items" && action_name.in?(%w[new edit]) %>
+<%= form_with model: line_item, url: url, method: method, data: form_data do |f| %>
 
   <% if line_item.errors.any? %>
     <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm" role="alert">

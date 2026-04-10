@@ -3,6 +3,6 @@
   <h4 class="text-xs font-semibold text-slate-600 mb-3"><%= t("line_items.add_line_item_heading") %></h4>
   <%# Pre-fill markup_percent from section default, mirroring LineItemsController#new.
       When line_item is passed (validation failure), use it directly to show errors. %>
-  <% line_item ||= section.line_items.build(line_item_category: "material", markup_percent: section.default_markup_percent) %>
+  <% line_item ||= LineItem.new(estimate_section: section, line_item_category: "material", markup_percent: section.default_markup_percent) %>
   <%= render "line_items/form", line_item: line_item, section: section, estimate: estimate %>
 </div>

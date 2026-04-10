@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_06_000005) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_10_171316) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -106,7 +106,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_06_000005) do
     t.string "component_type"
     t.string "cost_type"
     t.datetime "created_at", null: false
-    t.string "description"
+    t.string "description", null: false
     t.integer "estimate_material_id"
     t.bigint "estimate_section_id", null: false
     t.decimal "freeform_quantity", precision: 10, scale: 4
