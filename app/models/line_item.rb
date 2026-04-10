@@ -10,7 +10,11 @@ class LineItem < ApplicationRecord
 
   validates :description, presence: true
   validates :line_item_category, presence: true, inclusion: { in: LINE_ITEM_CATEGORIES }
-  validates :markup_percent, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :markup_percent,       numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :unit_cost,            numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :component_quantity,   numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :hours_per_unit,       numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :freeform_quantity,    numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
   # Extended cost routing — three computation paths depending on category
   def extended_cost

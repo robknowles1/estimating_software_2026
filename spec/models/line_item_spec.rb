@@ -10,6 +10,12 @@ RSpec.describe LineItem, type: :model do
   describe "validations" do
     it { is_expected.to validate_presence_of(:description) }
 
+    it { is_expected.to validate_numericality_of(:markup_percent).is_greater_than_or_equal_to(0).allow_nil }
+    it { is_expected.to validate_numericality_of(:unit_cost).is_greater_than_or_equal_to(0).allow_nil }
+    it { is_expected.to validate_numericality_of(:component_quantity).is_greater_than_or_equal_to(0).allow_nil }
+    it { is_expected.to validate_numericality_of(:hours_per_unit).is_greater_than_or_equal_to(0).allow_nil }
+    it { is_expected.to validate_numericality_of(:freeform_quantity).is_greater_than_or_equal_to(0).allow_nil }
+
     it "validates line_item_category is in the allowed list" do
       line_item.line_item_category = "invalid"
       expect(line_item).not_to be_valid
