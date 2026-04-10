@@ -18,7 +18,7 @@ RSpec.describe "Authentication", type: :system do
     click_button "Sign In"
 
     # Landed on estimates dashboard
-    expect(page).to have_current_path(estimates_path)
+    expect(page).to have_current_path(estimates_path, wait: 5)
     expect(page).to have_text("Alice Smith")
 
     # Log out

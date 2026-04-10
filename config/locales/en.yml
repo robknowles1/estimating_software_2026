@@ -51,12 +51,152 @@ en:
       submit: "Sign In"
 
   estimates:
+    create:
+      notice: "Estimate was successfully created."
+    update:
+      notice: "Estimate was successfully updated."
+    destroy:
+      notice: "Estimate was successfully deleted."
     index:
       title: "Estimates"
       subtitle: "Manage project estimates for Trim-Art clients."
       new_button: "New Estimate"
       empty_title: "No estimates yet"
       empty_description: "Estimates will appear here once clients are added."
+      search_placeholder: "Search by client or title..."
+      filter_all: "All Statuses"
+      filter_button: "Filter"
+      clear_filters: "Clear"
+      col_number: "Estimate #"
+      col_client: "Client"
+      col_title: "Job Title"
+      col_status: "Status"
+      col_updated: "Last Modified"
+      status_draft: "Draft"
+      status_sent: "Sent"
+      status_approved: "Approved"
+      status_lost: "Lost"
+      status_archived: "Archived"
+    new:
+      title: "New Estimate"
+      subtitle: "Start a new project estimate."
+    edit:
+      back: "Back to Estimates"
+      materials_link: "Material Costs"
+      details_heading: "Details"
+      status_heading: "Status"
+      job_settings_heading: "Job Settings"
+      update_status: "Update Status"
+      save_job_settings: "Save Job Settings"
+      sections_heading: "Sections"
+      no_sections: "No sections yet. Add a section below."
+      add_section_heading: "Add Section"
+      add_section_button: "Add Section"
+      markup_label: "%{percent}% markup"
+      markup_field_label: "Markup %"
+      quantity_field_label: "Qty"
+      line_items_count:
+        one: "1 line item"
+        other: "%{count} line items"
+      move_up: "Move Up"
+      move_down: "Move Down"
+      confirm_delete: "Are you sure you want to delete estimate %{number}? This cannot be undone."
+      confirm_delete_section: "Are you sure you want to delete section \"%{name}\"?"
+      confirm_delete_section_with_items: "Section \"%{name}\" has %{count} line item(s). Delete everything?"
+      miles_to_jobsite: "Miles to Jobsite (one-way)"
+      installer_crew_size: "Installer Crew Size"
+      delivery_crew_size: "Delivery Crew Size"
+      on_site_time_hrs: "On-Site Time (hrs)"
+      profit_overhead_percent: "Profit/Overhead %"
+      pm_supervision_percent: "PM Supervision %"
+    materials:
+      edit:
+        title: "Material Cost Slots"
+        subtitle: "Per-estimate pricing for %{estimate}"
+        back_to_estimate: "Back to Estimate"
+        save_button: "Save Material Costs"
+        cancel: "Cancel"
+      update:
+        notice: "Material costs updated successfully."
+    form:
+      client: "Client"
+      select_client: "Select a client..."
+      new_client_link: "Or create a new client"
+      cancel: "Cancel"
+      errors:
+        one: "1 error prohibited this estimate from being saved:"
+        other: "%{count} errors prohibited this estimate from being saved:"
+
+  estimate_materials:
+    slot_label: "Slot"
+    description_label: "Description"
+    description_placeholder: "e.g. WD2, Maple Veneer Ply"
+    price_label: "Price/Unit"
+    unit_label: "Unit"
+    unit_placeholder: "e.g. sheet, linear_ft"
+    category:
+      pl: "Panel / Sheet Goods (PL)"
+      pull: "Pulls (PULL)"
+      hinge: "Hinges (HINGE)"
+      slide: "Slides (SLIDE)"
+      banding: "Edge Banding (BANDING)"
+      veneer: "Veneer (VENEER)"
+
+  line_items:
+    create:
+      notice: "Line item was successfully added."
+    update:
+      notice: "Line item was successfully updated."
+    destroy:
+      notice: "Line item was successfully removed."
+    confirm_delete: "Are you sure you want to delete this line item?"
+    move_up: "Move Up"
+    move_down: "Move Down"
+    add_line_item_heading: "Add Line Item"
+    section_quantity: "%{count} cabinet(s)"
+    non_burdened_label: "Non-Burdened"
+    burdened_label: "Sell Price"
+    estimate_totals_heading: "Estimate Totals"
+    grand_total_non_burdened: "Total Cost (Non-Burdened)"
+    grand_total_burdened: "Total Sell Price (Burdened)"
+    alternate_total_heading: "Alternates"
+    buy_out_total_heading: "Buy-Outs"
+    see_section_total: "see section total"
+    estimate_totals:
+      cost_label: "Cost: "
+      sell_label: "Sell: "
+    category:
+      material: "Material"
+      labor: "Labor"
+      alternate: "Alternate"
+      buy_out: "Buy-Out"
+      other: "Other"
+    new:
+      title: "Add Line Item"
+      subtitle: "Add to section \"%{section}\" — %{estimate}"
+    edit:
+      title: "Edit Line Item"
+      subtitle: "Section \"%{section}\" — %{estimate}"
+    form:
+      category_label: "Category"
+      component_type_label: "Component Type"
+      labor_category_label: "Labor Category"
+      material_slot_label: "Material Slot"
+      description_label: "Description"
+      component_quantity_label: "Component Qty (per cabinet)"
+      hours_per_unit_label: "Hours per Cabinet"
+      freeform_quantity_label: "Quantity"
+      unit_cost_label: "Unit Cost"
+      markup_percent_label: "Markup %"
+      unit_label: "Unit"
+      notes_label: "Notes"
+      extended_cost_preview: "Extended Cost:"
+      sell_price_preview: "Sell Price:"
+      create_button: "Add Line Item"
+      update_button: "Update Line Item"
+      cancel: "Cancel"
+      select_blank: "— select —"
+      no_material_slot: "— none —"
 
   users:
     create:
@@ -117,6 +257,27 @@ en:
       errors:
         one: "1 error prohibited this client from being saved:"
         other: "%{count} errors prohibited this client from being saved:"
+
+  estimate_sections:
+    create:
+      notice: "Section was successfully added."
+    update:
+      notice: "Section was successfully updated."
+    destroy:
+      notice: "Section was successfully removed."
+    new:
+      title: "New Section"
+      subtitle: "Add a section to estimate %{estimate}."
+    edit:
+      title: "Edit Section"
+      subtitle: "Update section for estimate %{estimate}."
+    form:
+      markup_label: "Default Markup %"
+      quantity_label: "Cabinet Quantity"
+      cancel: "Cancel"
+      errors:
+        one: "1 error prohibited this section from being saved:"
+        other: "%{count} errors prohibited this section from being saved:"
 
   contacts:
     create:

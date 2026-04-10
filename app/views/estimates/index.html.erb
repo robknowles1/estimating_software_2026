@@ -3,24 +3,73 @@
     <h1 class="text-2xl font-bold text-slate-900"><%= t(".title") %></h1>
     <p class="text-slate-500 text-sm mt-0.5"><%= t(".subtitle") %></p>
   </div>
-  <%# New Estimate button will be wired in Phase 3 %>
-  <button disabled
-    class="inline-flex items-center gap-2 bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-semibold opacity-50 cursor-not-allowed">
+  <%= link_to new_estimate_path,
+      class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors" do %>
     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
     </svg>
     <%= t(".new_button") %>
-  </button>
+  <% end %>
+</div>
+
+<%# Search and filter %>
+<div class="mb-4 flex gap-3">
+  <%= form_with url: estimates_path, method: :get, class: "flex gap-3 flex-1" do |f| %>
+    <%= f.text_field :q, value: @search_query, placeholder: t(".search_placeholder"),
+        class: "flex-1 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+    <%= f.select :status,
+        [[ t(".filter_all"), "" ]] + Estimate.statuses.keys.map { |s| [ t(".status_#{s}"), s ] },
+        { selected: @status_filter },
+        class: "border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+    <%= f.submit t(".filter_button"),
+        class: "bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>
+    <% if @search_query.present? || @status_filter.present? %>
+      <%= link_to t(".clear_filters"), estimates_path,
+          class: "text-sm text-slate-500 hover:text-slate-700 font-medium px-3 py-2 transition-colors" %>
+    <% end %>
+  <% end %>
 </div>
 
 <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
-  <div class="flex flex-col items-center justify-center py-20 text-center">
-    <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-      <svg class="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-      </svg>
+  <% if @estimates.any? %>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider">
+          <th class="px-6 py-3 text-left font-medium"><%= t(".col_number") %></th>
+          <th class="px-6 py-3 text-left font-medium"><%= t(".col_client") %></th>
+          <th class="px-6 py-3 text-left font-medium"><%= t(".col_title") %></th>
+          <th class="px-6 py-3 text-left font-medium"><%= t(".col_status") %></th>
+          <th class="px-6 py-3 text-left font-medium"><%= t(".col_updated") %></th>
+          <th class="px-6 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        <% @estimates.each do |estimate| %>
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="px-6 py-4 font-mono text-xs text-slate-600"><%= estimate.estimate_number %></td>
+            <td class="px-6 py-4 text-slate-700"><%= estimate.client.company_name %></td>
+            <td class="px-6 py-4 font-medium text-slate-900"><%= estimate.title %></td>
+            <td class="px-6 py-4">
+              <%= render "status_badge", status: estimate.status %>
+            </td>
+            <td class="px-6 py-4 text-slate-500"><%= estimate.updated_at.strftime("%b %d, %Y") %></td>
+            <td class="px-6 py-4 text-right">
+              <%= link_to t("common.edit"), edit_estimate_path(estimate),
+                  class: "text-slate-600 hover:text-amber-700 font-medium transition-colors" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div class="flex flex-col items-center justify-center py-20 text-center">
+      <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+        <svg class="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <p class="text-slate-700 font-medium text-sm"><%= t(".empty_title") %></p>
+      <p class="text-slate-400 text-sm mt-1"><%= t(".empty_description") %></p>
     </div>
-    <p class="text-slate-700 font-medium text-sm"><%= t(".empty_title") %></p>
-    <p class="text-slate-400 text-sm mt-1"><%= t(".empty_description") %></p>
-  </div>
+  <% end %>
 </div>

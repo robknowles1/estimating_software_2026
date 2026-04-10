@@ -1,7 +1,7 @@
 # Spec: Phase 3 — Estimate Scaffold and Sections
 
 **ID:** SPEC-005
-**Status:** ready
+**Status:** done
 **Priority:** high
 **Created:** 2026-04-04
 **Author:** pm-agent
