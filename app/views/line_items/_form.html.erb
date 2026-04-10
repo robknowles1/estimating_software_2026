@@ -1,4 +1,4 @@
-<%# locals: (line_item:, section:, estimate:) %>
+<%# locals: (line_item:, section:, estimate:, sorted_materials: nil) %>
 <% url = line_item.persisted? ? estimate_estimate_section_line_item_path(estimate, section, line_item) : estimate_estimate_section_line_items_path(estimate, section) %>
 <% method = line_item.persisted? ? :patch : :post %>
 
@@ -43,8 +43,8 @@
     <div class="grid grid-cols-2 gap-4">
       <div>
         <%= f.label :estimate_material_id, t("line_items.form.material_slot_label"), class: "block text-xs font-medium text-slate-700 mb-1" %>
-        <%# Sort in Ruby so a preloaded association is not re-queried per section %>
-        <% materials = estimate.estimate_materials.sort_by { |m| [m.category, m.slot_number] } %>
+        <%# Use pre-sorted list from parent if provided (avoids re-sorting on every section render) %>
+        <% materials = sorted_materials || estimate.estimate_materials.sort_by { |m| [m.category, m.slot_number] } %>
         <%= f.select :estimate_material_id,
             [[ t("line_items.form.no_material_slot"), "" ]] +
             materials.map { |m| [ "#{m.slot_label}#{m.description.present? ? " — #{m.description}" : ""} (#{number_to_currency(m.price_per_unit)})", m.id ] },

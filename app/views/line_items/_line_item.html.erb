@@ -48,7 +48,7 @@
       <% elsif line_item.line_item_category == "labor" %>
         <%= line_item.labor_category&.humanize %>
         <% if line_item.hours_per_unit.present? %>
-          &middot; <%= format("%.3f", line_item.hours_per_unit) %> hrs/cabinet
+          &middot; <%= number_with_precision(line_item.hours_per_unit, precision: 3) %> hrs/cabinet
         <% end %>
       <% else %>
         <% if line_item.freeform_quantity.present? %>

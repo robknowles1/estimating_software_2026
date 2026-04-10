@@ -21,7 +21,9 @@ class LineItem < ApplicationRecord
     end
   end
 
-  # Sell price for buy-out / alternate items only (burden calc does NOT apply)
+  # Sell price = extended_cost × (1 + markup_percent / 100).
+  # Meaningful for buy-out / alternate / other items where markup is set by the user.
+  # For material / labor items markup_percent is typically 0, so sell_price == extended_cost.
   def sell_price
     pct = markup_percent || BigDecimal("0")
     extended_cost * (BigDecimal("1") + pct / BigDecimal("100"))

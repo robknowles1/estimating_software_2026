@@ -47,7 +47,7 @@ RSpec.describe "Line Items", type: :system do
       select "Material", from: "line_item[line_item_category]"
       select "Exterior", from: "line_item[component_type]"
       fill_in "Description", with: "Exterior Sheet Good"
-      select "PL1", from: "line_item[estimate_material_id]"
+      find("select[name='line_item[estimate_material_id]']").find("option[value='#{pl1.id}']").select_option
       fill_in "line_item[component_quantity]", with: "0.32"
       click_button "Add Line Item"
 
