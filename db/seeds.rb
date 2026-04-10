@@ -24,6 +24,57 @@ LaborRate::CATEGORIES.each do |category|
 end
 puts "Seeded #{LaborRate.count} labor rates."
 
+# Catalog items — derived from the Excel estimating template's common line item types.
+# All environments so estimators have a useful starting catalog.
+catalog_seed_data = [
+  # General conditions
+  { description: "Install Travel",       default_unit: "EA",  default_unit_cost: nil,    category: "general_conditions" },
+  { description: "Delivery",             default_unit: "EA",  default_unit_cost: 400.00, category: "general_conditions" },
+  { description: "Per Diem",             default_unit: "Day", default_unit_cost: 65.00,  category: "general_conditions" },
+  { description: "Hotel",                default_unit: "Day", default_unit_cost: nil,    category: "general_conditions" },
+  { description: "Airfare",              default_unit: "Day", default_unit_cost: nil,    category: "general_conditions" },
+  { description: "Equipment",            default_unit: "EA",  default_unit_cost: nil,    category: "general_conditions" },
+  # Millwork — common cabinet and trim components
+  { description: "Base Cabinet",         default_unit: "EA",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Wall Cabinet",         default_unit: "EA",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Tall Cabinet",         default_unit: "EA",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Vanity Cabinet",       default_unit: "EA",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Drawer Base Cabinet",  default_unit: "EA",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Corner Cabinet",       default_unit: "EA",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Crown Moulding",       default_unit: "LF",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Door Casing",          default_unit: "LF",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Base Moulding",        default_unit: "LF",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Base Plate",           default_unit: "LF",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Window Sill",          default_unit: "LF",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Stair Skirting",       default_unit: "LF",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Railing",              default_unit: "LF",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Newel Post",           default_unit: "EA",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Balusters",            default_unit: "EA",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Closet Shelving",      default_unit: "LF",  default_unit_cost: nil,    category: "millwork" },
+  { description: "Countertop",           default_unit: "LF",  default_unit_cost: nil,    category: "millwork" },
+  # Hardware
+  { description: "Concealed Hinge",      default_unit: "EA",  default_unit_cost: nil,    category: "hardware" },
+  { description: "Drawer Slide",         default_unit: "PR",  default_unit_cost: nil,    category: "hardware" },
+  { description: "Cabinet Pull",         default_unit: "EA",  default_unit_cost: nil,    category: "hardware" },
+  { description: "Cabinet Lock",         default_unit: "EA",  default_unit_cost: nil,    category: "hardware" },
+  # Sheet goods / materials
+  { description: "3/4\" Melamine Sheet", default_unit: "sheet", default_unit_cost: nil,  category: "materials" },
+  { description: "1/4\" Melamine Sheet", default_unit: "sheet", default_unit_cost: nil,  category: "materials" },
+  { description: "3/4\" Plywood G2S",    default_unit: "sheet", default_unit_cost: nil,  category: "materials" },
+  { description: "Baltic Birch Dovetail", default_unit: "sheet", default_unit_cost: nil, category: "materials" },
+  { description: "Edge Banding",         default_unit: "LF",  default_unit_cost: nil,    category: "materials" },
+  { description: "Veneer",               default_unit: "SF",  default_unit_cost: nil,    category: "materials" }
+]
+
+catalog_seed_data.each do |attrs|
+  CatalogItem.find_or_create_by!(description: attrs[:description]) do |item|
+    item.default_unit      = attrs[:default_unit]
+    item.default_unit_cost = attrs[:default_unit_cost]
+    item.category          = attrs[:category]
+  end
+end
+puts "Seeded #{CatalogItem.count} catalog items."
+
 if Rails.env.development?
   require "securerandom"
 

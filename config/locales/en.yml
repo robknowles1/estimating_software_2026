@@ -34,6 +34,7 @@ en:
   nav:
     estimates: "Estimates"
     clients: "Clients"
+    catalog: "Catalog"
     users: "Users"
     sign_out: "Sign Out"
 
@@ -278,6 +279,42 @@ en:
       errors:
         one: "1 error prohibited this section from being saved:"
         other: "%{count} errors prohibited this section from being saved:"
+
+  catalog_items:
+    create:
+      notice: "Catalog item was successfully created."
+    update:
+      notice: "Catalog item was successfully updated."
+    destroy:
+      notice: "Catalog item was successfully deleted."
+    index:
+      title: "Catalog"
+      subtitle: "Manage common line item descriptions, units, and costs."
+      add_button: "Add Item"
+      filter_all: "All Categories"
+      col_description: "Description"
+      col_category: "Category"
+      col_unit: "Unit"
+      col_cost: "Default Cost"
+      confirm_delete: "Delete catalog item \"%{description}\"? Existing line items will not be affected."
+      empty_title: "No catalog items yet"
+      empty_description: "Add common items to speed up estimating."
+    new:
+      title: "New Catalog Item"
+      subtitle: "Add a new item to the catalog."
+    edit:
+      title: "Edit Catalog Item"
+      subtitle: "Update \"%{description}\"."
+    form:
+      description_label: "Description"
+      unit_label: "Default Unit"
+      unit_placeholder: "e.g. EA, LF, sheet"
+      unit_cost_label: "Default Unit Cost"
+      category_label: "Category"
+      category_placeholder: "e.g. millwork, hardware, general_conditions"
+      create_button: "Add Item"
+      update_button: "Update Item"
+      cancel: "Cancel"
 
   contacts:
     create:

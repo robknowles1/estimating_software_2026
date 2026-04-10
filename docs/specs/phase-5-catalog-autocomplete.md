@@ -1,7 +1,7 @@
 # Spec: Phase 5 — Catalog and Line Item Autocomplete
 
 **ID:** SPEC-007
-**Status:** draft
+**Status:** done
 **Priority:** medium
 **Created:** 2026-04-04
 **Author:** pm-agent

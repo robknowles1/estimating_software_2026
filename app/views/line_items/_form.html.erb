@@ -2,7 +2,10 @@
 <% url = line_item.persisted? ? estimate_estimate_section_line_item_path(estimate, section, line_item) : estimate_estimate_section_line_items_path(estimate, section) %>
 <% method = line_item.persisted? ? :patch : :post %>
 
-<% form_data = { controller: "line-item-calculator" } %>
+<% form_data = {
+     controller: "line-item-calculator description-autocomplete",
+     "description-autocomplete-search-url-value" => search_catalog_items_path
+   } %>
 <% form_data[:turbo] = false if controller_name == "line_items" && action_name.in?(%w[new edit]) %>
 <%= form_with model: line_item, url: url, method: method, data: form_data do |f| %>
 
@@ -34,10 +37,23 @@
       </div>
     </div>
 
-    <div>
+    <%# Description with autocomplete dropdown %>
+    <div class="relative">
       <%= f.label :description, t("line_items.form.description_label"), class: "block text-xs font-medium text-slate-700 mb-1" %>
       <%= f.text_field :description, required: true,
+          autocomplete: "off",
+          role: "combobox",
+          aria: { autocomplete: "list", expanded: "false", haspopup: "listbox" },
+          data: {
+            "description-autocomplete-target" => "input",
+            action: "input->description-autocomplete#search keydown->description-autocomplete#navigate"
+          },
           class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+      <%= f.hidden_field :catalog_item_id,
+          data: { "description-autocomplete-target" => "catalogItemId" } %>
+      <div data-description-autocomplete-target="dropdown"
+           class="hidden absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+           role="listbox"></div>
     </div>
 
     <div class="grid grid-cols-2 gap-4">
@@ -83,7 +99,11 @@
       <div>
         <%= f.label :unit_cost, t("line_items.form.unit_cost_label"), class: "block text-xs font-medium text-slate-700 mb-1" %>
         <%= f.number_field :unit_cost, step: "any", min: 0,
-            data: { "line-item-calculator-target" => "unitCostInput", action: "input->line-item-calculator#calculate" },
+            data: {
+              "line-item-calculator-target" => "unitCostInput",
+              action: "input->line-item-calculator#calculate",
+              "description-autocomplete-target" => "unitCostInput"
+            },
             class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
       </div>
       <div>
@@ -95,6 +115,7 @@
       <div>
         <%= f.label :unit, t("line_items.form.unit_label"), class: "block text-xs font-medium text-slate-700 mb-1" %>
         <%= f.text_field :unit,
+            data: { "description-autocomplete-target" => "unitInput" },
             class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
       </div>
     </div>

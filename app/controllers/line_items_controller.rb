@@ -83,6 +83,7 @@ class LineItemsController < ApplicationController
       :component_type,
       :labor_category,
       :estimate_material_id,
+      :catalog_item_id,
       :component_quantity,
       :hours_per_unit,
       :freeform_quantity,

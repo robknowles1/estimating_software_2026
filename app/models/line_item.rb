@@ -1,6 +1,7 @@
 class LineItem < ApplicationRecord
   belongs_to :estimate_section
   belongs_to :estimate_material, optional: true
+  belongs_to :catalog_item, optional: true
 
   acts_as_list scope: :estimate_section
 
