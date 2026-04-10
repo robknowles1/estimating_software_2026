@@ -27,7 +27,7 @@
     </div>
   <% end %>
 
-  <%= form_with url: session_path, method: :post, class: "space-y-5" do |f| %>
+  <%= form_with url: session_path, method: :post, class: "space-y-5", data: { turbo: false } do |f| %>
     <div>
       <%= f.label :email, class: "block text-sm font-medium text-slate-700 mb-1.5" %>
       <%= f.email_field :email, required: true, autofocus: true,
