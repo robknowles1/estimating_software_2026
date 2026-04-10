@@ -33,10 +33,10 @@ class EstimateSectionsController < ApplicationController
   end
 
   def move
-    if params[:direction] == "up"
-      @section.move_higher
-    else
-      @section.move_lower
+    case params[:direction]
+    when "up"   then @section.move_higher
+    when "down" then @section.move_lower
+    else             return head :bad_request
     end
     redirect_to edit_estimate_path(@estimate), status: :see_other
   end

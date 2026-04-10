@@ -53,10 +53,10 @@ class LineItemsController < ApplicationController
   end
 
   def move
-    if params[:direction] == "up"
-      @line_item.move_higher
-    else
-      @line_item.move_lower
+    case params[:direction]
+    when "up"   then @line_item.move_higher
+    when "down" then @line_item.move_lower
+    else             return head :bad_request
     end
     redirect_to edit_estimate_path(@estimate), status: :see_other
   end

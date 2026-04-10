@@ -12,7 +12,7 @@
 
 ActiveRecord::Schema[8.1].define(version: 2026_04_06_000005) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "pg_catalog.plpgsql"
+  enable_extension "plpgsql"
 
   create_table "clients", force: :cascade do |t|
     t.string "address"

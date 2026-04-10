@@ -8,11 +8,16 @@ module Estimates
     end
 
     def update
-      materials_params.each do |id, attrs|
-        material = @estimate.estimate_materials.find(id)
-        material.update!(attrs.permit(:description, :price_per_unit, :unit))
-      rescue ActiveRecord::RecordNotFound
-        next
+      materials_by_id = @estimate.estimate_materials
+                                  .where(id: materials_params.keys)
+                                  .index_by { |m| m.id.to_s }
+
+      ActiveRecord::Base.transaction do
+        materials_params.each do |id, attrs|
+          material = materials_by_id[id.to_s]
+          next unless material
+          material.update!(attrs.permit(:description, :price_per_unit, :unit))
+        end
       end
 
       redirect_to edit_estimate_materials_path(@estimate), notice: t(".notice")

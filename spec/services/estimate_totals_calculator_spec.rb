@@ -183,23 +183,26 @@ RSpec.describe EstimateTotalsCalculator do
     end
 
     it "completes without firing per-item queries for labor rates or materials" do
+      # Force lazy lets to evaluate before we start counting queries.
+      # Without this, the Estimate.includes(...).find(...) preload fires inside
+      # the subscribed block and inflates the count.
+      preloaded_estimate
+
       # Verify that calling the calculator on preloaded data does not fire per-item queries.
-      # Only LaborRate.all (1 query) and possibly schema cache lookups are expected.
+      # Only LaborRate.all (1 query) is expected — everything else is already in memory.
       # The key invariant: query count is O(1), not O(n) in the number of line items.
       query_count = 0
-      counter = lambda do |*, **|
+      counter = lambda do |_name, _start, _finish, _id, payload|
+        next if %w[SCHEMA TRANSACTION CACHE].include?(payload[:name])
         query_count += 1
       end
 
-      # Record a baseline query count before calling the calculator
       ActiveSupport::Notifications.subscribed(counter, "sql.active_record") do
         calculator.call
       end
 
-      # With the preloaded estimate and cached labor rates, total queries should be small
-      # (typically just 1 for LaborRate.all). We allow up to 5 as a generous upper bound
-      # to account for schema cache and transaction queries, while still catching N+1 regressions.
-      expect(query_count).to be <= 5
+      # Allow up to 2: LaborRate.all plus one spare for any adapter bookkeeping.
+      expect(query_count).to be <= 2
     end
   end
 end

@@ -11,7 +11,7 @@ RSpec.describe "Estimates", type: :system do
     fill_in "Email", with: as.email
     fill_in "Password", with: password
     click_button "Sign In"
-    expect(page).to have_current_path(estimates_path)
+    expect(page).to have_current_path(estimates_path, wait: 5)
   end
 
   describe "creating an estimate with sections and reordering" do
