@@ -352,6 +352,33 @@ The `EstimateTotalsCalculator` must be the only place where burdened totals are 
 
 ---
 
+## Deferred to Phase 7 (Polish)
+
+The following items are intentionally deferred. They are not blockers for MVP but should be addressed in the Phase 7 polish pass.
+
+### P7-01: Soft delete on Estimates
+
+**File:** `app/controllers/estimates_controller.rb` — `destroy` action
+
+Currently `destroy` calls `@estimate.destroy`, which hard-deletes the record. Once real job data exists, hard deletion is risky — an accidentally deleted estimate is unrecoverable.
+
+**Planned fix:** Add a `deleted_at:datetime` column to `estimates` and use the [Discard gem](https://github.com/jhawthorn/discard) (or a manual `default_scope`/`kept` scope). The `destroy` action becomes `@estimate.discard` and the index scope filters to undiscarded records only. A future admin UI can show and restore soft-deleted estimates.
+
+This is safe to defer for MVP because there is no live data yet and accidental deletion can be corrected via the Rails console.
+
+### P7-02: User-manageable category lists
+
+**File:** `app/models/line_item.rb`
+
+Three constants are currently hardcoded:
+- `LINE_ITEM_CATEGORIES` — structural (app logic branches on these); keep hardcoded.
+- `COMPONENT_TYPES` — cabinet component labels (exterior, interior, banding, etc.); good candidate for user management.
+- `LABOR_CATEGORIES` — labor trade types (detail, mill, assembly, etc.); most likely to need expansion (e.g. adding "painting"); highest priority for user management.
+
+**Planned fix:** In Phase 7, extract `COMPONENT_TYPES` and `LABOR_CATEGORIES` into DB-backed models with admin CRUD. `LABOR_CATEGORIES` should be migrated first as it's the most volatile. `LINE_ITEM_CATEGORIES` stays hardcoded since the app's rendering and calculation logic depends on its specific values.
+
+---
+
 ## Known Tech Debt — Required Before First Production Deploy
 
 The following items are low-risk in development (no live data, PostgreSQL handles type coercion) but must be resolved before the first production database is provisioned:
