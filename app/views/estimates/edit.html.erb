@@ -134,7 +134,7 @@
             <div class="flex-1">
               <p class="text-sm font-semibold text-slate-900">
                 <%= section.name %>
-                <span class="text-slate-400 font-normal text-xs ml-1">&times; <%= section.quantity %></span>
+                <span class="text-slate-400 font-normal text-xs ml-1">&times; <%= number_with_precision(section.quantity, strip_insignificant_zeros: true) %></span>
               </p>
               <p class="text-xs text-slate-500 mt-0.5">
                 <%= t("estimates.edit.markup_label", percent: section.default_markup_percent) %>

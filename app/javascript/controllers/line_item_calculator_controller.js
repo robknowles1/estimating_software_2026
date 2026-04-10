@@ -1,10 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Provides real-time price preview for freeform line items (buy-out, alternate, other).
+// Provides real-time price preview from the freeform quantity/unit cost inputs.
 // Calculates: extended_cost = freeform_quantity × unit_cost
 //             sell_price    = extended_cost × (1 + markup / 100)
-// Material and labor items do not use freeform_quantity/unit_cost, so their preview
-// displays "—". Accurate totals for all types come from the server-side burden calculator.
+// The preview displays "—" when those inputs do not produce a positive extended cost.
+// Accurate totals for all line item types come from the server-side burden calculator.
 export default class extends Controller {
   static targets = [
     "quantityInput",

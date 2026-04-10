@@ -43,7 +43,7 @@
           &middot; <%= number_to_currency(line_item.estimate_material.price_per_unit) %>/unit
         <% end %>
         <% if line_item.component_quantity.present? %>
-          &middot; <%= line_item.component_quantity %> per cabinet
+          &middot; <%= number_with_precision(line_item.component_quantity, strip_insignificant_zeros: true) %> per cabinet
         <% end %>
       <% elsif line_item.line_item_category == "labor" %>
         <%= line_item.labor_category&.humanize %>
@@ -52,13 +52,13 @@
         <% end %>
       <% else %>
         <% if line_item.freeform_quantity.present? %>
-          Qty: <%= line_item.freeform_quantity %>
+          Qty: <%= number_with_precision(line_item.freeform_quantity, strip_insignificant_zeros: true) %>
         <% end %>
         <% if line_item.unit_cost.present? && line_item.unit_cost > 0 %>
           &middot; <%= number_to_currency(line_item.unit_cost) %>/unit
         <% end %>
         <% if line_item.markup_percent.present? && line_item.markup_percent > 0 %>
-          &middot; <%= line_item.markup_percent %>% markup
+          &middot; <%= number_with_precision(line_item.markup_percent, strip_insignificant_zeros: true) %>% markup
         <% end %>
       <% end %>
     </p>
