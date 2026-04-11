@@ -76,12 +76,12 @@ RSpec.describe "Catalog Items", type: :system do
       # Select the item from the dropdown
       find("[role='option']", text: "Crown Moulding").click
 
-      # Description field should be filled
-      expect(find_field("Description").value).to eq("Crown Moulding")
+      # Description field should be filled (wait for Stimulus _select to update the value)
+      expect(page).to have_field("Description", with: "Crown Moulding", wait: 5)
       # Unit field should be pre-filled
-      expect(find_field("line_item[unit]").value).to eq("LF")
+      expect(page).to have_field("line_item[unit]", with: "LF", wait: 5)
       # Unit cost field should be pre-filled
-      expect(find_field("line_item[unit_cost]").value).to eq("8.5")
+      expect(page).to have_field("line_item[unit_cost]", with: "8.5", wait: 5)
 
       # Fill remaining required fields and save
       fill_in "line_item[freeform_quantity]", with: "10"
