@@ -6,14 +6,15 @@ RSpec.describe Estimate, type: :model do
   describe "associations" do
     it { is_expected.to belong_to(:client) }
     it { is_expected.to belong_to(:created_by).class_name("User") }
-    it { is_expected.to have_many(:estimate_sections).dependent(:destroy) }
-    # line_items through estimate_sections is validated when LineItem model exists (Phase 4)
+    it { is_expected.to have_many(:materials).dependent(:destroy) }
+    it { is_expected.to have_many(:line_items).dependent(:destroy) }
   end
 
   describe "validations" do
     it { is_expected.to validate_presence_of(:title) }
     it { is_expected.to validate_presence_of(:client_id) }
     it { is_expected.to validate_uniqueness_of(:estimate_number) }
+    it { is_expected.to validate_numericality_of(:tax_rate).is_greater_than_or_equal_to(0) }
   end
 
   describe "estimate number generation" do
@@ -35,10 +36,10 @@ RSpec.describe Estimate, type: :model do
     end
 
     it "increments the sequence for subsequent estimates in the same year" do
-      first = create(:estimate)
+      first  = create(:estimate)
       second = create(:estimate)
 
-      first_seq = first.estimate_number.split("-").last.to_i
+      first_seq  = first.estimate_number.split("-").last.to_i
       second_seq = second.estimate_number.split("-").last.to_i
 
       expect(second_seq).to eq(first_seq + 1)
@@ -68,6 +69,88 @@ RSpec.describe Estimate, type: :model do
     end
   end
 
+  describe "#copy_tax_exempt_from_client (before_create)" do
+    it "copies the client's tax_exempt value onto the estimate at creation" do
+      client = create(:client, tax_exempt: true)
+      estimate = create(:estimate, client: client)
+      expect(estimate.tax_exempt).to be true
+    end
+
+    it "sets tax_exempt to false when client is not tax_exempt" do
+      client = create(:client, tax_exempt: false)
+      estimate = create(:estimate, client: client)
+      expect(estimate.tax_exempt).to be false
+    end
+
+    it "does not re-copy tax_exempt from client on update" do
+      client = create(:client, tax_exempt: false)
+      estimate = create(:estimate, client: client)
+
+      # Manually change the estimate's tax_exempt (simulates a per-job override)
+      estimate.update!(tax_exempt: true)
+
+      # Update client tax status — should NOT affect the existing estimate
+      client.update!(tax_exempt: false)
+      estimate.update!(title: "Updated Title")
+
+      expect(estimate.reload.tax_exempt).to be true
+    end
+  end
+
+  describe "#seed_materials (after_create)" do
+    it "creates exactly Material::SLOTS.length material records after creation" do
+      estimate = create(:estimate)
+      expect(estimate.materials.count).to eq(Material::SLOTS.length)
+    end
+
+    it "seeds materials with quote_price 0 and cost_with_tax 0" do
+      estimate = create(:estimate)
+      expect(estimate.materials.where(quote_price: 0, cost_with_tax: 0).count).to eq(Material::SLOTS.length)
+    end
+
+    it "seeds one material row per slot_key" do
+      estimate = create(:estimate)
+      seeded_keys = estimate.materials.pluck(:slot_key).sort
+      expected_keys = Material::SLOTS.map { |s| s[:slot_key] }.sort
+      expect(seeded_keys).to eq(expected_keys)
+    end
+  end
+
+  describe "#recalculate_material_costs (after_save)" do
+    let(:estimate) { create(:estimate, :skip_material_seeding, tax_rate: BigDecimal("0.08"), tax_exempt: false) }
+    let!(:mat1) { create(:material, estimate: estimate, quote_price: BigDecimal("100.00")) }
+    let!(:mat2) { create(:material, estimate: estimate, slot_key: "PL2", quote_price: BigDecimal("50.00")) }
+
+    context "when tax_rate changes" do
+      it "recalculates cost_with_tax for all materials via a single update" do
+        estimate.update!(tax_rate: BigDecimal("0.10"))
+        expect(mat1.reload.cost_with_tax.round(4)).to eq(BigDecimal("110.0000"))
+        expect(mat2.reload.cost_with_tax.round(4)).to eq(BigDecimal("55.0000"))
+      end
+    end
+
+    context "when tax_exempt changes to true" do
+      it "sets cost_with_tax equal to quote_price for all materials" do
+        # Seed costs with tax applied first
+        estimate.update!(tax_rate: BigDecimal("0.08"))
+        mat1.reload; mat2.reload
+
+        estimate.update!(tax_exempt: true)
+        expect(mat1.reload.cost_with_tax).to eq(BigDecimal("100.00"))
+        expect(mat2.reload.cost_with_tax).to eq(BigDecimal("50.00"))
+      end
+    end
+
+    context "when an unrelated field changes" do
+      it "does not recalculate materials" do
+        original_cost = mat1.reload.cost_with_tax
+        expect(estimate).not_to receive(:recalculate_material_costs)
+        estimate.update!(title: "New Title")
+        expect(mat1.reload.cost_with_tax).to eq(original_cost)
+      end
+    end
+  end
+
   describe "scopes" do
     let!(:draft_estimate)    { create(:estimate, status: "draft") }
     let!(:sent_estimate)     { create(:estimate, status: "sent") }
@@ -87,9 +170,9 @@ RSpec.describe Estimate, type: :model do
     end
 
     describe ".search" do
-      let!(:client_a) { create(:client, company_name: "Acme Corp") }
-      let!(:estimate_a) { create(:estimate, client: client_a, title: "Big Kitchen") }
-      let!(:estimate_b) { create(:estimate, title: "Bathroom Remodel") }
+      let!(:client_a)    { create(:client, company_name: "Acme Corp") }
+      let!(:estimate_a)  { create(:estimate, client: client_a, title: "Big Kitchen") }
+      let!(:estimate_b)  { create(:estimate, title: "Bathroom Remodel") }
 
       it "filters by title" do
         results = Estimate.search("Kitchen")

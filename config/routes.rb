@@ -2,13 +2,8 @@ Rails.application.routes.draw do
   resource :session, only: [ :new, :create, :destroy ]
   resources :users, only: [ :index, :new, :create, :edit, :update ]
   resources :estimates do
-    resource :materials, module: :estimates, only: [ :edit, :update ]
-    resources :estimate_sections do
-      member { patch :move }
-      resources :line_items do
-        member { patch :move }
-      end
-    end
+    resource  :materials, module: :estimates, only: [ :edit, :update ]
+    resources :line_items, only: [ :create, :update, :destroy ]
   end
   resources :clients do
     resources :contacts, only: [ :new, :create, :edit, :update, :destroy ]
