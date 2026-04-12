@@ -103,7 +103,7 @@ RSpec.describe EstimateTotalsCalculator do
       expect(result.burden_multiplier).to eq(BigDecimal("1.32"))
     end
 
-    it "fires at most 3 queries regardless of line item count" do
+    it "fires exactly 2 queries (materials + labor rates) regardless of line item count" do
       # Create several line items
       3.times { create(:line_item, estimate: estimate) }
       fresh_estimate = Estimate.includes(
@@ -120,8 +120,8 @@ RSpec.describe EstimateTotalsCalculator do
       ActiveSupport::Notifications.subscribed(counter, "sql.active_record") do
         EstimateTotalsCalculator.new(fresh_estimate).call
       end
-      # Should fire: 1 for materials (already loaded), 1 for labor_rates
-      expect(query_count).to be <= 3
+      # Should fire: 1 for labor_rates (materials are preloaded via includes)
+      expect(query_count).to be <= 2
     end
   end
 end

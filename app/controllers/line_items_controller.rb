@@ -1,10 +1,15 @@
 class LineItemsController < ApplicationController
   before_action :set_estimate
-  before_action :set_line_item, only: [ :update, :destroy, :move ]
+  before_action :set_line_item, only: [ :edit, :update, :destroy, :move ]
 
   def new
     @line_item = @estimate.line_items.new
     render partial: "line_items/new_form", locals: { estimate: @estimate, line_item: @line_item }
+  end
+
+  def edit
+    # @line_item set by before_action; renders as Turbo Stream or HTML
+    @totals = EstimateTotalsCalculator.new(@estimate).call
   end
 
   def create
@@ -17,7 +22,7 @@ class LineItemsController < ApplicationController
       end
     else
       respond_to do |format|
-        format.turbo_stream { render :create_error, status: :unprocessable_entity }
+        format.turbo_stream { render :create_error, status: :unprocessable_content }
         format.html { redirect_to edit_estimate_path(@estimate) }
       end
     end
@@ -32,7 +37,7 @@ class LineItemsController < ApplicationController
       end
     else
       respond_to do |format|
-        format.turbo_stream { render :update_error, status: :unprocessable_entity }
+        format.turbo_stream { render :update_error, status: :unprocessable_content }
         format.html { redirect_to edit_estimate_path(@estimate) }
       end
     end

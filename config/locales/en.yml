@@ -202,6 +202,8 @@ en:
       add_product: "Add Product"
       save_product: "Save Product"
       cancel: "Cancel"
+    line_item:
+      confirm_delete: "Delete %{description}?"
     new_form:
       title: "New Product"
     estimate_totals:

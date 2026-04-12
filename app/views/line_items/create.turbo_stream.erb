@@ -1,4 +1,4 @@
-<% if @estimate.line_items.count == 1 %>
+<% if @estimate.line_items.size == 1 %>
   <%= turbo_stream.replace "no_line_items",
       partial: "line_items/line_item",
       locals: { estimate: @estimate, line_item: @line_item, result: @totals.line_item_results[@line_item.id], materials: @estimate.materials } %>

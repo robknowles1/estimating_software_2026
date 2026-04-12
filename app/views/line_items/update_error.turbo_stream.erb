@@ -1,3 +1,4 @@
+<% prior_result = EstimateTotalsCalculator.new(@estimate).call.line_item_results[@line_item.id] %>
 <%= turbo_stream.replace dom_id(@line_item),
     partial: "line_items/line_item",
-    locals: { estimate: @estimate, line_item: @line_item, result: nil, materials: @estimate.materials } %>
+    locals: { estimate: @estimate, line_item: @line_item, result: prior_result, materials: @estimate.materials } %>

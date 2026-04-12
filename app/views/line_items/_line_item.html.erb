@@ -34,7 +34,7 @@
       <%# Delete %>
       <%= button_to "×", estimate_line_item_path(estimate, line_item), method: :delete,
           class: "text-slate-400 hover:text-red-500 text-lg leading-none ml-1",
-          form: { data: { turbo_confirm: "Delete #{line_item.description}?" } },
+          form: { data: { turbo_confirm: t(".confirm_delete", description: line_item.description) } },
           data: { action: "click->line-item-accordion#stopPropagation" } %>
     </div>
   </div>

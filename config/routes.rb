@@ -3,7 +3,7 @@ Rails.application.routes.draw do
   resources :users, only: [ :index, :new, :create, :edit, :update ]
   resources :estimates do
     resource  :materials, module: :estimates, only: [ :edit, :update ]
-    resources :line_items, only: [ :new, :create, :update, :destroy ] do
+    resources :line_items, only: [ :new, :create, :edit, :update, :destroy ] do
       member do
         patch :move
       end
