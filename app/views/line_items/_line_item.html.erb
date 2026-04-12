@@ -1,0 +1,46 @@
+<div id="<%= dom_id(line_item) %>" class="bg-white rounded-xl border border-slate-200 shadow-sm" data-controller="line-item-accordion">
+  <%# Collapsed header — always visible %>
+  <div class="flex items-center justify-between px-5 py-4 cursor-pointer"
+       data-action="click->line-item-accordion#toggle"
+       data-line-item-accordion-target="header">
+    <div class="flex items-center gap-4 flex-1 min-w-0">
+      <%# Expand/collapse chevron %>
+      <svg data-line-item-accordion-target="chevron" class="w-4 h-4 text-slate-400 flex-shrink-0 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+      </svg>
+      <div class="min-w-0">
+        <p class="text-sm font-semibold text-slate-800 truncate"><%= line_item.description %></p>
+        <p class="text-xs text-slate-500"><%= line_item.quantity %> × <%= line_item.unit %></p>
+      </div>
+    </div>
+    <div class="flex items-center gap-6 text-right ml-4">
+      <div class="hidden sm:block">
+        <p class="text-xs text-slate-500">Materials</p>
+        <p class="text-sm font-medium text-slate-700"><%= result ? number_to_currency(result[:subtotal_materials]) : "—" %></p>
+      </div>
+      <div class="hidden sm:block">
+        <p class="text-xs text-slate-500">Labor</p>
+        <p class="text-sm font-medium text-slate-700"><%= result ? number_to_currency(result[:labor_subtotals].values.sum) : "—" %></p>
+      </div>
+      <div>
+        <p class="text-xs text-slate-500">Total</p>
+        <p class="text-sm font-semibold text-amber-700"><%= result ? number_to_currency(result[:non_burdened_total]) : "—" %></p>
+      </div>
+      <%# Reorder controls %>
+      <div class="flex flex-col gap-0.5" data-action="click->line-item-accordion#stopPropagation">
+        <%= button_to "↑", move_estimate_line_item_path(estimate, line_item), method: :patch, params: { direction: "up" }, class: "text-slate-400 hover:text-slate-600 text-xs leading-none p-0.5" %>
+        <%= button_to "↓", move_estimate_line_item_path(estimate, line_item), method: :patch, params: { direction: "down" }, class: "text-slate-400 hover:text-slate-600 text-xs leading-none p-0.5" %>
+      </div>
+      <%# Delete %>
+      <%= button_to "×", estimate_line_item_path(estimate, line_item), method: :delete,
+          class: "text-slate-400 hover:text-red-500 text-lg leading-none ml-1",
+          form: { data: { turbo_confirm: "Delete #{line_item.description}?" } },
+          data: { action: "click->line-item-accordion#stopPropagation" } %>
+    </div>
+  </div>
+
+  <%# Expanded form — hidden by default %>
+  <div data-line-item-accordion-target="form" class="hidden border-t border-slate-100 px-5 py-5">
+    <%= render "line_items/form", estimate: estimate, line_item: line_item, materials: materials %>
+  </div>
+</div>

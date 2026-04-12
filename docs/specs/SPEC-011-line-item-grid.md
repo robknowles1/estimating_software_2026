@@ -1,7 +1,7 @@
 # Spec: Line Item Grid — Product Rows and Per-Item Totals
 
 **ID:** SPEC-011
-**Status:** ready
+**Status:** done
 **Priority:** high
 **Created:** 2026-04-10
 **Author:** pm-agent

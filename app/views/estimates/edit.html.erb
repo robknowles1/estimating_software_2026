@@ -104,10 +104,28 @@
     </div>
   </div>
 
-  <%# Line items area (SPEC-011) %>
+  <%# Line items area %>
   <div class="col-span-2">
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
-      <p class="text-slate-500 text-sm"><%= t(".no_line_items") %></p>
+    <div id="line_items_list" class="space-y-3 mb-4">
+      <% if @line_items_with_totals.any? %>
+        <% @line_items_with_totals.each do |li, result| %>
+          <%= render "line_items/line_item", estimate: @estimate, line_item: li, result: result, materials: @estimate.materials %>
+        <% end %>
+      <% else %>
+        <div id="no_line_items" class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+          <p class="text-slate-500 text-sm"><%= t(".no_line_items") %></p>
+        </div>
+      <% end %>
     </div>
+
+    <%# New line item form area (Turbo Frame target) %>
+    <turbo-frame id="new_line_item_frame">
+      <%= link_to t(".add_product"), new_estimate_line_item_path(@estimate),
+          class: "inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors",
+          data: { turbo_frame: "new_line_item_frame" } %>
+    </turbo-frame>
+
+    <%# Estimate totals partial %>
+    <%= render "line_items/estimate_totals", estimate: @estimate, totals: @totals %>
   </div>
 </div>

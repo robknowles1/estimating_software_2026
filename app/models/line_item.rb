@@ -33,5 +33,6 @@ class LineItem < ApplicationRecord
   acts_as_list scope: :estimate
 
   validates :description, presence: true
+  validates :unit, presence: true
   validates :quantity, presence: true, numericality: { greater_than: 0 }
 end

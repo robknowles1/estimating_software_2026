@@ -1,0 +1,19 @@
+<% if @estimate.line_items.count == 1 %>
+  <%= turbo_stream.replace "no_line_items",
+      partial: "line_items/line_item",
+      locals: { estimate: @estimate, line_item: @line_item, result: @totals.line_item_results[@line_item.id], materials: @estimate.materials } %>
+<% else %>
+  <%= turbo_stream.append "line_items_list",
+      partial: "line_items/line_item",
+      locals: { estimate: @estimate, line_item: @line_item, result: @totals.line_item_results[@line_item.id], materials: @estimate.materials } %>
+<% end %>
+<%= turbo_stream.replace "estimate_#{@estimate.id}_totals",
+    partial: "line_items/estimate_totals",
+    locals: { estimate: @estimate, totals: @totals } %>
+<%= turbo_stream.replace "new_line_item_frame" do %>
+  <turbo-frame id="new_line_item_frame">
+    <%= link_to t("estimates.edit.add_product"), new_estimate_line_item_path(@estimate),
+        class: "inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors",
+        data: { turbo_frame: "new_line_item_frame" } %>
+  </turbo-frame>
+<% end %>

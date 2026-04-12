@@ -34,8 +34,17 @@ class EstimatesController < ApplicationController
   end
 
   def edit
-    @estimate = Estimate.includes(:client, :materials).find(params[:id])
+    @estimate = Estimate.includes(
+      :client, :materials,
+      line_items: [
+        :exterior_material, :interior_material, :interior2_material,
+        :back_material, :banding_material, :drawers_material,
+        :pulls_material, :hinges_material, :slides_material
+      ]
+    ).find(params[:id])
     @clients  = Client.alphabetical
+    @totals   = EstimateTotalsCalculator.new(@estimate).call
+    @line_items_with_totals = @estimate.line_items.map { |li| [ li, @totals.line_item_results[li.id] ] }
   end
 
   def update

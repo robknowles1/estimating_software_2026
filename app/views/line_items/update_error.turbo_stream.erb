@@ -1,0 +1,3 @@
+<%= turbo_stream.replace dom_id(@line_item),
+    partial: "line_items/line_item",
+    locals: { estimate: @estimate, line_item: @line_item, result: nil, materials: @estimate.materials } %>

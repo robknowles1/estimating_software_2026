@@ -1,0 +1,4 @@
+<%= turbo_stream.remove dom_id(@line_item) %>
+<%= turbo_stream.replace "estimate_#{@estimate.id}_totals",
+    partial: "line_items/estimate_totals",
+    locals: { estimate: @estimate, totals: @totals } %>

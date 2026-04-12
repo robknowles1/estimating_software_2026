@@ -3,7 +3,11 @@ Rails.application.routes.draw do
   resources :users, only: [ :index, :new, :create, :edit, :update ]
   resources :estimates do
     resource  :materials, module: :estimates, only: [ :edit, :update ]
-    resources :line_items, only: [ :create, :update, :destroy ]
+    resources :line_items, only: [ :new, :create, :update, :destroy ] do
+      member do
+        patch :move
+      end
+    end
   end
   resources :clients do
     resources :contacts, only: [ :new, :create, :edit, :update, :destroy ]

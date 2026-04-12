@@ -1,0 +1,7 @@
+<%= turbo_stream.replace "new_line_item_frame" do %>
+  <turbo-frame id="new_line_item_frame">
+    <div class="bg-white rounded-xl border border-amber-300 shadow-sm p-5">
+      <%= render "line_items/form", estimate: @estimate, line_item: @line_item, materials: @estimate.materials %>
+    </div>
+  </turbo-frame>
+<% end %>

@@ -90,6 +90,7 @@ en:
       update_status: "Update Status"
       save_job_settings: "Save Job Settings"
       no_line_items: "No line items yet — add your first product after setting up material costs."
+      add_product: "Add Product"
       materials_banner_text: "Material costs aren't set up yet."
       materials_banner_link: "Set up materials →"
       miles_to_jobsite: "Miles to Jobsite (one-way)"
@@ -120,6 +121,10 @@ en:
 
   activerecord:
     attributes:
+      line_item:
+        description: "Description"
+        quantity: "Quantity"
+        unit: "Unit"
       estimate:
         title: "Job Title"
         client_id: "Client"
@@ -163,6 +168,46 @@ en:
       notice: "Line item was successfully updated."
     destroy:
       notice: "Line item was successfully removed."
+    form:
+      materials_heading: "Materials"
+      labor_heading: "Labor"
+      equipment_heading: "Equipment"
+      exterior_qty: "Ext. Qty"
+      exterior_material: "Exterior"
+      interior_qty: "Int. Qty"
+      interior_material: "Interior"
+      interior2_qty: "Int. 2 Qty"
+      interior2_material: "Interior 2"
+      back_qty: "Back Qty"
+      back_material: "Back"
+      banding_material: "Banding"
+      drawers_qty: "Drawers Qty"
+      drawers_material: "Drawers"
+      pulls_qty: "Pulls Qty"
+      pulls_material: "Pulls"
+      hinges_qty: "Hinges Qty"
+      hinges_material: "Hinges"
+      slides_qty: "Slides Qty"
+      slides_material: "Slides"
+      locks_qty: "Locks Qty"
+      other_material_cost: "Other Material Cost"
+      detail_hrs: "Detail (hrs)"
+      mill_hrs: "Mill (hrs)"
+      assembly_hrs: "Assembly (hrs)"
+      customs_hrs: "Customs (hrs)"
+      finish_hrs: "Finish (hrs)"
+      install_hrs: "Install (hrs)"
+      equipment_hrs: "Equipment (hrs)"
+      equipment_rate: "Equipment Rate ($/hr)"
+      add_product: "Add Product"
+      save_product: "Save Product"
+      cancel: "Cancel"
+    new_form:
+      title: "New Product"
+    estimate_totals:
+      grand_non_burdened_label: "Estimate Total (Pre-Burden)"
+      burden_note: "Job-level costs and burden applied in next step"
+      burden_multiplier_label: "Burden Multiplier"
 
   users:
     create:

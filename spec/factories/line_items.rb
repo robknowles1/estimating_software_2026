@@ -4,6 +4,5 @@ FactoryBot.define do
     sequence(:description) { |n| "Base Cabinet #{n}" }
     quantity { BigDecimal("1") }
     unit     { "EA" }
-    position { 1 }
   end
 end
