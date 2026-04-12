@@ -241,5 +241,5 @@ en:
     form:
       cancel: "Cancel"
       errors:
-        one: "1 error prohibited this contact from being said:"
+        one: "1 error prohibited this contact from being saved:"
         other: "%{count} errors prohibited this contact from being saved:"
