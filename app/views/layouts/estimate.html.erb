@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || t("app.name") %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="<%= t('app.name') %>">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="bg-slate-50 h-screen flex flex-col overflow-hidden">
+    <%# Slim top bar — no sidebar on estimate pages %>
+    <header class="bg-white border-b border-slate-200 flex-shrink-0">
+      <div class="flex items-center justify-between px-6 py-3 gap-4">
+        <%# Left: estimate number + client name %>
+        <div class="flex items-center gap-3 min-w-0">
+          <% if local_assigns[:estimate].nil? && defined?(@estimate) %>
+            <% _topbar_estimate = @estimate %>
+          <% else %>
+            <% _topbar_estimate = local_assigns[:estimate] || (defined?(@estimate) ? @estimate : nil) %>
+          <% end %>
+          <% if _topbar_estimate %>
+            <span class="font-mono text-xs font-semibold text-slate-500 whitespace-nowrap">
+              <%= _topbar_estimate.estimate_number %>
+            </span>
+            <span class="text-slate-300">|</span>
+            <span class="text-sm text-slate-700 truncate">
+              <%= _topbar_estimate.client.company_name %>
+            </span>
+          <% end %>
+        </div>
+
+        <%# Center: estimate title %>
+        <div class="flex-1 text-center min-w-0">
+          <% if _topbar_estimate %>
+            <span class="text-sm font-semibold text-slate-900 truncate block">
+              <%= _topbar_estimate.title %>
+            </span>
+          <% end %>
+        </div>
+
+        <%# Right: status badge + Materials button + Back link %>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <% if _topbar_estimate %>
+            <%= render "estimates/status_badge", status: _topbar_estimate.status %>
+            <%= link_to t("estimates.layout.materials_button"), edit_estimate_materials_path(_topbar_estimate),
+                class: "inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors" %>
+          <% end %>
+          <%= link_to t("estimates.layout.back_to_estimates"), estimates_path,
+              class: "inline-flex items-center gap-1.5 text-slate-600 hover:text-amber-700 text-xs font-medium border border-slate-300 rounded-lg px-3 py-1.5 transition-colors" %>
+        </div>
+      </div>
+    </header>
+
+    <%= render "layouts/flashes" %>
+
+    <main class="flex-1 overflow-y-auto p-8">
+      <%= yield %>
+    </main>
+  </body>
+</html>

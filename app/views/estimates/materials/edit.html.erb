@@ -11,38 +11,37 @@
   <% @materials_by_category.each do |category, materials| %>
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       <div class="px-6 py-3 border-b border-slate-200 bg-slate-50">
-        <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide"><%= t("estimate_materials.category.#{category}") %></h2>
+        <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide"><%= t("materials.category.#{category}") %></h2>
       </div>
       <table class="w-full text-sm">
         <thead>
           <tr class="border-b border-slate-100 text-xs text-slate-500">
-            <th class="px-6 py-2 text-left font-medium w-16"><%= t("estimate_materials.slot_label") %></th>
-            <th class="px-6 py-2 text-left font-medium"><%= t("estimate_materials.description_label") %></th>
-            <th class="px-6 py-2 text-left font-medium w-36"><%= t("estimate_materials.price_label") %></th>
-            <th class="px-6 py-2 text-left font-medium w-32"><%= t("estimate_materials.unit_label") %></th>
+            <th class="px-6 py-2 text-left font-medium w-40"><%= t("materials.slot_label") %></th>
+            <th class="px-6 py-2 text-left font-medium"><%= t("materials.description_label") %></th>
+            <th class="px-6 py-2 text-left font-medium w-36"><%= t("materials.quote_price_label") %></th>
+            <th class="px-6 py-2 text-left font-medium w-36"><%= t("materials.cost_with_tax_label") %></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-50">
           <% materials.each do |material| %>
             <tr>
-              <td class="px-6 py-2 font-mono text-xs font-semibold text-slate-600"><%= material.slot_label %></td>
+              <td class="px-6 py-2 font-mono text-xs font-semibold text-slate-600 whitespace-nowrap">
+                <%= material.display_label %>
+              </td>
               <td class="px-6 py-2">
-                <%= text_field_tag "estimate_materials[#{material.id}][description]",
+                <%= text_field_tag "materials[#{material.id}][description]",
                     material.description,
-                    placeholder: t("estimate_materials.description_placeholder"),
+                    placeholder: t("materials.description_placeholder"),
                     class: "w-full border border-slate-200 rounded px-2.5 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
               </td>
               <td class="px-6 py-2">
-                <%= number_field_tag "estimate_materials[#{material.id}][price_per_unit]",
-                    material.price_per_unit,
-                    step: "any", min: 0,
+                <%= number_field_tag "materials[#{material.id}][quote_price]",
+                    material.quote_price,
+                    step: "0.01", min: 0,
                     class: "w-full border border-slate-200 rounded px-2.5 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
               </td>
-              <td class="px-6 py-2">
-                <%= text_field_tag "estimate_materials[#{material.id}][unit]",
-                    material.unit,
-                    placeholder: t("estimate_materials.unit_placeholder"),
-                    class: "w-full border border-slate-200 rounded px-2.5 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+              <td class="px-6 py-2 text-slate-600 text-sm">
+                <%= number_to_currency(material.cost_with_tax) %>
               </td>
             </tr>
           <% end %>

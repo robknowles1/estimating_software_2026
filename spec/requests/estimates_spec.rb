@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Estimates", type: :request do
-  let(:user) { create(:user) }
+  let(:user)   { create(:user) }
   let(:client) { create(:client) }
 
   before { sign_in(user) }
@@ -49,8 +49,8 @@ RSpec.describe "Estimates", type: :request do
     end
 
     context "with search query" do
-      let!(:matching)     { create(:estimate, client: client, title: "Kitchen Remodel") }
-      let!(:nonmatching)  { create(:estimate, client: client, title: "Garage Door") }
+      let!(:matching)    { create(:estimate, client: client, title: "Kitchen Remodel") }
+      let!(:nonmatching) { create(:estimate, client: client, title: "Garage Door") }
 
       it "returns only matching estimates" do
         get estimates_path, params: { q: "Kitchen" }
@@ -73,12 +73,17 @@ RSpec.describe "Estimates", type: :request do
     end
 
     context "with valid params" do
-      it "creates estimate and redirects to edit" do
+      it "creates estimate and redirects to materials edit (materials-first flow)" do
         expect {
           post estimates_path, params: valid_params
         }.to change(Estimate, :count).by(1)
 
-        expect(response).to redirect_to(edit_estimate_path(Estimate.last))
+        expect(response).to redirect_to(edit_estimate_materials_path(Estimate.last))
+      end
+
+      it "seeds all material slots on creation" do
+        post estimates_path, params: valid_params
+        expect(Estimate.last.materials.count).to eq(Material::SLOTS.length)
       end
 
       it "sets status to draft" do
@@ -125,17 +130,29 @@ RSpec.describe "Estimates", type: :request do
   end
 
   describe "GET /estimates/:id/edit" do
-    let(:estimate) { create(:estimate, client: client) }
+    let(:estimate) { create(:estimate, :skip_material_seeding, client: client) }
 
     it "renders the edit page" do
       get edit_estimate_path(estimate)
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(estimate.title)
     end
+
+    it "renders materials setup banner when no materials have a non-zero quote_price" do
+      get edit_estimate_path(estimate)
+      # Use the "Set up materials" link text which doesn't contain HTML-escaped characters
+      expect(response.body).to include("Set up materials")
+    end
+
+    it "does not show materials banner when at least one material has a non-zero price" do
+      create(:material, estimate: estimate, quote_price: BigDecimal("25.00"))
+      get edit_estimate_path(estimate)
+      expect(response.body).not_to include("Material costs aren't set up yet")
+    end
   end
 
   describe "PATCH /estimates/:id" do
-    let(:estimate) { create(:estimate, client: client, status: "draft") }
+    let(:estimate) { create(:estimate, :skip_material_seeding, client: client, status: "draft") }
 
     it "updates the estimate status and redirects" do
       patch estimate_path(estimate), params: { estimate: { status: "sent", title: estimate.title, client_id: client.id } }
@@ -147,10 +164,42 @@ RSpec.describe "Estimates", type: :request do
       patch estimate_path(estimate), params: { estimate: { title: "Updated Title", client_id: client.id } }
       expect(estimate.reload.title).to eq("Updated Title")
     end
+
+    it "persists job-level settings on the estimate" do
+      patch estimate_path(estimate),
+        params: {
+          estimate: {
+            title: estimate.title,
+            client_id: estimate.client_id,
+            miles_to_jobsite: "42.5",
+            installer_crew_size: "3",
+            profit_overhead_percent: "20.0",
+            tax_rate: "0.09"
+          }
+        }
+
+      estimate.reload
+      expect(estimate.miles_to_jobsite).to eq(BigDecimal("42.5"))
+      expect(estimate.installer_crew_size).to eq(3)
+      expect(estimate.profit_overhead_percent).to eq(BigDecimal("20.0"))
+      expect(estimate.tax_rate).to eq(BigDecimal("0.09"))
+    end
+
+    context "when tax_rate changes" do
+      it "recalculates all material cost_with_tax values" do
+        mat = create(:material, estimate: estimate, quote_price: BigDecimal("100.00"))
+        estimate.update!(tax_rate: BigDecimal("0.08"))
+        # Force a tax_rate change via PATCH
+        patch estimate_path(estimate),
+          params: { estimate: { title: estimate.title, client_id: client.id, tax_rate: "0.10" } }
+
+        expect(mat.reload.cost_with_tax.round(4)).to eq(BigDecimal("110.0000"))
+      end
+    end
   end
 
   describe "DELETE /estimates/:id" do
-    let!(:estimate) { create(:estimate, client: client) }
+    let!(:estimate) { create(:estimate, :skip_material_seeding, client: client) }
 
     it "destroys the estimate and redirects to index" do
       expect {
