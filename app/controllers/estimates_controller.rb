@@ -34,7 +34,7 @@ class EstimatesController < ApplicationController
   end
 
   def edit
-    @estimate = Estimate.includes(:materials).find(params[:id])
+    @estimate = Estimate.includes(:client, :materials).find(params[:id])
     @clients  = Client.alphabetical
   end
 

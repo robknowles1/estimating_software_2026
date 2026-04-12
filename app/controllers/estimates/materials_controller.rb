@@ -34,7 +34,7 @@ module Estimates
     private
 
     def set_estimate
-      @estimate = Estimate.find(params[:estimate_id])
+      @estimate = Estimate.includes(:client).find(params[:estimate_id])
     end
 
     def material_ids_from_params

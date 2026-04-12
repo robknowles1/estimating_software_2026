@@ -101,6 +101,30 @@ RSpec.describe "Estimates", type: :system do
     end
   end
 
+  describe "changing tax rate updates material cost_with_tax (AC#6)" do
+    it "recalculates cost_with_tax when the tax rate is changed and job settings saved" do
+      # Create an estimate with a material that has a non-zero quote_price
+      estimate = create(:estimate, :skip_material_seeding, client: client, title: "Tax Rate Test", created_by: user, tax_rate: 0.08)
+      material = create(:material, estimate: estimate, slot_key: "PL1", quote_price: BigDecimal("100.00"))
+      # Set initial cost_with_tax to reflect the 8% rate
+      material.update_columns(cost_with_tax: BigDecimal("108.00"))
+
+      login
+
+      # Visit estimate edit and change tax rate to 10%
+      visit edit_estimate_path(estimate)
+      find("input[name='estimate[tax_rate]']").set("0.10")
+      click_button "Save Job Settings"
+
+      expect(page).to have_text("Estimate was successfully updated", wait: 5)
+
+      # Visit the materials page and verify cost_with_tax reflects the new 10% rate
+      # 100.00 * 1.10 = $110.00
+      visit edit_estimate_materials_path(estimate)
+      expect(page).to have_text("$110.00", wait: 5)
+    end
+  end
+
   describe "changing estimate status and filtering on dashboard" do
     it "changes status to sent and the estimate appears in sent filter" do
       estimate = create(:estimate, :skip_material_seeding, client: client, title: "Status Test Job", created_by: user, status: "draft")

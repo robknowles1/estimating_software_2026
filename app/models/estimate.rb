@@ -22,7 +22,7 @@ class Estimate < ApplicationRecord
 
   # When tax_rate or tax_exempt changes, recalculate all materials via a single SQL UPDATE.
   # Do not call material.save! in a loop — that triggers N+1 callback executions.
-  after_save :recalculate_material_costs, if: -> { saved_change_to_tax_rate? || saved_change_to_tax_exempt? }
+  after_update :recalculate_material_costs, if: -> { saved_change_to_tax_rate? || saved_change_to_tax_exempt? }
 
   scope :with_status, ->(s) { s.present? ? where(status: s) : all }
   scope :search, ->(q) {

@@ -118,6 +118,34 @@ en:
         one: "1 error prohibited this estimate from being saved:"
         other: "%{count} errors prohibited this estimate from being saved:"
 
+  activerecord:
+    attributes:
+      estimate:
+        title: "Job Title"
+        client_id: "Client"
+        status: "Status"
+        job_start_date: "Start Date"
+        job_end_date: "End Date"
+        notes: "Internal Notes"
+        client_notes: "Client-Facing Notes"
+        tax_rate: "Tax Rate"
+        tax_exempt: "Tax Exempt"
+        miles_to_jobsite: "Miles to Jobsite (one-way)"
+        installer_crew_size: "Installer Crew Size"
+        delivery_crew_size: "Delivery Crew Size"
+        on_site_time_hrs: "On-Site Time (hrs)"
+        profit_overhead_percent: "Profit / Overhead %"
+        pm_supervision_percent: "PM Supervision %"
+        install_travel_qty: "Install Travel Days"
+        delivery_qty: "Delivery Trips"
+        delivery_rate: "Delivery Rate ($/trip)"
+        per_diem_qty: "Per Diem Days"
+        per_diem_rate: "Per Diem Rate ($/day)"
+        hotel_qty: "Hotel Nights"
+        airfare_qty: "Airfare (# of tickets)"
+        equipment_cost: "Equipment Cost"
+        countertop_quote: "Countertop Quote"
+
   materials:
     slot_label: "Slot"
     description_label: "Description"
