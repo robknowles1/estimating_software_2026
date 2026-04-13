@@ -183,6 +183,18 @@ en:
       notice: "Line item was successfully removed."
     form:
       select_product: "Select Product (optional)"
+      identity_heading: "Line Item Details"
+      materials_heading: "Materials"
+      material_description_col: "Description"
+      material_unit_price_col: "Unit Price"
+      material_qty_col: "Qty"
+      banding_flat_rate: "Flat rate — no qty"
+      other_material_cost_label: "Other Material Cost"
+      labor_heading: "Labor Hours"
+      equipment_heading: "Equipment"
+      equipment_hrs_label: "Equipment Hours"
+      equipment_rate_label: "Equipment Rate ($/hr)"
+      cancel: "Cancel"
       errors:
         one: "1 error prohibited this line item from being saved:"
         other: "%{count} errors prohibited this line item from being saved:"

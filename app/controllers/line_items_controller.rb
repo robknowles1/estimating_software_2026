@@ -77,7 +77,7 @@ class LineItemsController < ApplicationController
   private
 
   def set_estimate
-    @estimate = Estimate.includes(:line_items).find(params[:estimate_id])
+    @estimate = Estimate.includes(line_items: :product).find(params[:estimate_id])
   end
 
   def line_item_params

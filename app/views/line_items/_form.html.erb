@@ -38,7 +38,7 @@
 
 <%# ── Identity ── %>
 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
-  <h2 class="text-sm font-semibold text-slate-700 mb-4">Line Item Details</h2>
+  <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t("line_items.form.identity_heading") %></h2>
   <div class="grid grid-cols-3 gap-4">
     <div class="col-span-2">
       <%= f.label :description, class: label_cls %>
@@ -57,14 +57,14 @@
 
 <%# ── Materials ── %>
 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
-  <h2 class="text-sm font-semibold text-slate-700 mb-4">Materials</h2>
+  <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t("line_items.form.materials_heading") %></h2>
 
   <%# Column headers %>
   <div class="grid grid-cols-12 gap-2 mb-2 px-1">
     <div class="col-span-1"></div>
-    <div class="col-span-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Description</div>
-    <div class="col-span-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit Price</div>
-    <div class="col-span-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Qty</div>
+    <div class="col-span-5 text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t("line_items.form.material_description_col") %></div>
+    <div class="col-span-3 text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t("line_items.form.material_unit_price_col") %></div>
+    <div class="col-span-3 text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t("line_items.form.material_qty_col") %></div>
   </div>
 
   <% [
@@ -102,14 +102,14 @@
       <%= f.number_field :banding_unit_price, class: input_cls, step: "0.0001", min: 0 %>
     </div>
     <div class="col-span-3">
-      <span class="text-xs text-slate-400 italic">Flat rate — no qty</span>
+      <span class="text-xs text-slate-400 italic"><%= t("line_items.form.banding_flat_rate") %></span>
     </div>
   </div>
 
   <%# Other material cost %>
   <div class="mt-4 pt-4 border-t border-slate-100">
     <div class="grid grid-cols-12 gap-2 items-center">
-      <div class="col-span-4 text-xs font-medium text-slate-700">Other Material Cost</div>
+      <div class="col-span-4 text-xs font-medium text-slate-700"><%= t("line_items.form.other_material_cost_label") %></div>
       <div class="col-span-3">
         <%= f.number_field :other_material_cost, class: input_cls, step: "0.01", min: 0 %>
       </div>
@@ -119,7 +119,7 @@
 
 <%# ── Labor ── %>
 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
-  <h2 class="text-sm font-semibold text-slate-700 mb-4">Labor Hours</h2>
+  <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t("line_items.form.labor_heading") %></h2>
   <div class="grid grid-cols-3 gap-4">
     <% %w[detail mill assembly customs finish install].each do |cat| %>
       <div>
@@ -132,14 +132,14 @@
 
 <%# ── Equipment ── %>
 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
-  <h2 class="text-sm font-semibold text-slate-700 mb-4">Equipment</h2>
+  <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t("line_items.form.equipment_heading") %></h2>
   <div class="grid grid-cols-2 gap-4">
     <div>
-      <label class="<%= label_cls %>">Equipment Hours</label>
+      <label class="<%= label_cls %>"><%= t("line_items.form.equipment_hrs_label") %></label>
       <%= f.number_field :equipment_hrs, class: input_cls, step: "0.0001", min: 0 %>
     </div>
     <div>
-      <label class="<%= label_cls %>">Equipment Rate ($/hr)</label>
+      <label class="<%= label_cls %>"><%= t("line_items.form.equipment_rate_label") %></label>
       <%= f.number_field :equipment_rate, class: input_cls, step: "0.01", min: 0 %>
     </div>
   </div>
@@ -148,6 +148,6 @@
 <%# ── Actions ── %>
 <div class="flex items-center gap-3">
   <%= f.submit class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>
-  <%= link_to "Cancel", edit_estimate_path(estimate),
+  <%= link_to t("line_items.form.cancel"), edit_estimate_path(estimate),
       class: "text-sm text-slate-600 hover:text-slate-900 font-medium" %>
 </div>

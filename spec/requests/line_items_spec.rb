@@ -38,17 +38,18 @@ RSpec.describe "LineItems", type: :request do
         expect(LineItem.last.description).to eq("Custom shelf unit")
       end
 
-      it "does not accept _material_id params (strong params)" do
+      it "ignores removed _material_id columns (schema no longer has them)" do
         post estimate_line_items_path(estimate), params: {
           line_item: {
             description: "Test",
             quantity: "1",
             unit: "EA",
-            exterior_material_id: "999"  # should be ignored
+            exterior_material_id: "999"  # filtered by strong params; column does not exist
           }
         }
-        li = LineItem.last
-        expect(li).not_to respond_to(:exterior_material_id)
+        expect(response).to redirect_to(edit_estimate_path(estimate))
+        expect(LineItem.last.description).to eq("Test")
+        expect(LineItem.last.product_id).to be_nil
       end
     end
 

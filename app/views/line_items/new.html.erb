@@ -19,7 +19,7 @@
 ]).to_json %>
 
 <div data-controller="product-selector"
-     data-product-selector-products-value="<%= products_json.html_safe %>"
+     data-product-selector-products-value="<%= j products_json %>"
      data-product-selector-form-target="form">
   <%= form_with model: [@estimate, @line_item], data: { "product-selector-target": "form" } do |f| %>
     <%= render "form", f: f, estimate: @estimate, products: @products %>
