@@ -39,6 +39,24 @@ RSpec.describe "LineItems", type: :request do
         expect(LineItem.last.description).to eq("Custom shelf unit")
       end
 
+      context "when a product with the same name already exists in the catalog" do
+        let!(:existing_product) do
+          create(:product, name: "Custom shelf unit", exterior_unit_price: BigDecimal("99.00"))
+        end
+
+        it "does not create a new product" do
+          expect {
+            post estimate_line_items_path(estimate), params: freeform_params
+          }.not_to change(Product, :count)
+        end
+
+        it "links the line item to the existing product without modifying it" do
+          post estimate_line_items_path(estimate), params: freeform_params
+          expect(LineItem.last.product_id).to eq(existing_product.id)
+          expect(existing_product.reload.exterior_unit_price).to eq(BigDecimal("99.00"))
+        end
+      end
+
       it "ignores removed _material_id columns (schema no longer has them)" do
         post estimate_line_items_path(estimate), params: {
           line_item: {

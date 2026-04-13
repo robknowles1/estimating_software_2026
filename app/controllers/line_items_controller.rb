@@ -9,13 +9,18 @@ class LineItemsController < ApplicationController
   def create
     product = Product.find_by(id: params.dig(:line_item, :product_id))
 
-    # Freeform line item — persist it to the catalog so it's reusable in future estimates.
-    # If a product with the same name already exists, link to that instead of duplicating.
+    # Freeform line item — if a product with the same name already exists in the catalog,
+    # link to it without modifying it (edits belong in the Products CRUD).
+    # If no matching product exists, create a new one so it's reusable in future estimates.
     unless product
-      product = Product.find_or_initialize_by(name: line_item_params[:description].to_s.strip)
-      product.assign_attributes(product_attrs_from_line_item_params)
-      product.save
-      product = nil unless product.persisted?
+      existing = Product.find_by(name: line_item_params[:description].to_s.strip)
+      if existing
+        product = existing
+      else
+        product = Product.new(product_attrs_from_line_item_params)
+        product.save
+        product = nil unless product.persisted?
+      end
     end
 
     @line_item = @estimate.line_items.new
