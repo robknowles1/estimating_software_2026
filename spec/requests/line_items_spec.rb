@@ -25,12 +25,13 @@ RSpec.describe "LineItems", type: :request do
         }
       end
 
-      it "creates a freeform line item with product_id nil" do
+      it "auto-creates a catalog product and links it to the line item" do
         expect {
           post estimate_line_items_path(estimate), params: freeform_params
-        }.to change(LineItem, :count).by(1)
+        }.to change(LineItem, :count).by(1).and change(Product, :count).by(1)
 
-        expect(LineItem.last.product_id).to be_nil
+        li = LineItem.last
+        expect(li.product_id).to eq(Product.find_by(name: "Custom shelf unit").id)
       end
 
       it "saves the provided description" do
@@ -49,7 +50,7 @@ RSpec.describe "LineItems", type: :request do
         }
         expect(response).to redirect_to(edit_estimate_path(estimate))
         expect(LineItem.last.description).to eq("Test")
-        expect(LineItem.last.product_id).to be_nil
+        expect(LineItem.last.product_id).to eq(Product.find_by(name: "Test").id)
       end
     end
 

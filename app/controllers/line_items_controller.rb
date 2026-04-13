@@ -8,10 +8,21 @@ class LineItemsController < ApplicationController
 
   def create
     product = Product.find_by(id: params.dig(:line_item, :product_id))
+
+    # Freeform line item — persist it to the catalog so it's reusable in future estimates.
+    # If a product with the same name already exists, link to that instead of duplicating.
+    unless product
+      product = Product.find_or_initialize_by(name: line_item_params[:description].to_s.strip)
+      product.assign_attributes(product_attrs_from_line_item_params)
+      product.save
+      product = nil unless product.persisted?
+    end
+
     @line_item = @estimate.line_items.new
     product.apply_to(@line_item) if product
     @line_item.assign_attributes(line_item_params)
     @line_item.description = product.name if product && @line_item.description.blank?
+    @line_item.product_id = product&.id
 
     if @line_item.save
       respond_to do |format|
@@ -78,6 +89,28 @@ class LineItemsController < ApplicationController
 
   def set_estimate
     @estimate = Estimate.includes(line_items: :product).find(params[:estimate_id])
+  end
+
+  # Extracts product-level fields from line_item_params so a freeform line item
+  # can be persisted to the catalog for reuse in future estimates.
+  def product_attrs_from_line_item_params
+    p = line_item_params
+    p.slice(
+      :unit,
+      :exterior_description, :exterior_unit_price, :exterior_qty,
+      :interior_description, :interior_unit_price, :interior_qty,
+      :interior2_description, :interior2_unit_price, :interior2_qty,
+      :back_description, :back_unit_price, :back_qty,
+      :banding_description, :banding_unit_price,
+      :drawers_description, :drawers_unit_price, :drawers_qty,
+      :pulls_description, :pulls_unit_price, :pulls_qty,
+      :hinges_description, :hinges_unit_price, :hinges_qty,
+      :slides_description, :slides_unit_price, :slides_qty,
+      :locks_description, :locks_unit_price, :locks_qty,
+      :other_material_cost,
+      :detail_hrs, :mill_hrs, :assembly_hrs, :customs_hrs, :finish_hrs, :install_hrs,
+      :equipment_hrs, :equipment_rate
+    ).merge(name: p[:description].to_s.strip)
   end
 
   def line_item_params
