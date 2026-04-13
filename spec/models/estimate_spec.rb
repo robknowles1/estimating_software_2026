@@ -6,7 +6,6 @@ RSpec.describe Estimate, type: :model do
   describe "associations" do
     it { is_expected.to belong_to(:client) }
     it { is_expected.to belong_to(:created_by).class_name("User") }
-    it { is_expected.to have_many(:materials).dependent(:destroy) }
     it { is_expected.to have_many(:line_items).dependent(:destroy) }
   end
 
@@ -94,60 +93,6 @@ RSpec.describe Estimate, type: :model do
       estimate.update!(title: "Updated Title")
 
       expect(estimate.reload.tax_exempt).to be true
-    end
-  end
-
-  describe "#seed_materials (after_create)" do
-    it "creates exactly Material::SLOTS.length material records after creation" do
-      estimate = create(:estimate)
-      expect(estimate.materials.count).to eq(Material::SLOTS.length)
-    end
-
-    it "seeds materials with quote_price 0 and cost_with_tax 0" do
-      estimate = create(:estimate)
-      expect(estimate.materials.where(quote_price: 0, cost_with_tax: 0).count).to eq(Material::SLOTS.length)
-    end
-
-    it "seeds one material row per slot_key" do
-      estimate = create(:estimate)
-      seeded_keys = estimate.materials.pluck(:slot_key).sort
-      expected_keys = Material::SLOTS.map { |s| s[:slot_key] }.sort
-      expect(seeded_keys).to eq(expected_keys)
-    end
-  end
-
-  describe "#recalculate_material_costs (after_save)" do
-    let(:estimate) { create(:estimate, :skip_material_seeding, tax_rate: BigDecimal("0.08"), tax_exempt: false) }
-    let!(:mat1) { create(:material, estimate: estimate, quote_price: BigDecimal("100.00")) }
-    let!(:mat2) { create(:material, estimate: estimate, slot_key: "PL2", quote_price: BigDecimal("50.00")) }
-
-    context "when tax_rate changes" do
-      it "recalculates cost_with_tax for all materials via a single update" do
-        estimate.update!(tax_rate: BigDecimal("0.10"))
-        expect(mat1.reload.cost_with_tax.round(4)).to eq(BigDecimal("110.0000"))
-        expect(mat2.reload.cost_with_tax.round(4)).to eq(BigDecimal("55.0000"))
-      end
-    end
-
-    context "when tax_exempt changes to true" do
-      it "sets cost_with_tax equal to quote_price for all materials" do
-        # Seed costs with tax applied first
-        estimate.update!(tax_rate: BigDecimal("0.08"))
-        mat1.reload; mat2.reload
-
-        estimate.update!(tax_exempt: true)
-        expect(mat1.reload.cost_with_tax).to eq(BigDecimal("100.00"))
-        expect(mat2.reload.cost_with_tax).to eq(BigDecimal("50.00"))
-      end
-    end
-
-    context "when an unrelated field changes" do
-      it "does not recalculate materials" do
-        original_cost = mat1.reload.cost_with_tax
-        expect(estimate).not_to receive(:recalculate_material_costs)
-        estimate.update!(title: "New Title")
-        expect(mat1.reload.cost_with_tax).to eq(original_cost)
-      end
     end
   end
 

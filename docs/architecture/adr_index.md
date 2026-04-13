@@ -1,7 +1,7 @@
 # Architecture Decision Records — Index
 
 **Project:** Estimating Software MVP
-**Last updated:** 2026-04-01
+**Last updated:** 2026-04-11
 
 This directory contains Architecture Decision Records (ADRs) for the estimating software project. Each ADR documents a significant technical decision, the alternatives considered, and the rationale.
 
@@ -22,6 +22,7 @@ This directory contains Architecture Decision Records (ADRs) for the estimating 
 
 | ADR | Title | Status | Date | Key Decision |
 |-----|-------|--------|------|-------------|
+| [ADR-009](ADR-009-product-catalog.md) | Product Catalog — Data Model and Line Item Integration | accepted | 2026-04-11 | Flat columns on both products and line_items; material FKs removed; copy-on-select snapshot; materials table dropped. |
 | [ADR-001](ADR-001-markup-level.md) | Markup Level | accepted | 2026-04-01 | Markup stored per line item; section provides a default that stamps new items at creation. No estimate-level markup. |
 | [ADR-002](ADR-002-pdf-generation.md) | PDF Generation Strategy | accepted | 2026-04-01 | Browser print CSS for MVP. No Grover, Prawn, or WickedPDF. Two separate print layout views (cost_sheet, client_pdf). |
 | [ADR-003](ADR-003-realtime-totals.md) | Real-Time Totals | accepted | 2026-04-01 | Two-layer approach: Stimulus for in-form arithmetic (no server call); Turbo Streams on save to update section subtotal and grand total partials. |

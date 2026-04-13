@@ -26,7 +26,7 @@ class EstimatesController < ApplicationController
     @estimate.created_by_user_id = current_user.id
 
     if @estimate.save
-      redirect_to edit_estimate_materials_path(@estimate), notice: t(".notice")
+      redirect_to edit_estimate_path(@estimate), notice: t(".notice")
     else
       @clients = Client.alphabetical
       render :new, status: :unprocessable_content
@@ -34,7 +34,7 @@ class EstimatesController < ApplicationController
   end
 
   def edit
-    @estimate = Estimate.includes(:client, :materials).find(params[:id])
+    @estimate = Estimate.includes(:client, :line_items).find(params[:id])
     @clients  = Client.alphabetical
   end
 

@@ -11,6 +11,10 @@
 | SPEC-007 | [Phase 5 — Catalog and Line Item Autocomplete](./phase-5-catalog-autocomplete.md) | draft | medium | 2026-04-04 |
 | SPEC-008 | [Phase 6 — Document Output](./phase-6-document-output.md) | draft | medium | 2026-04-04 |
 | SPEC-009 | [Phase 7 — Polish and Hardening](./phase-7-polish.md) | draft | low | 2026-04-04 |
+| SPEC-010 | [Estimating Foundation](./SPEC-010-estimating-foundation.md) | done | high | 2026-04-10 |
+| SPEC-011 | [Line Item Grid — Product Rows and Per-Item Totals](./SPEC-011-line-item-grid.md) | done | high | 2026-04-10 |
+| SPEC-012 | [Job-Level Costs and Final Totals](./SPEC-012-job-level-costs-totals.md) | ready | high | 2026-04-10 |
+| SPEC-013 | [Product Catalog and Line Item Refactor](./SPEC-013-product-catalog.md) | ready | high | 2026-04-11 |
 
 ---
 
