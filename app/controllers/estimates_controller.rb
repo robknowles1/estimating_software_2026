@@ -36,6 +36,7 @@ class EstimatesController < ApplicationController
   def edit
     @estimate = Estimate.includes(:client, line_items: :product).find(params[:id])
     @clients  = Client.alphabetical
+    @totals   = EstimateTotalsCalculator.new(@estimate).call
   end
 
   def update
