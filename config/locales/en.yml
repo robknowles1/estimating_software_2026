@@ -241,6 +241,7 @@ en:
         other: "%{count} errors prohibited this line item from being saved:"
     line_item:
       based_on: "Based on: %{product}"
+      confirm_delete: "Remove this line item?"
     estimate_totals:
       grand_non_burdened_label: "Estimate Total (Pre-Burden)"
       burden_note: "Burden multiplier: %{multiplier}× (profit/overhead + PM supervision)"

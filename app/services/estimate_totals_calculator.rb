@@ -45,7 +45,7 @@ class EstimateTotalsCalculator
       labor_subtotals = {}
       LABOR_CATEGORIES.each do |cat|
         hrs  = li.public_send(:"#{cat}_hrs").to_d
-        rate = labor_rates[cat]&.hourly_rate.to_d || BigDecimal("0")
+        rate = labor_rates[cat]&.hourly_rate&.to_d || BigDecimal("0")
         labor_subtotals[cat] = hrs * rate * qty
       end
 

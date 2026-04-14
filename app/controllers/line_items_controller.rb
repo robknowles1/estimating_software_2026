@@ -16,16 +16,10 @@ class LineItemsController < ApplicationController
     @line_item.product_id = product&.id
 
     if @line_item.save
-      respond_to do |format|
-        format.html { redirect_to edit_estimate_path(@estimate), notice: t(".notice") }
-        format.turbo_stream
-      end
+      redirect_to edit_estimate_path(@estimate), notice: t(".notice")
     else
       @products = Product.by_category
-      respond_to do |format|
-        format.html { render :new, status: :unprocessable_content }
-        format.turbo_stream { render :new, status: :unprocessable_content }
-      end
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -38,27 +32,17 @@ class LineItemsController < ApplicationController
     @line_item = @estimate.line_items.find(params[:id])
 
     if @line_item.update(line_item_params)
-      respond_to do |format|
-        format.html { redirect_to edit_estimate_path(@estimate), notice: t(".notice") }
-        format.turbo_stream
-      end
+      redirect_to edit_estimate_path(@estimate), notice: t(".notice")
     else
       @products = Product.by_category
-      respond_to do |format|
-        format.html { render :edit, status: :unprocessable_content }
-        format.turbo_stream { render :edit, status: :unprocessable_content }
-      end
+      render :edit, status: :unprocessable_content
     end
   end
 
   def destroy
     @line_item = @estimate.line_items.find(params[:id])
     @line_item.destroy
-
-    respond_to do |format|
-      format.html { redirect_to edit_estimate_path(@estimate), notice: t(".notice") }
-      format.turbo_stream
-    end
+    redirect_to edit_estimate_path(@estimate), notice: t(".notice")
   end
 
   def move
@@ -70,10 +54,7 @@ class LineItemsController < ApplicationController
     when "down" then @line_item.move_lower
     end
 
-    respond_to do |format|
-      format.html { redirect_to edit_estimate_path(@estimate) }
-      format.turbo_stream
-    end
+    redirect_to edit_estimate_path(@estimate)
   end
 
   private

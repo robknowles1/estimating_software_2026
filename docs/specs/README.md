@@ -14,7 +14,7 @@
 | SPEC-010 | [Estimating Foundation](./SPEC-010-estimating-foundation.md) | done | high | 2026-04-10 |
 | SPEC-011 | [Line Item Grid — Product Rows and Per-Item Totals](./SPEC-011-line-item-grid.md) | done | high | 2026-04-10 |
 | SPEC-012 | [Job-Level Costs and Final Totals](./SPEC-012-job-level-costs-totals.md) | ready | high | 2026-04-10 |
-| SPEC-013 | [Product Catalog and Line Item Refactor](./SPEC-013-product-catalog.md) | ready | high | 2026-04-11 |
+| SPEC-013 | [Product Catalog and Line Item Refactor](./SPEC-013-product-catalog.md) | done | high | 2026-04-11 |
 
 ---
 
