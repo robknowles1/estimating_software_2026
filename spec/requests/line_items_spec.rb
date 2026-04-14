@@ -25,36 +25,23 @@ RSpec.describe "LineItems", type: :request do
         }
       end
 
-      it "auto-creates a catalog product and links it to the line item" do
+      it "creates a line item with product_id nil (freeform — AC-15)" do
         expect {
           post estimate_line_items_path(estimate), params: freeform_params
-        }.to change(LineItem, :count).by(1).and change(Product, :count).by(1)
+        }.to change(LineItem, :count).by(1)
 
-        li = LineItem.last
-        expect(li.product_id).to eq(Product.find_by(name: "Custom shelf unit").id)
+        expect(LineItem.last.product_id).to be_nil
+      end
+
+      it "does not create a catalog product for a freeform line item (AC-15)" do
+        expect {
+          post estimate_line_items_path(estimate), params: freeform_params
+        }.not_to change(Product, :count)
       end
 
       it "saves the provided description" do
         post estimate_line_items_path(estimate), params: freeform_params
         expect(LineItem.last.description).to eq("Custom shelf unit")
-      end
-
-      context "when a product with the same name already exists in the catalog" do
-        let!(:existing_product) do
-          create(:product, name: "Custom shelf unit", exterior_unit_price: BigDecimal("99.00"))
-        end
-
-        it "does not create a new product" do
-          expect {
-            post estimate_line_items_path(estimate), params: freeform_params
-          }.not_to change(Product, :count)
-        end
-
-        it "links the line item to the existing product without modifying it" do
-          post estimate_line_items_path(estimate), params: freeform_params
-          expect(LineItem.last.product_id).to eq(existing_product.id)
-          expect(existing_product.reload.exterior_unit_price).to eq(BigDecimal("99.00"))
-        end
       end
 
       it "ignores removed _material_id columns (schema no longer has them)" do
@@ -68,7 +55,7 @@ RSpec.describe "LineItems", type: :request do
         }
         expect(response).to redirect_to(edit_estimate_path(estimate))
         expect(LineItem.last.description).to eq("Test")
-        expect(LineItem.last.product_id).to eq(Product.find_by(name: "Test").id)
+        expect(LineItem.last.product_id).to be_nil
       end
     end
 

@@ -42,21 +42,21 @@
   <%# Column headers %>
   <div class="grid grid-cols-12 gap-2 mb-2 px-1">
     <div class="col-span-1"></div>
-    <div class="col-span-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Description</div>
-    <div class="col-span-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit Price</div>
-    <div class="col-span-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Qty</div>
+    <div class="col-span-5 text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t("products.form.material_description_col") %></div>
+    <div class="col-span-3 text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t("products.form.material_unit_price_col") %></div>
+    <div class="col-span-3 text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t("products.form.material_qty_col") %></div>
   </div>
 
   <% [
-    { key: :exterior,  label: "Exterior" },
-    { key: :interior,  label: "Interior" },
-    { key: :interior2, label: "Interior 2" },
-    { key: :back,      label: "Back" },
-    { key: :drawers,   label: "Drawers" },
-    { key: :pulls,     label: "Pulls" },
-    { key: :hinges,    label: "Hinges" },
-    { key: :slides,    label: "Slides" },
-    { key: :locks,     label: "Locks" }
+    { key: :exterior,  label: t("products.form.material_slot_exterior") },
+    { key: :interior,  label: t("products.form.material_slot_interior") },
+    { key: :interior2, label: t("products.form.material_slot_interior2") },
+    { key: :back,      label: t("products.form.material_slot_back") },
+    { key: :drawers,   label: t("products.form.material_slot_drawers") },
+    { key: :pulls,     label: t("products.form.material_slot_pulls") },
+    { key: :hinges,    label: t("products.form.material_slot_hinges") },
+    { key: :slides,    label: t("products.form.material_slot_slides") },
+    { key: :locks,     label: t("products.form.material_slot_locks") }
   ].each do |slot| %>
     <div class="grid grid-cols-12 gap-2 mb-2 items-center">
       <div class="col-span-1 text-xs text-slate-500 font-medium"><%= slot[:label] %></div>
@@ -74,7 +74,7 @@
 
   <%# Banding — no qty %>
   <div class="grid grid-cols-12 gap-2 mb-2 items-center">
-    <div class="col-span-1 text-xs text-slate-500 font-medium">Banding</div>
+    <div class="col-span-1 text-xs text-slate-500 font-medium"><%= t("products.form.material_slot_banding") %></div>
     <div class="col-span-5">
       <%= f.text_field :banding_description, class: input_cls, placeholder: "e.g. Melamine edge band" %>
     </div>
@@ -82,7 +82,7 @@
       <%= f.number_field :banding_unit_price, class: input_cls, step: "0.0001", min: 0, placeholder: "0.0000" %>
     </div>
     <div class="col-span-3">
-      <span class="text-xs text-slate-400 italic">Flat rate — no qty</span>
+      <span class="text-xs text-slate-400 italic"><%= t("products.form.banding_flat_rate") %></span>
     </div>
   </div>
 
@@ -103,7 +103,7 @@
   <div class="grid grid-cols-3 gap-4">
     <% %w[detail mill assembly customs finish install].each do |cat| %>
       <div>
-        <label class="<%= label_cls %>"><%= cat.capitalize %> Hrs</label>
+        <label class="<%= label_cls %>"><%= t("products.form.labor_#{cat}_hrs") %></label>
         <%= f.number_field :"#{cat}_hrs", class: input_cls, step: "0.0001", min: 0, placeholder: "0.0000" %>
       </div>
     <% end %>
@@ -115,11 +115,11 @@
   <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t("products.form.equipment_heading") %></h2>
   <div class="grid grid-cols-2 gap-4">
     <div>
-      <label class="<%= label_cls %>">Equipment Hours</label>
+      <label class="<%= label_cls %>"><%= t("products.form.equipment_hrs_label") %></label>
       <%= f.number_field :equipment_hrs, class: input_cls, step: "0.0001", min: 0, placeholder: "0.0000" %>
     </div>
     <div>
-      <label class="<%= label_cls %>">Equipment Rate ($/hr)</label>
+      <label class="<%= label_cls %>"><%= t("products.form.equipment_rate_label") %></label>
       <%= f.number_field :equipment_rate, class: input_cls, step: "0.01", min: 0, placeholder: "0.00" %>
     </div>
   </div>

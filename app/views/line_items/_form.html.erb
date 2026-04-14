@@ -23,7 +23,7 @@
           data-product-selector-target="select"
           data-action="change->product-selector#fill"
           class="<%= input_cls %>">
-    <option value="">— freeform / no product —</option>
+    <option value=""><%= t("line_items.form.freeform_option") %></option>
     <% (products || Product.by_category).group_by(&:category).each do |category, prods| %>
       <optgroup label="<%= category.presence || 'Uncategorized' %>">
         <% prods.each do |product| %>
@@ -68,15 +68,15 @@
   </div>
 
   <% [
-    { key: :exterior,  label: "Exterior" },
-    { key: :interior,  label: "Interior" },
-    { key: :interior2, label: "Interior 2" },
-    { key: :back,      label: "Back" },
-    { key: :drawers,   label: "Drawers" },
-    { key: :pulls,     label: "Pulls" },
-    { key: :hinges,    label: "Hinges" },
-    { key: :slides,    label: "Slides" },
-    { key: :locks,     label: "Locks" }
+    { key: :exterior,  label: t("line_items.form.material_slot_exterior") },
+    { key: :interior,  label: t("line_items.form.material_slot_interior") },
+    { key: :interior2, label: t("line_items.form.material_slot_interior2") },
+    { key: :back,      label: t("line_items.form.material_slot_back") },
+    { key: :drawers,   label: t("line_items.form.material_slot_drawers") },
+    { key: :pulls,     label: t("line_items.form.material_slot_pulls") },
+    { key: :hinges,    label: t("line_items.form.material_slot_hinges") },
+    { key: :slides,    label: t("line_items.form.material_slot_slides") },
+    { key: :locks,     label: t("line_items.form.material_slot_locks") }
   ].each do |slot| %>
     <div class="grid grid-cols-12 gap-2 mb-2 items-center">
       <div class="col-span-1 text-xs text-slate-500 font-medium"><%= slot[:label] %></div>
@@ -94,7 +94,7 @@
 
   <%# Banding — no qty %>
   <div class="grid grid-cols-12 gap-2 mb-2 items-center">
-    <div class="col-span-1 text-xs text-slate-500 font-medium">Banding</div>
+    <div class="col-span-1 text-xs text-slate-500 font-medium"><%= t("line_items.form.material_slot_banding") %></div>
     <div class="col-span-5">
       <%= f.text_field :banding_description, class: input_cls %>
     </div>
@@ -123,7 +123,7 @@
   <div class="grid grid-cols-3 gap-4">
     <% %w[detail mill assembly customs finish install].each do |cat| %>
       <div>
-        <label class="<%= label_cls %>"><%= cat.capitalize %> Hrs</label>
+        <label class="<%= label_cls %>"><%= t("line_items.form.labor_#{cat}_hrs") %></label>
         <%= f.number_field :"#{cat}_hrs", class: input_cls, step: "0.0001", min: 0 %>
       </div>
     <% end %>
