@@ -153,6 +153,14 @@ RSpec.describe "LineItems", type: :request do
       }
       expect(response).to redirect_to(edit_estimate_path(estimate))
     end
+
+    it "redirects to login when unauthenticated" do
+      delete session_path
+      patch estimate_line_item_path(estimate, line_item), params: {
+        line_item: { description: "New Name", quantity: "1", unit: "EA" }
+      }
+      expect(response).to redirect_to(new_session_path)
+    end
   end
 
   describe "DELETE /estimates/:estimate_id/line_items/:id" do
@@ -167,6 +175,12 @@ RSpec.describe "LineItems", type: :request do
     it "redirects to the estimate edit page" do
       delete estimate_line_item_path(estimate, line_item)
       expect(response).to redirect_to(edit_estimate_path(estimate))
+    end
+
+    it "redirects to login when unauthenticated" do
+      delete session_path
+      delete estimate_line_item_path(estimate, line_item)
+      expect(response).to redirect_to(new_session_path)
     end
   end
 end

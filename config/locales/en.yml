@@ -199,6 +199,10 @@ en:
         countertop_quote: "Countertop Quote"
 
   line_items:
+    new:
+      title: "Add Line Item"
+    edit:
+      title: "Edit Line Item"
     create:
       notice: "Line item was successfully added."
     update:
