@@ -212,6 +212,7 @@ en:
     form:
       select_product: "Select Product (optional)"
       freeform_option: "— freeform / no product —"
+      uncategorized: "Uncategorized"
       identity_heading: "Line Item Details"
       materials_heading: "Materials"
       material_description_col: "Description"

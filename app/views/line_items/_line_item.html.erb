@@ -13,7 +13,7 @@
       <%= link_to t("common.edit"), edit_estimate_line_item_path(estimate, line_item),
           class: "text-xs text-slate-500 hover:text-amber-700 font-medium transition-colors" %>
       <%= button_to t("common.delete"), estimate_line_item_path(estimate, line_item), method: :delete,
-          form: { data: { turbo: false, turbo_confirm: t("line_items.line_item.confirm_delete") } },
+          form: { data: { turbo_confirm: t("line_items.line_item.confirm_delete") } },
           class: "text-xs text-red-400 hover:text-red-600 font-medium transition-colors bg-transparent border-0 p-0 cursor-pointer" %>
     </div>
   </div>
