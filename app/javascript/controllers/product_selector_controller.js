@@ -5,6 +5,7 @@ export default class extends Controller {
   static values  = { products: Array }
 
   fill() {
+    if (!this.selectTarget.value) return
     const productId = parseInt(this.selectTarget.value)
     const product   = this.productsValue.find(p => p.id === productId)
     if (!product) return

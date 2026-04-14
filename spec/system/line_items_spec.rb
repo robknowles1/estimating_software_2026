@@ -1,0 +1,74 @@
+require "rails_helper"
+
+RSpec.describe "Line Items", type: :system do
+  before { driven_by(:selenium_chrome_headless) }
+
+  let!(:user)     { create(:user) }
+  let!(:client)   { create(:client, company_name: "Prestige Millwork") }
+  let!(:estimate) { create(:estimate, client: client, title: "Kitchen Remodel", created_by: user) }
+
+  def login(as: user, password: "password123")
+    visit new_session_path
+    fill_in "Email", with: as.email
+    fill_in "Password", with: password
+    click_button "Sign In"
+    expect(page).to have_current_path(estimates_path, wait: 5)
+  end
+
+  describe "adding a line item via product dropdown" do
+    it "shows 'Based on' annotation on the line item card" do
+      product = create(:product, name: "MDF Base 2-door", category: "Base Cabinets", unit: "EA")
+
+      login
+      visit new_estimate_line_item_path(estimate)
+
+      select "MDF Base 2-door", from: "line_item[product_id]"
+      fill_in "line_item[description]", with: "MDF Base 2-door"
+      fill_in "line_item[quantity]", with: "1"
+      find("input[type='submit']").click
+
+      expect(page).to have_current_path(edit_estimate_path(estimate), wait: 5)
+      expect(page).to have_text("Based on: MDF Base 2-door", wait: 3)
+    end
+  end
+
+  describe "adding a freeform line item" do
+    it "saves without a 'Based on' annotation and product_id is nil" do
+      login
+      visit new_estimate_line_item_path(estimate)
+
+      # Leave product selector on the blank/freeform option
+      fill_in "line_item[description]", with: "Custom Freeform Cabinet"
+      fill_in "line_item[quantity]", with: "2"
+      find("input[type='submit']").click
+
+      expect(page).to have_current_path(edit_estimate_path(estimate), wait: 5)
+      expect(page).to have_text("Custom Freeform Cabinet", wait: 3)
+      expect(page).not_to have_text("Based on:")
+
+      line_item = estimate.line_items.find_by!(description: "Custom Freeform Cabinet")
+      expect(line_item.product_id).to be_nil
+    end
+  end
+
+  describe "overriding a pre-filled description after selecting a product" do
+    it "saves the overridden description, not the product name" do
+      product = create(:product, name: "MDF Base 2-door", category: "Base Cabinets", unit: "EA")
+
+      login
+      visit new_estimate_line_item_path(estimate)
+
+      select "MDF Base 2-door", from: "line_item[product_id]"
+      # Clear and override the description that was pre-filled from the product
+      fill_in "line_item[description]", with: "Custom Override Description"
+      fill_in "line_item[quantity]", with: "1"
+      find("input[type='submit']").click
+
+      expect(page).to have_current_path(edit_estimate_path(estimate), wait: 5)
+      expect(page).to have_text("Custom Override Description", wait: 3)
+
+      line_item = estimate.line_items.find_by!(description: "Custom Override Description")
+      expect(line_item.description).to eq("Custom Override Description")
+    end
+  end
+end

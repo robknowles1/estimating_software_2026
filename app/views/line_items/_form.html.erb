@@ -24,7 +24,7 @@
           data-action="change->product-selector#fill"
           class="<%= input_cls %>">
     <option value=""><%= t("line_items.form.freeform_option") %></option>
-    <% (products || Product.by_category).group_by(&:category).each do |category, prods| %>
+    <% products.group_by(&:category).each do |category, prods| %>
       <optgroup label="<%= category.presence || 'Uncategorized' %>">
         <% prods.each do |product| %>
           <option value="<%= product.id %>" <%= "selected" if f.object.product_id == product.id %>>

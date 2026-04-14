@@ -66,9 +66,9 @@ RSpec.describe Product, type: :model do
     end
 
     it "does not assign banding_qty (banding has no qty column)" do
-      # banding_qty does not exist — applying product should not raise
-      # We verify by checking that the apply succeeds without error
-      expect { product.apply_to(build(:line_item)) }.not_to raise_error
+      li = build(:line_item)
+      expect { product.apply_to(li) }.not_to raise_error
+      expect(li.respond_to?(:banding_qty)).to be(false)
     end
 
     it "copies locks description, unit_price, and qty" do
