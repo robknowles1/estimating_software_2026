@@ -21,6 +21,6 @@
 <div data-controller="product-selector"
      data-product-selector-products-value="<%= j products_json %>">
   <%= form_with model: [@estimate, @line_item], data: { turbo: false, "product-selector-target": "form" } do |f| %>
-    <%= render "form", f: f, estimate: @estimate, products: @products %>
+    <%= render "form", f: f, estimate: @estimate, products: @products, show_product_selector: false %>
   <% end %>
 </div>

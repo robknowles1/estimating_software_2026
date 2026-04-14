@@ -16,25 +16,27 @@
   </div>
 <% end %>
 
-<%# ── Product selector ── %>
-<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
-  <h2 class="text-sm font-semibold text-slate-700 mb-3"><%= t("line_items.form.select_product") %></h2>
-  <select name="line_item[product_id]"
-          data-product-selector-target="select"
-          data-action="change->product-selector#fill"
-          class="<%= input_cls %>">
-    <option value=""><%= t("line_items.form.freeform_option") %></option>
-    <% products.group_by(&:category).each do |category, prods| %>
-      <optgroup label="<%= category.presence || t("line_items.form.uncategorized") %>">
-        <% prods.each do |product| %>
-          <option value="<%= product.id %>" <%= "selected" if f.object.product_id == product.id %>>
-            <%= product.name %>
-          </option>
-        <% end %>
-      </optgroup>
-    <% end %>
-  </select>
-</div>
+<%# ── Product selector (new form only) ── %>
+<% if local_assigns.fetch(:show_product_selector, true) %>
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+    <h2 class="text-sm font-semibold text-slate-700 mb-3"><%= t("line_items.form.select_product") %></h2>
+    <select name="line_item[product_id]"
+            data-product-selector-target="select"
+            data-action="change->product-selector#fill"
+            class="<%= input_cls %>">
+      <option value=""><%= t("line_items.form.freeform_option") %></option>
+      <% products.group_by(&:category).each do |category, prods| %>
+        <optgroup label="<%= category.presence || t("line_items.form.uncategorized") %>">
+          <% prods.each do |product| %>
+            <option value="<%= product.id %>" <%= "selected" if f.object.product_id == product.id %>>
+              <%= product.name %>
+            </option>
+          <% end %>
+        </optgroup>
+      <% end %>
+    </select>
+  </div>
+<% end %>
 
 <%# ── Identity ── %>
 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
