@@ -15,7 +15,7 @@ RSpec.describe "Estimates", type: :system do
   end
 
   describe "creating a new estimate" do
-    it "creates an estimate, redirects to materials price book, and shows all material slots" do
+    it "creates an estimate and redirects to the estimate edit page" do
       login
 
       visit new_estimate_path
@@ -23,14 +23,9 @@ RSpec.describe "Estimates", type: :system do
       fill_in "estimate[title]", with: "Full Kitchen Renovation"
       find("input[type='submit']").click
 
-      # After create, redirected to materials edit (materials-first flow)
-      expect(page).to have_current_path(%r{/estimates/\d+/materials/edit}, wait: 5)
-
-      # All material slots should be visible
-      expect(page).to have_text("PL1")
-      # Categories rendered uppercase via CSS — use case-insensitive match
-      expect(page).to have_text("Sheet Goods", normalize_ws: true, wait: 3).or have_text("SHEET GOODS", wait: 3)
-      expect(page).to have_text("Hardware", normalize_ws: true, wait: 3).or have_text("HARDWARE", wait: 3)
+      # After create, redirected to estimate edit (no materials-first flow)
+      expect(page).to have_current_path(%r{/estimates/\d+/edit}, wait: 5)
+      expect(page).to have_text("Full Kitchen Renovation", wait: 3)
     end
 
     it "shows estimate number in EST-YYYY-NNNN format in the top bar" do
@@ -45,89 +40,36 @@ RSpec.describe "Estimates", type: :system do
     end
   end
 
-  describe "entering quote prices in the materials price book" do
-    it "saves quote prices and displays updated cost_with_tax on the page" do
+  describe "estimate edit page — materials elements removed" do
+    it "does not show a Materials button" do
+      estimate = create(:estimate, client: client, title: "Cabinet Project", created_by: user)
       login
-
-      visit new_estimate_path
-      select "Prestige Millwork", from: "estimate_client_id"
-      fill_in "estimate[title]", with: "Bathroom Vanities"
-      find("input[type='submit']").click
-
-      expect(page).to have_current_path(%r{/estimates/\d+/materials/edit}, wait: 5)
-
-      # Enter a price for the PL1 slot
-      estimate_id = page.current_url.match(%r{/estimates/(\d+)})[1]
-      material = Material.find_by!(estimate_id: estimate_id, slot_key: "PL1")
-
-      fill_in "materials[#{material.id}][quote_price]", with: "100.00"
-      click_button "Save Material Costs"
-
-      expect(page).to have_current_path(%r{/estimates/\d+/materials/edit}, wait: 5)
-
-      # With 8% default tax rate: cost_with_tax = 100.00 * 1.08 = $108.00
-      expect(page).to have_text("$108.00")
-    end
-  end
-
-  describe "materials banner on estimate edit page" do
-    it "shows the materials banner when no prices are set, hides after any price is set" do
-      login
-
-      visit new_estimate_path
-      select "Prestige Millwork", from: "estimate_client_id"
-      fill_in "estimate[title]", with: "Cabinet Project"
-      find("input[type='submit']").click
-
-      # Wait for redirect to materials edit
-      expect(page).to have_current_path(%r{/estimates/\d+/materials/edit}, wait: 5)
-
-      # Extract estimate_id from materials edit URL
-      materials_url = page.current_path
-      estimate_id   = materials_url.match(%r{/estimates/(\d+)/materials/edit})[1]
-
-      # Navigate to estimate edit — banner should be visible
-      visit edit_estimate_path(estimate_id)
-      expect(page).to have_text("Set up materials", wait: 3)
-
-      # Enter a price and return to estimate edit
-      visit edit_estimate_materials_path(estimate_id)
-      material = Material.find_by!(estimate_id: estimate_id, slot_key: "PL1")
-      fill_in "materials[#{material.id}][quote_price]", with: "50.00"
-      click_button "Save Material Costs"
-
-      visit edit_estimate_path(estimate_id)
-      expect(page).not_to have_text("Set up materials", wait: 3)
-    end
-  end
-
-  describe "changing tax rate updates material cost_with_tax (AC#6)" do
-    it "recalculates cost_with_tax when the tax rate is changed and job settings saved" do
-      # Create an estimate with a material that has a non-zero quote_price
-      estimate = create(:estimate, :skip_material_seeding, client: client, title: "Tax Rate Test", created_by: user, tax_rate: 0.08)
-      material = create(:material, estimate: estimate, slot_key: "PL1", quote_price: BigDecimal("100.00"))
-      # Set initial cost_with_tax to reflect the 8% rate
-      material.update_columns(cost_with_tax: BigDecimal("108.00"))
-
-      login
-
-      # Visit estimate edit and change tax rate to 10%
       visit edit_estimate_path(estimate)
-      find("input[name='estimate[tax_rate]']").set("0.10")
-      click_button "Save Job Settings"
 
-      expect(page).to have_text("Estimate was successfully updated", wait: 5)
+      expect(page).not_to have_text("Materials")
+      expect(page).not_to have_text("Set up materials")
+    end
 
-      # Visit the materials page and verify cost_with_tax reflects the new 10% rate
-      # 100.00 * 1.10 = $110.00
-      visit edit_estimate_materials_path(estimate)
-      expect(page).to have_text("$110.00", wait: 5)
+    it "does not show a materials setup banner" do
+      estimate = create(:estimate, client: client, title: "Cabinet Project", created_by: user)
+      login
+      visit edit_estimate_path(estimate)
+
+      expect(page).not_to have_text("Material costs aren't set up yet")
+    end
+
+    it "shows the 'Add Product' button" do
+      estimate = create(:estimate, client: client, title: "Cabinet Project", created_by: user)
+      login
+      visit edit_estimate_path(estimate)
+
+      expect(page).to have_text("Add Product", wait: 3)
     end
   end
 
   describe "changing estimate status and filtering on dashboard" do
     it "changes status to sent and the estimate appears in sent filter" do
-      estimate = create(:estimate, :skip_material_seeding, client: client, title: "Status Test Job", created_by: user, status: "draft")
+      estimate = create(:estimate, client: client, title: "Status Test Job", created_by: user, status: "draft")
 
       login
       visit edit_estimate_path(estimate)
@@ -145,7 +87,7 @@ RSpec.describe "Estimates", type: :system do
     end
 
     it "does not show draft estimate when filtering by sent" do
-      create(:estimate, :skip_material_seeding, client: client, title: "Draft Only Job", created_by: user, status: "draft")
+      create(:estimate, client: client, title: "Draft Only Job", created_by: user, status: "draft")
 
       login
       visit estimates_path

@@ -73,17 +73,12 @@ RSpec.describe "Estimates", type: :request do
     end
 
     context "with valid params" do
-      it "creates estimate and redirects to materials edit (materials-first flow)" do
+      it "creates estimate and redirects to estimate edit page" do
         expect {
           post estimates_path, params: valid_params
         }.to change(Estimate, :count).by(1)
 
-        expect(response).to redirect_to(edit_estimate_materials_path(Estimate.last))
-      end
-
-      it "seeds all material slots on creation" do
-        post estimates_path, params: valid_params
-        expect(Estimate.last.materials.count).to eq(Material::SLOTS.length)
+        expect(response).to redirect_to(edit_estimate_path(Estimate.last))
       end
 
       it "sets status to draft" do
@@ -130,7 +125,7 @@ RSpec.describe "Estimates", type: :request do
   end
 
   describe "GET /estimates/:id/edit" do
-    let(:estimate) { create(:estimate, :skip_material_seeding, client: client) }
+    let(:estimate) { create(:estimate, client: client) }
 
     it "renders the edit page" do
       get edit_estimate_path(estimate)
@@ -138,21 +133,20 @@ RSpec.describe "Estimates", type: :request do
       expect(response.body).to include(estimate.title)
     end
 
-    it "renders materials setup banner when no materials have a non-zero quote_price" do
-      get edit_estimate_path(estimate)
-      # Use the "Set up materials" link text which doesn't contain HTML-escaped characters
-      expect(response.body).to include("Set up materials")
-    end
-
-    it "does not show materials banner when at least one material has a non-zero price" do
-      create(:material, estimate: estimate, quote_price: BigDecimal("25.00"))
+    it "does not render a materials banner" do
       get edit_estimate_path(estimate)
       expect(response.body).not_to include("Material costs aren't set up yet")
+      expect(response.body).not_to include("Set up materials")
+    end
+
+    it "shows the add product link" do
+      get edit_estimate_path(estimate)
+      expect(response.body).to include("Add Product")
     end
   end
 
   describe "PATCH /estimates/:id" do
-    let(:estimate) { create(:estimate, :skip_material_seeding, client: client, status: "draft") }
+    let(:estimate) { create(:estimate, client: client, status: "draft") }
 
     it "updates the estimate status and redirects" do
       patch estimate_path(estimate), params: { estimate: { status: "sent", title: estimate.title, client_id: client.id } }
@@ -184,22 +178,10 @@ RSpec.describe "Estimates", type: :request do
       expect(estimate.profit_overhead_percent).to eq(BigDecimal("20.0"))
       expect(estimate.tax_rate).to eq(BigDecimal("0.09"))
     end
-
-    context "when tax_rate changes" do
-      it "recalculates all material cost_with_tax values" do
-        mat = create(:material, estimate: estimate, quote_price: BigDecimal("100.00"))
-        estimate.update!(tax_rate: BigDecimal("0.08"))
-        # Force a tax_rate change via PATCH
-        patch estimate_path(estimate),
-          params: { estimate: { title: estimate.title, client_id: client.id, tax_rate: "0.10" } }
-
-        expect(mat.reload.cost_with_tax.round(4)).to eq(BigDecimal("110.0000"))
-      end
-    end
   end
 
   describe "DELETE /estimates/:id" do
-    let!(:estimate) { create(:estimate, :skip_material_seeding, client: client) }
+    let!(:estimate) { create(:estimate, client: client) }
 
     it "destroys the estimate and redirects to index" do
       expect {

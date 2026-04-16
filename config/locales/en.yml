@@ -33,6 +33,7 @@ en:
 
   nav:
     estimates: "Estimates"
+    products: "Products"
     clients: "Clients"
     users: "Users"
     sign_out: "Sign Out"
@@ -50,6 +51,63 @@ en:
       subtitle: "Enter your credentials to continue."
       submit: "Sign In"
 
+  products:
+    create:
+      notice: "Product was successfully created."
+    update:
+      notice: "Product was successfully updated."
+    destroy:
+      notice: "Product was successfully deleted."
+    index:
+      title: "Products"
+      subtitle: "Manage the catalog of products the shop builds."
+      new_button: "New Product"
+      empty_title: "No products yet"
+      empty_description: "Add the first product to get started."
+      col_name: "Name"
+      col_category: "Category"
+      col_unit: "Unit"
+      col_updated: "Last Updated"
+      confirm_delete: "Delete %{name}? Line items based on this product will not be affected."
+    new:
+      title: "New Product"
+      subtitle: "Add a product to the catalog."
+    edit:
+      title: "Edit Product"
+      subtitle: "Update %{name}."
+    form:
+      basic_heading: "Basic Info"
+      materials_heading: "Materials"
+      material_description_col: "Description"
+      material_unit_price_col: "Unit Price"
+      material_qty_col: "Qty"
+      material_slot_exterior: "Exterior"
+      material_slot_interior: "Interior"
+      material_slot_interior2: "Interior 2"
+      material_slot_back: "Back"
+      material_slot_drawers: "Drawers"
+      material_slot_pulls: "Pulls"
+      material_slot_hinges: "Hinges"
+      material_slot_slides: "Slides"
+      material_slot_locks: "Locks"
+      material_slot_banding: "Banding"
+      banding_flat_rate: "Flat rate — no qty"
+      labor_heading: "Labor Hours"
+      labor_detail_hrs: "Detail Hrs"
+      labor_mill_hrs: "Mill Hrs"
+      labor_assembly_hrs: "Assembly Hrs"
+      labor_customs_hrs: "Customs Hrs"
+      labor_finish_hrs: "Finish Hrs"
+      labor_install_hrs: "Install Hrs"
+      equipment_heading: "Equipment"
+      equipment_hrs_label: "Equipment Hours"
+      equipment_rate_label: "Equipment Rate ($/hr)"
+      other_material_cost: "Other Material Cost"
+      cancel: "Cancel"
+      errors:
+        one: "1 error prohibited this product from being saved:"
+        other: "%{count} errors prohibited this product from being saved:"
+
   estimates:
     create:
       notice: "Estimate was successfully created."
@@ -58,7 +116,6 @@ en:
     destroy:
       notice: "Estimate was successfully deleted."
     layout:
-      materials_button: "Materials"
       back_to_estimates: "Back to Estimates"
     index:
       title: "Estimates"
@@ -89,9 +146,9 @@ en:
       job_settings_heading: "Job Settings"
       update_status: "Update Status"
       save_job_settings: "Save Job Settings"
-      no_line_items: "No line items yet — add your first product after setting up material costs."
-      materials_banner_text: "Material costs aren't set up yet."
-      materials_banner_link: "Set up materials →"
+      no_line_items: "No products added yet — select from the catalog or add a freeform product."
+      line_items_heading: "Products"
+      add_product: "Add Product"
       miles_to_jobsite: "Miles to Jobsite (one-way)"
       installer_crew_size: "Installer Crew Size"
       delivery_crew_size: "Delivery Crew Size"
@@ -100,15 +157,6 @@ en:
       pm_supervision_percent: "PM Supervision %"
       tax_rate: "Tax Rate (decimal, e.g. 0.08)"
       tax_exempt: "Tax Exempt"
-    materials:
-      edit:
-        title: "Material Cost Slots"
-        subtitle: "Per-estimate pricing for %{estimate}"
-        back_to_estimate: "Back to Estimate"
-        save_button: "Save Material Costs"
-        cancel: "Cancel"
-      update:
-        notice: "Material costs updated successfully."
     form:
       client: "Client"
       select_client: "Select a client..."
@@ -120,6 +168,10 @@ en:
 
   activerecord:
     attributes:
+      product:
+        name: "Product Name"
+        category: "Category"
+        unit: "Unit"
       estimate:
         title: "Job Title"
         client_id: "Client"
@@ -146,23 +198,58 @@ en:
         equipment_cost: "Equipment Cost"
         countertop_quote: "Countertop Quote"
 
-  materials:
-    slot_label: "Slot"
-    description_label: "Description"
-    description_placeholder: "e.g. Maple Veneer Ply, WD2"
-    quote_price_label: "Quote Price"
-    cost_with_tax_label: "Cost w/ Tax"
-    category:
-      sheet_good: "Sheet Goods"
-      hardware: "Hardware"
-
   line_items:
+    new:
+      title: "Add Line Item"
+    edit:
+      title: "Edit Line Item"
     create:
       notice: "Line item was successfully added."
     update:
       notice: "Line item was successfully updated."
     destroy:
       notice: "Line item was successfully removed."
+    form:
+      select_product: "Select Product (optional)"
+      freeform_option: "— freeform / no product —"
+      uncategorized: "Uncategorized"
+      identity_heading: "Line Item Details"
+      materials_heading: "Materials"
+      material_description_col: "Description"
+      material_unit_price_col: "Unit Price"
+      material_qty_col: "Qty"
+      material_slot_exterior: "Exterior"
+      material_slot_interior: "Interior"
+      material_slot_interior2: "Interior 2"
+      material_slot_back: "Back"
+      material_slot_drawers: "Drawers"
+      material_slot_pulls: "Pulls"
+      material_slot_hinges: "Hinges"
+      material_slot_slides: "Slides"
+      material_slot_locks: "Locks"
+      material_slot_banding: "Banding"
+      banding_flat_rate: "Flat rate — no qty"
+      other_material_cost_label: "Other Material Cost"
+      labor_heading: "Labor Hours"
+      labor_detail_hrs: "Detail Hrs"
+      labor_mill_hrs: "Mill Hrs"
+      labor_assembly_hrs: "Assembly Hrs"
+      labor_customs_hrs: "Customs Hrs"
+      labor_finish_hrs: "Finish Hrs"
+      labor_install_hrs: "Install Hrs"
+      equipment_heading: "Equipment"
+      equipment_hrs_label: "Equipment Hours"
+      equipment_rate_label: "Equipment Rate ($/hr)"
+      cancel: "Cancel"
+      errors:
+        one: "1 error prohibited this line item from being saved:"
+        other: "%{count} errors prohibited this line item from being saved:"
+    line_item:
+      based_on: "Based on: %{product}"
+      confirm_delete: "Remove this line item?"
+    estimate_totals:
+      grand_non_burdened_label: "Estimate Total (Pre-Burden)"
+      burden_note: "Burden multiplier: %{multiplier}× (profit/overhead + PM supervision)"
 
   users:
     create:

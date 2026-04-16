@@ -1,7 +1,6 @@
 class Estimate < ApplicationRecord
   belongs_to :client
   belongs_to :created_by, class_name: "User", foreign_key: :created_by_user_id
-  has_many :materials,  dependent: :destroy
   has_many :line_items, -> { order(:position) }, dependent: :destroy
 
   enum :status, { draft: "draft", sent: "sent", approved: "approved", lost: "lost", archived: "archived" }, default: "draft"
@@ -18,11 +17,6 @@ class Estimate < ApplicationRecord
 
   before_validation :assign_estimate_number, on: :create
   before_create     :copy_tax_exempt_from_client
-  after_create      :seed_materials
-
-  # When tax_rate or tax_exempt changes, recalculate all materials via a single SQL UPDATE.
-  # Do not call material.save! in a loop — that triggers N+1 callback executions.
-  after_update :recalculate_material_costs, if: -> { saved_change_to_tax_rate? || saved_change_to_tax_exempt? }
 
   scope :with_status, ->(s) { s.present? ? where(status: s) : all }
   scope :search, ->(q) {
@@ -68,38 +62,5 @@ class Estimate < ApplicationRecord
     return if tax_exempt_changed?
 
     self.tax_exempt = client.tax_exempt
-  end
-
-  # Seeds all material slots in a single INSERT statement using insert_all.
-  # compute_cost_with_tax is NOT called here — quote_price is 0 at seed time
-  # so cost_with_tax is also 0. insert_all bypasses callbacks by design.
-  def seed_materials
-    now = Time.current
-    rows = Material::SLOTS.map do |slot|
-      {
-        estimate_id:  id,
-        slot_key:     slot[:slot_key],
-        category:     slot[:category],
-        quote_price:  BigDecimal("0"),
-        cost_with_tax: BigDecimal("0"),
-        created_at:   now,
-        updated_at:   now
-      }
-    end
-    Material.insert_all(rows)
-  end
-
-  # Issues a single SQL UPDATE for all materials on this estimate.
-  # Called when tax_rate or tax_exempt changes (after_save callback).
-  # PostgreSQL arithmetic is used directly; no per-record Ruby callbacks.
-  def recalculate_material_costs
-    if tax_exempt?
-      materials.update_all("cost_with_tax = quote_price")
-    else
-      # Parameterize the tax_rate to prevent SQL injection
-      materials.update_all(
-        [ "cost_with_tax = ROUND(quote_price * (1 + ?), 4)", tax_rate ]
-      )
-    end
   end
 end
