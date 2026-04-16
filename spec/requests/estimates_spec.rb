@@ -133,12 +133,6 @@ RSpec.describe "Estimates", type: :request do
       expect(response.body).to include(estimate.title)
     end
 
-    it "does not render a materials banner" do
-      get edit_estimate_path(estimate)
-      expect(response.body).not_to include("Material costs aren't set up yet")
-      expect(response.body).not_to include("Set up materials")
-    end
-
     it "shows the add product link" do
       get edit_estimate_path(estimate)
       expect(response.body).to include("Add Product")

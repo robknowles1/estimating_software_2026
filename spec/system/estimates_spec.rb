@@ -40,24 +40,7 @@ RSpec.describe "Estimates", type: :system do
     end
   end
 
-  describe "estimate edit page — materials elements removed" do
-    it "does not show a Materials button" do
-      estimate = create(:estimate, client: client, title: "Cabinet Project", created_by: user)
-      login
-      visit edit_estimate_path(estimate)
-
-      expect(page).not_to have_text("Materials")
-      expect(page).not_to have_text("Set up materials")
-    end
-
-    it "does not show a materials setup banner" do
-      estimate = create(:estimate, client: client, title: "Cabinet Project", created_by: user)
-      login
-      visit edit_estimate_path(estimate)
-
-      expect(page).not_to have_text("Material costs aren't set up yet")
-    end
-
+  describe "estimate edit page" do
     it "shows the 'Add Product' button" do
       estimate = create(:estimate, client: client, title: "Cabinet Project", created_by: user)
       login

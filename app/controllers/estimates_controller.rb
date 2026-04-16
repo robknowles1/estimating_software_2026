@@ -25,7 +25,22 @@ class EstimatesController < ApplicationController
     @estimate = Estimate.new(estimate_params)
     @estimate.created_by_user_id = current_user.id
 
-    if @estimate.save
+    saved = false
+    attempts = 0
+
+    begin
+      saved = @estimate.save
+    rescue ActiveRecord::RecordNotUnique => e
+      raise unless e.message.include?("estimate_number")
+
+      attempts += 1
+      raise if attempts >= 3
+
+      @estimate.estimate_number = nil
+      retry
+    end
+
+    if saved
       redirect_to edit_estimate_path(@estimate), notice: t(".notice")
     else
       @clients = Client.alphabetical
