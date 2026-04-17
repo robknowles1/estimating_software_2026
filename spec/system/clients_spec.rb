@@ -13,6 +13,14 @@ RSpec.describe "Client and Contact Management", type: :system do
     expect(page).to have_current_path(estimates_path, wait: 5)
   end
 
+  # Waits until application.js has finished loading (indicated by the
+  # data-js-ready attribute set at the bottom of application.js).  This
+  # ensures Turbo's submit event listeners are registered before the test
+  # clicks any button that carries a data-turbo-confirm attribute.
+  def wait_for_js
+    expect(page).to have_css("html[data-js-ready='true']", wait: 5)
+  end
+
   describe "primary contact badge" do
     it "shows Primary badge only on the primary contact" do
       client = create(:client, company_name: "Prestige Cabinets")
@@ -39,12 +47,17 @@ RSpec.describe "Client and Contact Management", type: :system do
       visit client_path(client)
       expect(page).to have_text("Locked Client Co")
 
+      # Ensure Turbo's event listeners are registered before clicking the
+      # confirm-protected Delete button (otherwise the dialog never fires
+      # and accept_confirm raises Capybara::ModalNotFound).
+      wait_for_js
+
       accept_confirm do
         click_button "Delete"
       end
 
-      expect(page).to have_current_path(client_path(client))
-      expect(page).to have_text("Cannot delete")
+      expect(page).to have_current_path(client_path(client), wait: 5)
+      expect(page).to have_text("Cannot delete", wait: 10)
       expect(Client.find_by(id: client.id)).to be_present
     end
 
@@ -56,11 +69,13 @@ RSpec.describe "Client and Contact Management", type: :system do
       visit client_path(client)
       expect(page).to have_text("Removable Client Co")
 
+      wait_for_js
+
       accept_confirm do
         click_button "Delete"
       end
 
-      expect(page).to have_current_path(clients_path)
+      expect(page).to have_current_path(clients_path, wait: 5)
       expect(page).not_to have_text("Removable Client Co")
     end
   end

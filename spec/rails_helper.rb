@@ -49,27 +49,30 @@ RSpec.configure do |config|
     Rails.root.join('spec/fixtures')
   ]
 
-  # Use transactional fixtures for unit/request specs.
-  # System specs run via Selenium in a separate thread — the app server cannot
-  # see records inside an open transaction, so we disable transactions for those
-  # and use DatabaseCleaner truncation instead.
-  config.use_transactional_fixtures = true
+  # DatabaseCleaner manages all cleanup. Transactional fixtures are disabled
+  # globally because toggling the flag per-example inside an around hook is
+  # unreliable — the transaction wrapper hooks are registered at suite start
+  # and cannot be safely toggled mid-run. System specs run via Selenium in a
+  # separate OS thread and the app server cannot see an open transaction, so
+  # they require truncation. All other specs use the transaction strategy for
+  # speed.
+  config.use_transactional_fixtures = false
 
   config.before(:suite) do
     DatabaseCleaner.clean_with(:truncation)
   end
 
-  # System specs run via Selenium in a separate thread — the server cannot see
-  # records inside an open transaction. Use an around hook with ensure so the
-  # global setting is always restored, even if the example raises or is pending.
-  config.around(:each, type: :system) do |example|
-    RSpec.configuration.use_transactional_fixtures = false
-    DatabaseCleaner.strategy = :truncation
+  config.before(:each) do |example|
+    if example.metadata[:type] == :system
+      DatabaseCleaner.strategy = :truncation
+    else
+      DatabaseCleaner.strategy = :transaction
+    end
     DatabaseCleaner.start
-    example.run
-  ensure
+  end
+
+  config.after(:each) do
     DatabaseCleaner.clean
-    RSpec.configuration.use_transactional_fixtures = true
   end
 
   # You can uncomment this line to turn off ActiveRecord support entirely.
