@@ -91,7 +91,9 @@ class EstimateMaterialsController < ApplicationController
   end
 
   def estimate_material_params
-    params.require(:estimate_material).permit(:quote_price, :role)
+    p = params.require(:estimate_material).permit(:quote_price, :role)
+    p[:role] = p[:role].presence_in(%w[locks])
+    p
   end
 
   def new_material_params

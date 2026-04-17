@@ -37,8 +37,7 @@ class Estimate < ApplicationRecord
     if tax_exempt?
       estimate_materials.update_all("cost_with_tax = quote_price")
     else
-      multiplier = (BigDecimal("1") + tax_rate.to_d).to_s("F")
-      estimate_materials.update_all("cost_with_tax = quote_price * #{multiplier}")
+      estimate_materials.update_all(["cost_with_tax = quote_price * ?", BigDecimal("1") + tax_rate.to_d])
     end
   end
 
