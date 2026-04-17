@@ -9,6 +9,24 @@ RSpec.describe EstimateMaterial, type: :model do
   describe "validations" do
     it { is_expected.to validate_numericality_of(:quote_price).is_greater_than_or_equal_to(0) }
 
+    describe ":role inclusion" do
+      it "is valid when role is nil" do
+        em = build(:estimate_material, role: nil)
+        expect(em).to be_valid
+      end
+
+      it "is valid when role is a known value" do
+        em = build(:estimate_material, role: "locks")
+        expect(em).to be_valid
+      end
+
+      it "is invalid when role is an unknown value" do
+        em = build(:estimate_material, role: "admin")
+        expect(em).not_to be_valid
+        expect(em.errors[:role]).to be_present
+      end
+    end
+
     it "enforces uniqueness of material_id scoped to estimate_id" do
       estimate = create(:estimate)
       material = create(:material)

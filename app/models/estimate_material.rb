@@ -2,8 +2,11 @@ class EstimateMaterial < ApplicationRecord
   belongs_to :estimate
   belongs_to :material
 
+  ROLES = %w[locks].freeze
+
   validates :quote_price,  numericality: { greater_than_or_equal_to: 0 }
   validates :material_id,  uniqueness: { scope: :estimate_id }
+  validates :role,         inclusion: { in: ROLES }, allow_nil: true
 
   before_save :compute_cost_with_tax
 
