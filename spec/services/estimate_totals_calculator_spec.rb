@@ -2,7 +2,11 @@ require "rails_helper"
 
 RSpec.describe EstimateTotalsCalculator do
   let(:estimate) do
-    create(:estimate, profit_overhead_percent: BigDecimal("0"), pm_supervision_percent: BigDecimal("0"))
+    create(:estimate,
+           profit_overhead_percent: BigDecimal("0"),
+           pm_supervision_percent:  BigDecimal("0"),
+           tax_rate:                BigDecimal("0"),
+           tax_exempt:              false)
   end
 
   let!(:detail_rate)   { create(:labor_rate, labor_category: "detail",   hourly_rate: BigDecimal("20.00")) }
@@ -31,42 +35,90 @@ RSpec.describe EstimateTotalsCalculator do
   end
 
   describe "#call material cost computation" do
-    context "with exterior_qty and exterior_unit_price set" do
+    context "with exterior_material_id and exterior_qty set" do
+      let!(:material) { create(:material, default_price: BigDecimal("50.00")) }
+      let!(:em)       { create(:estimate_material, estimate: estimate, material: material, quote_price: BigDecimal("50.00")) }
       let!(:li) do
         create(:line_item, estimate: estimate,
-               exterior_qty: BigDecimal("2.0"), exterior_unit_price: BigDecimal("50.00"),
+               exterior_material_id: em.id,
+               exterior_qty: BigDecimal("2.0"),
                quantity: BigDecimal("1"))
       end
 
-      it "computes material_cost_per_unit as exterior_qty * exterior_unit_price" do
+      it "computes material_cost_per_unit as exterior_qty * em.cost_with_tax" do
         result = calculator.call
         expect(result.line_item_results[li.id][:material_cost_per_unit]).to eq(BigDecimal("100.00"))
       end
     end
 
-    context "with banding_unit_price set (no qty multiplier)" do
+    context "with null exterior_material_id" do
       let!(:li) do
         create(:line_item, estimate: estimate,
-               banding_unit_price: BigDecimal("8.50"),
+               exterior_material_id: nil,
+               exterior_qty: BigDecimal("2.0"),
                quantity: BigDecimal("1"))
       end
 
-      it "applies banding_unit_price directly without qty multiplier" do
+      it "contributes zero without raising" do
+        expect { calculator.call }.not_to raise_error
+        result = calculator.call
+        expect(result.line_item_results[li.id][:material_cost_per_unit]).to eq(BigDecimal("0"))
+      end
+    end
+
+    context "with banding_material_id set (no qty multiplier)" do
+      let!(:material) { create(:material, default_price: BigDecimal("8.50")) }
+      let!(:em)       { create(:estimate_material, estimate: estimate, material: material, quote_price: BigDecimal("8.50")) }
+      let!(:li) do
+        create(:line_item, estimate: estimate,
+               banding_material_id: em.id,
+               quantity: BigDecimal("1"))
+      end
+
+      it "applies cost_with_tax directly without qty multiplier" do
         result = calculator.call
         expect(result.line_item_results[li.id][:material_cost_per_unit]).to eq(BigDecimal("8.50"))
       end
     end
 
-    context "with locks_qty and locks_unit_price set" do
+    context "with banding_material_id nil" do
       let!(:li) do
         create(:line_item, estimate: estimate,
-               locks_qty: BigDecimal("3.0"), locks_unit_price: BigDecimal("12.00"),
+               banding_material_id: nil,
                quantity: BigDecimal("1"))
       end
 
-      it "includes locks_qty * locks_unit_price in material cost" do
+      it "contributes zero without raising" do
+        result = calculator.call
+        expect(result.line_item_results[li.id][:material_cost_per_unit]).to eq(BigDecimal("0"))
+      end
+    end
+
+    context "with locks_qty and a locks-role estimate_material" do
+      let!(:material) { create(:material, default_price: BigDecimal("12.00")) }
+      let!(:em)       { create(:estimate_material, estimate: estimate, material: material, quote_price: BigDecimal("12.00"), role: "locks") }
+      let!(:li) do
+        create(:line_item, estimate: estimate,
+               locks_qty: BigDecimal("3.0"),
+               quantity: BigDecimal("1"))
+      end
+
+      it "includes locks_qty * locks_em.cost_with_tax in material cost" do
         result = calculator.call
         expect(result.line_item_results[li.id][:material_cost_per_unit]).to eq(BigDecimal("36.00"))
+      end
+    end
+
+    context "when no locks-role estimate_material exists" do
+      let!(:li) do
+        create(:line_item, estimate: estimate,
+               locks_qty: BigDecimal("2.0"),
+               quantity: BigDecimal("1"))
+      end
+
+      it "contributes zero for locks without raising" do
+        result = calculator.call
+        expect(result.line_item_results[li.id][:material_cost_per_unit]).to eq(BigDecimal("0"))
       end
     end
 
@@ -94,10 +146,15 @@ RSpec.describe EstimateTotalsCalculator do
     end
 
     context "with multiple slots and quantity > 1" do
+      let!(:material) { create(:material, default_price: BigDecimal("50.00")) }
+      let!(:em_ext)   { create(:estimate_material, estimate: estimate, material: material, quote_price: BigDecimal("50.00")) }
+      let!(:mat2)     { create(:material, default_price: BigDecimal("5.00")) }
+      let!(:em_band)  { create(:estimate_material, estimate: estimate, material: mat2, quote_price: BigDecimal("5.00")) }
       let!(:li) do
         create(:line_item, estimate: estimate,
-               exterior_qty: BigDecimal("2.0"), exterior_unit_price: BigDecimal("50.00"),
-               banding_unit_price: BigDecimal("5.00"),
+               exterior_material_id: em_ext.id,
+               exterior_qty: BigDecimal("2.0"),
+               banding_material_id: em_band.id,
                quantity: BigDecimal("3"))
       end
 
@@ -120,9 +177,7 @@ RSpec.describe EstimateTotalsCalculator do
     it "computes labor subtotals per category" do
       result = calculator.call
       subtotals = result.line_item_results[li.id][:labor_subtotals]
-      # detail: 1.0 * 20.00 * 2 = 40.00
       expect(subtotals["detail"]).to eq(BigDecimal("40.00"))
-      # assembly: 0.5 * 25.00 * 2 = 25.00
       expect(subtotals["assembly"]).to eq(BigDecimal("25.00"))
     end
   end
@@ -146,28 +201,38 @@ RSpec.describe EstimateTotalsCalculator do
   end
 
   describe "#call grand_non_burdened_total" do
+    let!(:material1) { create(:material, default_price: BigDecimal("100.00")) }
+    let!(:material2) { create(:material, default_price: BigDecimal("50.00")) }
+    let!(:em1)       { create(:estimate_material, estimate: estimate, material: material1, quote_price: BigDecimal("100.00")) }
+    let!(:em2)       { create(:estimate_material, estimate: estimate, material: material2, quote_price: BigDecimal("50.00")) }
+
     let!(:li1) do
       create(:line_item, estimate: estimate,
-             exterior_qty: BigDecimal("1.0"), exterior_unit_price: BigDecimal("100.00"),
+             exterior_material_id: em1.id,
+             exterior_qty: BigDecimal("1.0"),
              quantity: BigDecimal("1"))
     end
     let!(:li2) do
       create(:line_item, estimate: estimate,
-             exterior_qty: BigDecimal("2.0"), exterior_unit_price: BigDecimal("50.00"),
+             exterior_material_id: em2.id,
+             exterior_qty: BigDecimal("2.0"),
              quantity: BigDecimal("1"))
     end
 
     it "sums non_burdened_total across all line items" do
       result = described_class.new(preloaded_estimate).call
-      # li1 material: 1.0 * 100 = 100; li2 material: 2.0 * 50 = 100; total = 200
+      # li1: 1.0 * 100 = 100; li2: 2.0 * 50 = 100; total = 200
       expect(result.grand_non_burdened_total).to eq(BigDecimal("200.00"))
     end
   end
 
   describe "#call uses BigDecimal arithmetic" do
+    let!(:material) { create(:material, default_price: BigDecimal("3.0")) }
+    let!(:em)       { create(:estimate_material, estimate: estimate, material: material, quote_price: BigDecimal("3.0")) }
     let!(:li) do
       create(:line_item, estimate: estimate,
-             exterior_qty: BigDecimal("1.3333"), exterior_unit_price: BigDecimal("3.0"),
+             exterior_material_id: em.id,
+             exterior_qty: BigDecimal("1.3333"),
              quantity: BigDecimal("1"))
     end
 
@@ -175,7 +240,6 @@ RSpec.describe EstimateTotalsCalculator do
       result = calculator.call
       mat = result.line_item_results[li.id][:material_cost_per_unit]
       expect(mat).to be_a(BigDecimal)
-      # 1.3333 * 3.0 = 3.9999 exactly in BigDecimal
       expect(mat).to eq(BigDecimal("1.3333") * BigDecimal("3.0"))
     end
   end
@@ -184,8 +248,7 @@ RSpec.describe EstimateTotalsCalculator do
     let!(:li1) { create(:line_item, estimate: estimate, quantity: BigDecimal("1")) }
     let!(:li2) { create(:line_item, estimate: estimate, quantity: BigDecimal("1")) }
 
-    it "fires exactly one database query (LaborRate.all) regardless of line item count" do
-      # Pre-load the estimate so preloading queries don't count
+    it "fires at most 2 database queries (estimate_materials + labor_rates) regardless of line item count" do
       loaded = preloaded_estimate
 
       query_count = 0
@@ -198,7 +261,6 @@ RSpec.describe EstimateTotalsCalculator do
         described_class.new(loaded).call
       end
 
-      # Allow up to 2: LaborRate.all plus one spare for adapter bookkeeping
       expect(query_count).to be <= 2
     end
   end

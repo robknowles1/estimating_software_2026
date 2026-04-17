@@ -37,7 +37,6 @@ RSpec.describe "Line Items", type: :system do
       login
       visit new_estimate_line_item_path(estimate)
 
-      # Leave product selector on the blank/freeform option
       fill_in "line_item[description]", with: "Custom Freeform Cabinet"
       fill_in "line_item[quantity]", with: "2"
       find("input[type='submit']").click
@@ -59,7 +58,6 @@ RSpec.describe "Line Items", type: :system do
       visit new_estimate_line_item_path(estimate)
 
       select "MDF Base 2-door", from: "line_item[product_id]"
-      # Clear and override the description that was pre-filled from the product
       fill_in "line_item[description]", with: "Custom Override Description"
       fill_in "line_item[quantity]", with: "1"
       find("input[type='submit']").click
@@ -69,6 +67,30 @@ RSpec.describe "Line Items", type: :system do
 
       line_item = estimate.line_items.find_by!(description: "Custom Override Description")
       expect(line_item.description).to eq("Custom Override Description")
+    end
+  end
+
+  describe "applying a product sets _qty fields but leaves _material_id nil" do
+    it "sets exterior_qty via apply_to and exterior_material_id stays nil" do
+      product = create(:product, name: "MDF Base 2-door", category: "Base Cabinets", unit: "EA",
+                       exterior_qty: BigDecimal("2.0"))
+      login
+      visit new_estimate_line_item_path(estimate)
+
+      select "MDF Base 2-door", from: "line_item[product_id]"
+      fill_in "line_item[description]", with: "Test Cabinet"
+      fill_in "line_item[quantity]", with: "1"
+
+      # Wait for JS to prefill fields (product_selector_controller#fill)
+      expect(page).to have_field("line_item[exterior_qty]", with: "2.0", wait: 3)
+
+      find("input[type='submit']").click
+
+      expect(page).to have_current_path(edit_estimate_path(estimate), wait: 5)
+
+      li = estimate.line_items.find_by!(description: "Test Cabinet")
+      expect(li.exterior_qty).to eq(BigDecimal("2.0"))
+      expect(li.exterior_material_id).to be_nil
     end
   end
 end

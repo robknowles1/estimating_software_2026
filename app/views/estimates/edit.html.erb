@@ -1,3 +1,15 @@
+<%# Materials setup banner — advisory only %>
+<% if @estimate.estimate_materials.none? %>
+  <div class="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 mb-6 flex items-center justify-between">
+    <p class="text-sm text-amber-800">
+      <%= t("estimates.materials_banner.message") %>
+    </p>
+    <%= link_to t("estimates.materials_banner.link"),
+        estimate_estimate_materials_path(@estimate),
+        class: "text-sm font-semibold text-amber-700 hover:text-amber-900 whitespace-nowrap ml-4 underline" %>
+  </div>
+<% end %>
+
 <div class="grid grid-cols-3 gap-6">
   <%# Metadata / edit form %>
   <div class="col-span-1">

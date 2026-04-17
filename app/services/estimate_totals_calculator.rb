@@ -5,8 +5,6 @@ class EstimateTotalsCalculator
     :burden_multiplier         # BigDecimal
   )
 
-  # Slots with qty multiplier (qty * unit_price)
-  TYPED_SLOTS = %w[exterior interior interior2 back drawers pulls hinges slides locks].freeze
   LABOR_CATEGORIES = %w[detail mill assembly customs finish install].freeze
 
   def initialize(estimate)
@@ -14,7 +12,11 @@ class EstimateTotalsCalculator
   end
 
   def call
-    # One query — labor rates indexed by category
+    estimate_materials_by_id = EstimateMaterial
+      .where(estimate_id: @estimate.id)
+      .index_by(&:id)
+
+    locks_em    = estimate_materials_by_id.values.find { |em| em.role == "locks" }
     labor_rates = LaborRate.all.index_by(&:labor_category)
 
     burden_multiplier        = calculate_burden_multiplier
@@ -23,25 +25,23 @@ class EstimateTotalsCalculator
 
     @estimate.line_items.each do |li|
       qty = li.quantity.to_d
-
-      # Material cost per unit
       material_cost_per_unit = BigDecimal("0")
 
-      TYPED_SLOTS.each do |slot|
-        slot_qty   = li.public_send(:"#{slot}_qty").to_d
-        slot_price = li.public_send(:"#{slot}_unit_price").to_d
-        material_cost_per_unit += slot_qty * slot_price
+      %w[exterior interior interior2 back drawers pulls hinges slides].each do |slot|
+        slot_qty = li.public_send(:"#{slot}_qty").to_d
+        em       = estimate_materials_by_id[li.public_send(:"#{slot}_material_id")]
+        material_cost_per_unit += slot_qty * em&.cost_with_tax.to_d
       end
 
-      # Banding — flat per-unit, no qty multiplier
-      material_cost_per_unit += li.banding_unit_price.to_d
+      banding_em = estimate_materials_by_id[li.banding_material_id]
+      material_cost_per_unit += banding_em&.cost_with_tax.to_d
 
-      # Other freeform cost per unit
+      material_cost_per_unit += li.locks_qty.to_d * locks_em&.cost_with_tax.to_d
+
       material_cost_per_unit += li.other_material_cost.to_d
 
       subtotal_materials = material_cost_per_unit * qty
 
-      # Labor subtotals
       labor_subtotals = {}
       LABOR_CATEGORIES.each do |cat|
         hrs  = li.public_send(:"#{cat}_hrs").to_d
@@ -49,9 +49,7 @@ class EstimateTotalsCalculator
         labor_subtotals[cat] = hrs * rate * qty
       end
 
-      # Equipment
-      equipment_total = li.equipment_hrs.to_d * li.equipment_rate.to_d * qty
-
+      equipment_total    = li.equipment_hrs.to_d * li.equipment_rate.to_d * qty
       non_burdened_total = subtotal_materials + labor_subtotals.values.sum + equipment_total
 
       line_item_results[li.id] = {

@@ -36,6 +36,7 @@ en:
     products: "Products"
     clients: "Clients"
     users: "Users"
+    materials: "Materials"
     sign_out: "Sign Out"
 
   flash:
@@ -165,6 +166,9 @@ en:
       errors:
         one: "1 error prohibited this estimate from being saved:"
         other: "%{count} errors prohibited this estimate from being saved:"
+    materials_banner:
+      message: "Add materials before pricing products — material costs will be zero until materials are set up."
+      link: "Set up price book"
 
   activerecord:
     attributes:
@@ -310,6 +314,119 @@ en:
       errors:
         one: "1 error prohibited this client from being saved:"
         other: "%{count} errors prohibited this client from being saved:"
+
+  materials:
+    create:
+      notice: "Material was successfully created."
+    update:
+      notice: "Material was successfully updated."
+    destroy:
+      notice: "Material was archived."
+    index:
+      title: "Materials Library"
+      subtitle: "Manage the global catalog of materials with default prices."
+      new_button: "New Material"
+      empty_title: "No materials yet"
+      empty_description: "Add the first material to get started."
+      col_name: "Name"
+      col_description: "Description"
+      col_category: "Category"
+      col_unit: "Unit"
+      col_default_price: "Default Price"
+      col_actions: "Actions"
+      archive_button: "Archive"
+      confirm_archive: "Archive %{name}? It will no longer appear in the active library."
+    new:
+      title: "New Material"
+      subtitle: "Add a material to the global library."
+    edit:
+      title: "Edit Material"
+      subtitle: "Update %{name}."
+    form:
+      basic_heading: "Material Details"
+      cancel: "Cancel"
+      category_sheet_good: "Sheet Good"
+      category_hardware: "Hardware"
+      errors:
+        one: "1 error prohibited this material from being saved:"
+        other: "%{count} errors prohibited this material from being saved:"
+
+  estimate_materials:
+    create:
+      notice: "Material added to price book."
+      already_present: "That material is already in this estimate's price book."
+    update:
+      notice: "Price updated."
+    destroy:
+      notice: "Material removed from price book."
+    index:
+      title: "Price Book"
+      subtitle: "Materials and job-specific prices for this estimate."
+      add_button: "Add Material"
+      apply_set_button: "Apply Set"
+      empty_title: "No materials yet"
+      empty_description: "Add materials to set up the price book for this estimate."
+      col_name: "Material"
+      col_category: "Category"
+      col_unit: "Unit"
+      col_quote_price: "Quote Price"
+      col_cost_with_tax: "Cost (with tax)"
+      col_role: "Role"
+      col_actions: "Actions"
+      locks_role_badge: "Locks"
+    new:
+      title: "Add Material"
+      subtitle: "Search the library or create a new material."
+      search_tab: "Search Library"
+      create_tab: "Create New"
+      search_placeholder: "Search by name or description..."
+      search_button: "Search"
+      no_results: "No materials found matching your search."
+      select_button: "Add to Price Book"
+      default_price_hint: "This will become the initial quote price for this estimate."
+    edit:
+      title: "Edit Price"
+      subtitle: "Update quote price for %{name}."
+    form:
+      quote_price_label: "Quote Price"
+      role_label: "Role"
+      role_blank: "— none —"
+      role_locks: "Locks"
+      cancel: "Cancel"
+      errors:
+        one: "1 error prohibited this from being saved:"
+        other: "%{count} errors prohibited this from being saved:"
+
+  material_sets:
+    create:
+      notice: "Material set was successfully created."
+    update:
+      notice: "Material set was successfully updated."
+    destroy:
+      notice: "Material set was successfully deleted."
+    apply_to_estimate:
+      notice: "Applied set: %{added} added, %{skipped} already present."
+    index:
+      title: "Material Sets"
+      subtitle: "Named groups of materials for quick price book setup."
+      new_button: "New Set"
+      empty_title: "No material sets yet"
+      empty_description: "Create a set to bulk-add materials to an estimate."
+      col_name: "Name"
+      col_items: "Items"
+      col_actions: "Actions"
+    new:
+      title: "New Material Set"
+      subtitle: "Create a named group of library materials."
+    edit:
+      title: "Edit Material Set"
+      subtitle: "Update %{name}."
+    form:
+      materials_heading: "Library Materials"
+      cancel: "Cancel"
+      errors:
+        one: "1 error prohibited this set from being saved:"
+        other: "%{count} errors prohibited this set from being saved:"
 
   contacts:
     create:

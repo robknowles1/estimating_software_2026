@@ -10,9 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_13_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_13_100001) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "plpgsql"
+  enable_extension "pg_catalog.plpgsql"
 
   create_table "clients", force: :cascade do |t|
     t.string "address"
@@ -37,6 +37,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_000001) do
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_contacts_on_client_id"
     t.index ["client_id"], name: "index_contacts_on_client_id_primary", unique: true, where: "(is_primary = true)"
+  end
+
+  create_table "estimate_materials", force: :cascade do |t|
+    t.decimal "cost_with_tax", precision: 12, scale: 4, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.bigint "estimate_id", null: false
+    t.bigint "material_id", null: false
+    t.decimal "quote_price", precision: 12, scale: 4, default: "0.0", null: false
+    t.string "role"
+    t.datetime "updated_at", null: false
+    t.index ["estimate_id", "material_id"], name: "index_estimate_materials_on_estimate_id_and_material_id", unique: true
+    t.index ["estimate_id"], name: "index_estimate_materials_on_estimate_id"
   end
 
   create_table "estimates", force: :cascade do |t|
@@ -86,49 +98,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_000001) do
 
   create_table "line_items", force: :cascade do |t|
     t.decimal "assembly_hrs", precision: 10, scale: 4
-    t.string "back_description"
+    t.bigint "back_material_id"
     t.decimal "back_qty", precision: 10, scale: 4
-    t.decimal "back_unit_price", precision: 12, scale: 4
-    t.string "banding_description"
-    t.decimal "banding_unit_price", precision: 12, scale: 4
+    t.bigint "banding_material_id"
     t.datetime "created_at", null: false
     t.decimal "customs_hrs", precision: 10, scale: 4
     t.string "description", null: false
     t.decimal "detail_hrs", precision: 10, scale: 4
-    t.string "drawers_description"
+    t.bigint "drawers_material_id"
     t.decimal "drawers_qty", precision: 10, scale: 4
-    t.decimal "drawers_unit_price", precision: 12, scale: 4
     t.decimal "equipment_hrs", precision: 10, scale: 4
     t.decimal "equipment_rate", precision: 10, scale: 2
     t.bigint "estimate_id", null: false
-    t.string "exterior_description"
+    t.bigint "exterior_material_id"
     t.decimal "exterior_qty", precision: 10, scale: 4
-    t.decimal "exterior_unit_price", precision: 12, scale: 4
     t.decimal "finish_hrs", precision: 10, scale: 4
-    t.string "hinges_description"
+    t.bigint "hinges_material_id"
     t.decimal "hinges_qty", precision: 10, scale: 4
-    t.decimal "hinges_unit_price", precision: 12, scale: 4
     t.decimal "install_hrs", precision: 10, scale: 4
-    t.string "interior2_description"
+    t.bigint "interior2_material_id"
     t.decimal "interior2_qty", precision: 10, scale: 4
-    t.decimal "interior2_unit_price", precision: 12, scale: 4
-    t.string "interior_description"
+    t.bigint "interior_material_id"
     t.decimal "interior_qty", precision: 10, scale: 4
-    t.decimal "interior_unit_price", precision: 12, scale: 4
-    t.string "locks_description"
     t.decimal "locks_qty", precision: 10, scale: 4
-    t.decimal "locks_unit_price", precision: 12, scale: 4
     t.decimal "mill_hrs", precision: 10, scale: 4
     t.decimal "other_material_cost", precision: 10, scale: 2
     t.integer "position"
     t.bigint "product_id"
-    t.string "pulls_description"
+    t.bigint "pulls_material_id"
     t.decimal "pulls_qty", precision: 10, scale: 4
-    t.decimal "pulls_unit_price", precision: 12, scale: 4
     t.decimal "quantity", precision: 10, scale: 4, default: "1.0", null: false
-    t.string "slides_description"
+    t.bigint "slides_material_id"
     t.decimal "slides_qty", precision: 10, scale: 4
-    t.decimal "slides_unit_price", precision: 12, scale: 4
     t.string "unit", default: "EA"
     t.datetime "updated_at", null: false
     t.index ["estimate_id", "position"], name: "index_line_items_on_estimate_id_and_position"
@@ -136,48 +137,55 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_000001) do
     t.index ["product_id"], name: "index_line_items_on_product_id"
   end
 
+  create_table "material_set_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "material_id", null: false
+    t.bigint "material_set_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["material_set_id", "material_id"], name: "index_material_set_items_on_material_set_id_and_material_id", unique: true
+    t.index ["material_set_id"], name: "index_material_set_items_on_material_set_id"
+  end
+
+  create_table "material_sets", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "materials", force: :cascade do |t|
+    t.string "category", null: false
+    t.datetime "created_at", null: false
+    t.decimal "default_price", precision: 12, scale: 4, default: "0.0", null: false
+    t.string "description"
+    t.datetime "discarded_at"
+    t.string "name", null: false
+    t.string "unit"
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_materials_on_name"
+  end
+
   create_table "products", force: :cascade do |t|
     t.decimal "assembly_hrs", precision: 8, scale: 4
-    t.string "back_description"
     t.decimal "back_qty", precision: 10, scale: 4
-    t.decimal "back_unit_price", precision: 12, scale: 4
-    t.string "banding_description"
-    t.decimal "banding_unit_price", precision: 12, scale: 4
     t.string "category"
     t.datetime "created_at", null: false
     t.decimal "customs_hrs", precision: 8, scale: 4
     t.decimal "detail_hrs", precision: 8, scale: 4
-    t.string "drawers_description"
     t.decimal "drawers_qty", precision: 10, scale: 4
-    t.decimal "drawers_unit_price", precision: 12, scale: 4
     t.decimal "equipment_hrs", precision: 8, scale: 4
     t.decimal "equipment_rate", precision: 10, scale: 2
-    t.string "exterior_description"
     t.decimal "exterior_qty", precision: 10, scale: 4
-    t.decimal "exterior_unit_price", precision: 12, scale: 4
     t.decimal "finish_hrs", precision: 8, scale: 4
-    t.string "hinges_description"
     t.decimal "hinges_qty", precision: 10, scale: 4
-    t.decimal "hinges_unit_price", precision: 12, scale: 4
     t.decimal "install_hrs", precision: 8, scale: 4
-    t.string "interior2_description"
     t.decimal "interior2_qty", precision: 10, scale: 4
-    t.decimal "interior2_unit_price", precision: 12, scale: 4
-    t.string "interior_description"
     t.decimal "interior_qty", precision: 10, scale: 4
-    t.decimal "interior_unit_price", precision: 12, scale: 4
-    t.string "locks_description"
     t.decimal "locks_qty", precision: 10, scale: 4
-    t.decimal "locks_unit_price", precision: 12, scale: 4
     t.decimal "mill_hrs", precision: 8, scale: 4
     t.string "name", null: false
     t.decimal "other_material_cost", precision: 12, scale: 2
-    t.string "pulls_description"
     t.decimal "pulls_qty", precision: 10, scale: 4
-    t.decimal "pulls_unit_price", precision: 12, scale: 4
-    t.string "slides_description"
     t.decimal "slides_qty", precision: 10, scale: 4
-    t.decimal "slides_unit_price", precision: 12, scale: 4
     t.string "unit", default: "EA", null: false
     t.datetime "updated_at", null: false
     t.index ["category"], name: "index_products_on_category"
@@ -194,8 +202,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_000001) do
   end
 
   add_foreign_key "contacts", "clients"
+  add_foreign_key "estimate_materials", "estimates", on_delete: :cascade
+  add_foreign_key "estimate_materials", "materials"
   add_foreign_key "estimates", "clients"
   add_foreign_key "estimates", "users", column: "created_by_user_id"
+  add_foreign_key "line_items", "estimate_materials", column: "back_material_id", on_delete: :nullify
+  add_foreign_key "line_items", "estimate_materials", column: "banding_material_id", on_delete: :nullify
+  add_foreign_key "line_items", "estimate_materials", column: "drawers_material_id", on_delete: :nullify
+  add_foreign_key "line_items", "estimate_materials", column: "exterior_material_id", on_delete: :nullify
+  add_foreign_key "line_items", "estimate_materials", column: "hinges_material_id", on_delete: :nullify
+  add_foreign_key "line_items", "estimate_materials", column: "interior2_material_id", on_delete: :nullify
+  add_foreign_key "line_items", "estimate_materials", column: "interior_material_id", on_delete: :nullify
+  add_foreign_key "line_items", "estimate_materials", column: "pulls_material_id", on_delete: :nullify
+  add_foreign_key "line_items", "estimate_materials", column: "slides_material_id", on_delete: :nullify
   add_foreign_key "line_items", "estimates", on_delete: :cascade
   add_foreign_key "line_items", "products", on_delete: :nullify
+  add_foreign_key "material_set_items", "material_sets", on_delete: :cascade
+  add_foreign_key "material_set_items", "materials"
 end

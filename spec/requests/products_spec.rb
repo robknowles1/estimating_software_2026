@@ -48,8 +48,6 @@ RSpec.describe "Products", type: :request do
           name: "MDF Base 2-door",
           category: "Base Cabinets",
           unit: "EA",
-          exterior_description: "MDF",
-          exterior_unit_price: "45.00",
           exterior_qty: "2.5",
           detail_hrs: "0.75"
         }
@@ -70,8 +68,6 @@ RSpec.describe "Products", type: :request do
         product = Product.last
         expect(product.name).to eq("MDF Base 2-door")
         expect(product.category).to eq("Base Cabinets")
-        expect(product.exterior_description).to eq("MDF")
-        expect(product.exterior_unit_price).to eq(BigDecimal("45.00"))
         expect(product.exterior_qty).to eq(BigDecimal("2.5"))
         expect(product.detail_hrs).to eq(BigDecimal("0.75"))
       end

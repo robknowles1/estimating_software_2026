@@ -2,12 +2,20 @@ Rails.application.routes.draw do
   resource  :session,  only: [ :new, :create, :destroy ]
   resources :users,    only: [ :index, :new, :create, :edit, :update ]
   resources :products
+  resources :materials
+  resources :material_sets do
+    resources :material_set_items, only: [ :create, :destroy ]
+    member do
+      post :apply_to_estimate
+    end
+  end
   resources :estimates do
     resources :line_items, only: [ :new, :create, :edit, :update, :destroy ] do
       member do
         patch :move
       end
     end
+    resources :estimate_materials, only: [ :index, :new, :create, :edit, :update, :destroy ]
   end
   resources :clients do
     resources :contacts, only: [ :new, :create, :edit, :update, :destroy ]

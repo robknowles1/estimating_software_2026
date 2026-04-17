@@ -7,6 +7,8 @@ RSpec.describe Estimate, type: :model do
     it { is_expected.to belong_to(:client) }
     it { is_expected.to belong_to(:created_by).class_name("User") }
     it { is_expected.to have_many(:line_items).dependent(:destroy) }
+    it { is_expected.to have_many(:estimate_materials).dependent(:destroy) }
+    it { is_expected.to have_many(:materials).through(:estimate_materials) }
   end
 
   describe "validations" do
@@ -93,6 +95,39 @@ RSpec.describe Estimate, type: :model do
       estimate.update!(title: "Updated Title")
 
       expect(estimate.reload.tax_exempt).to be true
+    end
+  end
+
+  describe "estimate_materials — no auto-seeding" do
+    it "creates with zero estimate_materials rows" do
+      estimate = create(:estimate)
+      expect(estimate.estimate_materials.count).to eq(0)
+    end
+  end
+
+  describe "#recalculate_material_costs" do
+    let!(:estimate) { create(:estimate, tax_rate: BigDecimal("0.10"), tax_exempt: false) }
+    let!(:material) { create(:material, default_price: BigDecimal("100.00")) }
+    let!(:em)       { create(:estimate_material, estimate: estimate, material: material, quote_price: BigDecimal("100.00")) }
+
+    it "updates cost_with_tax when tax_rate changes" do
+      expect {
+        estimate.update!(tax_rate: BigDecimal("0.15"))
+      }.to change { em.reload.cost_with_tax }
+        .from(BigDecimal("110.00"))
+        .to(BigDecimal("115.00"))
+    end
+
+    it "sets cost_with_tax = quote_price when tax_exempt becomes true" do
+      estimate.update!(tax_exempt: true)
+      expect(em.reload.cost_with_tax).to eq(BigDecimal("100.00"))
+    end
+
+    it "does not trigger when an unrelated field changes" do
+      original_cost = em.reload.cost_with_tax
+      expect(EstimateMaterial).not_to receive(:update_all)
+      estimate.update!(title: "New Title")
+      expect(em.reload.cost_with_tax).to eq(original_cost)
     end
   end
 

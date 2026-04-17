@@ -1,0 +1,10 @@
+<div class="max-w-2xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-900"><%= t(".title") %></h1>
+    <p class="text-sm text-slate-500 mt-1"><%= t(".subtitle", name: @material.name) %></p>
+  </div>
+
+  <%= form_with model: @material, data: { turbo: false } do |f| %>
+    <%= render "form", f: f %>
+  <% end %>
+</div>
