@@ -58,4 +58,23 @@ RSpec.describe "MaterialSets", type: :request do
     post apply_to_estimate_material_set_path(ms), params: { estimate_id: estimate.id }
     expect(response).to redirect_to(new_session_path)
   end
+
+  describe "POST /material_sets (create) — discarded material in submission" do
+    it "does not link a discarded material when its ID is submitted" do
+      discarded = create(:material, discarded_at: Time.current)
+      active    = create(:material)
+
+      post material_sets_path, params: {
+        material_set: {
+          name:         "Mixed Set",
+          material_ids: [ discarded.id.to_s, active.id.to_s ]
+        }
+      }
+
+      ms = MaterialSet.find_by!(name: "Mixed Set")
+      linked_ids = ms.material_set_items.pluck(:material_id)
+      expect(linked_ids).to include(active.id)
+      expect(linked_ids).not_to include(discarded.id)
+    end
+  end
 end

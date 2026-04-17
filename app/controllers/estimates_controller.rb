@@ -49,7 +49,7 @@ class EstimatesController < ApplicationController
   end
 
   def edit
-    @estimate = Estimate.includes(:client, line_items: :product).find(params[:id])
+    @estimate = Estimate.includes(:client, :estimate_materials, line_items: :product).find(params[:id])
     @clients  = Client.alphabetical
     @totals   = EstimateTotalsCalculator.new(@estimate).call
   end
@@ -58,7 +58,7 @@ class EstimatesController < ApplicationController
     if @estimate.update(estimate_params)
       redirect_to edit_estimate_path(@estimate), notice: t(".notice")
     else
-      @estimate = Estimate.includes(:client, line_items: :product).find(@estimate.id)
+      @estimate = Estimate.includes(:client, :estimate_materials, line_items: :product).find(@estimate.id)
       @clients  = Client.alphabetical
       @totals   = EstimateTotalsCalculator.new(@estimate).call
       render :edit, status: :unprocessable_content

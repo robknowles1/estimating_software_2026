@@ -177,6 +177,24 @@ RSpec.describe "EstimateMaterials", type: :request do
       }.not_to change(Material, :count)
       expect(response).to have_http_status(:unprocessable_content)
     end
+
+    it "rolls back the Material when EstimateMaterial save fails" do
+      # Force the EstimateMaterial save to fail (simulates e.g. a uniqueness violation on the EM
+      # side after the material has already been persisted within the same transaction).
+      allow_any_instance_of(EstimateMaterial).to receive(:save).and_return(false)
+
+      params = {
+        material: {
+          name:          "Orphan Risk Material",
+          category:      "sheet_good",
+          default_price: "20.00",
+          unit:          "sheet"
+        }
+      }
+      expect {
+        post estimate_estimate_materials_path(estimate), params: params
+      }.not_to change(Material, :count)
+    end
   end
 
   describe "unauthenticated access" do

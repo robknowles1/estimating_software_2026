@@ -79,13 +79,16 @@ class MaterialSetsController < ApplicationController
   end
 
   # Replaces material_set_items to match the submitted material_ids checkboxes.
+  # Only active (non-discarded) material IDs are processed; discarded material
+  # IDs in the submission are silently ignored.
   def sync_material_set_items
     submitted_ids = Array(params.dig(:material_set, :material_ids)).map(&:to_i).reject(&:zero?)
     return if submitted_ids.empty? && params.dig(:material_set, :material_ids).nil?
 
+    valid_ids    = Material.active.where(id: submitted_ids).pluck(:id)
     existing_ids = @material_set.material_set_items.pluck(:material_id)
-    to_add    = submitted_ids - existing_ids
-    to_remove = existing_ids - submitted_ids
+    to_add    = valid_ids - existing_ids
+    to_remove = existing_ids - valid_ids
 
     to_add.each    { |mid| @material_set.material_set_items.create!(material_id: mid) }
     to_remove.each { |mid| @material_set.material_set_items.find_by(material_id: mid)&.destroy }

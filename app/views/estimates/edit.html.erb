@@ -1,5 +1,5 @@
 <%# Materials setup banner — advisory only %>
-<% if @estimate.estimate_materials.none? %>
+<% if @estimate.estimate_materials.size.zero? %>
   <div class="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 mb-6 flex items-center justify-between">
     <p class="text-sm text-amber-800">
       <%= t("estimates.materials_banner.message") %>

@@ -11,12 +11,16 @@ class Material < ApplicationRecord
 
   # Soft-deletes the material. Returns false (with a base error) if any
   # estimate_materials rows reference it — those prices must remain intact.
+  # Uses with_lock to prevent a race condition where a concurrent request
+  # inserts an estimate_materials row between the check and the update.
   def discard!
-    if estimate_materials.any?
-      errors.add(:base, :in_use_on_estimates,
-                 message: "cannot be archived because it is in use on one or more estimates")
-      return false
+    with_lock do
+      if estimate_materials.any?
+        errors.add(:base, :in_use_on_estimates,
+                   message: "cannot be archived because it is in use on one or more estimates")
+        return false
+      end
+      update_column(:discarded_at, Time.current)
     end
-    update(discarded_at: Time.current)
   end
 end
