@@ -17,30 +17,32 @@
           </select>
         </form>
         <script type="module">
-          document.addEventListener("DOMContentLoaded", () => {
+          const initializeApplySetDropdown = () => {
             const sel = document.getElementById("material_set_select");
-            if (sel) {
-              sel.addEventListener("change", () => {
-                if (sel.value) {
-                  const form = document.createElement("form");
-                  form.method = "post";
-                  form.action = sel.value;
-                  const csrf = document.createElement("input");
-                  csrf.type = "hidden";
-                  csrf.name = document.querySelector("meta[name='csrf-param']").content;
-                  csrf.value = document.querySelector("meta[name='csrf-token']").content;
-                  const estimateInput = document.createElement("input");
-                  estimateInput.type = "hidden";
-                  estimateInput.name = "estimate_id";
-                  estimateInput.value = "<%= @estimate.id %>";
-                  form.appendChild(csrf);
-                  form.appendChild(estimateInput);
-                  document.body.appendChild(form);
-                  form.submit();
-                }
-              });
-            }
-          });
+            if (!sel || sel.dataset.applySetInitialized === "true") return;
+            sel.dataset.applySetInitialized = "true";
+            sel.addEventListener("change", () => {
+              if (sel.value) {
+                const form = document.createElement("form");
+                form.method = "post";
+                form.action = sel.value;
+                const csrf = document.createElement("input");
+                csrf.type = "hidden";
+                csrf.name = document.querySelector("meta[name='csrf-param']").content;
+                csrf.value = document.querySelector("meta[name='csrf-token']").content;
+                const estimateInput = document.createElement("input");
+                estimateInput.type = "hidden";
+                estimateInput.name = "estimate_id";
+                estimateInput.value = "<%= @estimate.id %>";
+                form.appendChild(csrf);
+                form.appendChild(estimateInput);
+                document.body.appendChild(form);
+                form.submit();
+              }
+            });
+          };
+
+          document.addEventListener("turbo:load", initializeApplySetDropdown);
         </script>
       <% end %>
       <%= link_to t(".add_button"), new_estimate_estimate_material_path(@estimate),

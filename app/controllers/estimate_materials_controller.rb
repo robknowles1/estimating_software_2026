@@ -24,7 +24,7 @@ class EstimateMaterialsController < ApplicationController
       begin
         if em.save
           redirect_to estimate_estimate_materials_path(@estimate), notice: t(".notice")
-        elsif em.errors[:material_id].any? { |msg| msg.match?(/taken/i) }
+        elsif em.errors.details[:material_id].any? { |e| e[:error] == :taken }
           redirect_to estimate_estimate_materials_path(@estimate), notice: t(".already_present")
         else
           @mode = "search"
