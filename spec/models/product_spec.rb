@@ -15,66 +15,66 @@ RSpec.describe Product, type: :model do
   describe "#apply_to(line_item)" do
     let(:product) do
       build(:product,
-        name:                "MDF Base 2-door",
-        unit:                "EA",
-        exterior_description: "MDF sheet",
-        exterior_unit_price:  BigDecimal("45.00"),
-        exterior_qty:         BigDecimal("2.0"),
-        interior_description: "Melamine",
-        interior_unit_price:  BigDecimal("30.00"),
-        interior_qty:         BigDecimal("1.5"),
-        banding_description:  "Edge tape",
-        banding_unit_price:   BigDecimal("5.00"),
-        locks_description:    "Lock set",
-        locks_unit_price:     BigDecimal("12.50"),
-        locks_qty:            BigDecimal("2.0"),
-        detail_hrs:           BigDecimal("0.75"),
-        mill_hrs:             BigDecimal("1.25"),
-        assembly_hrs:         BigDecimal("0.50"),
-        customs_hrs:          BigDecimal("0.00"),
-        finish_hrs:           BigDecimal("0.25"),
-        install_hrs:          BigDecimal("0.10"),
-        other_material_cost:  BigDecimal("8.00"),
-        equipment_hrs:        BigDecimal("0.50"),
-        equipment_rate:       BigDecimal("25.00"))
+        name:               "MDF Base 2-door",
+        unit:               "EA",
+        exterior_qty:       BigDecimal("2.0"),
+        interior_qty:       BigDecimal("1.5"),
+        interior2_qty:      BigDecimal("0.5"),
+        back_qty:           BigDecimal("1.0"),
+        drawers_qty:        BigDecimal("3.0"),
+        pulls_qty:          BigDecimal("2.0"),
+        hinges_qty:         BigDecimal("4.0"),
+        slides_qty:         BigDecimal("2.0"),
+        locks_qty:          BigDecimal("1.0"),
+        detail_hrs:         BigDecimal("0.75"),
+        mill_hrs:           BigDecimal("1.25"),
+        assembly_hrs:       BigDecimal("0.50"),
+        customs_hrs:        BigDecimal("0.00"),
+        finish_hrs:         BigDecimal("0.25"),
+        install_hrs:        BigDecimal("0.10"),
+        other_material_cost: BigDecimal("8.00"),
+        equipment_hrs:      BigDecimal("0.50"),
+        equipment_rate:     BigDecimal("25.00"))
     end
 
     let(:line_item) { build(:line_item) }
 
     before { product.apply_to(line_item) }
 
-    it "copies exterior_description" do
-      expect(line_item.exterior_description).to eq("MDF sheet")
-    end
-
-    it "copies exterior_unit_price" do
-      expect(line_item.exterior_unit_price).to eq(BigDecimal("45.00"))
-    end
-
     it "copies exterior_qty" do
       expect(line_item.exterior_qty).to eq(BigDecimal("2.0"))
     end
 
-    it "copies interior description and price" do
-      expect(line_item.interior_description).to eq("Melamine")
-      expect(line_item.interior_unit_price).to eq(BigDecimal("30.00"))
+    it "copies interior_qty" do
+      expect(line_item.interior_qty).to eq(BigDecimal("1.5"))
     end
 
-    it "copies banding description and unit_price" do
-      expect(line_item.banding_description).to eq("Edge tape")
-      expect(line_item.banding_unit_price).to eq(BigDecimal("5.00"))
+    it "copies interior2_qty" do
+      expect(line_item.interior2_qty).to eq(BigDecimal("0.5"))
     end
 
-    it "does not assign banding_qty (banding has no qty column)" do
-      li = build(:line_item)
-      expect { product.apply_to(li) }.not_to raise_error
-      expect(li.respond_to?(:banding_qty)).to be(false)
+    it "copies back_qty" do
+      expect(line_item.back_qty).to eq(BigDecimal("1.0"))
     end
 
-    it "copies locks description, unit_price, and qty" do
-      expect(line_item.locks_description).to eq("Lock set")
-      expect(line_item.locks_unit_price).to eq(BigDecimal("12.50"))
-      expect(line_item.locks_qty).to eq(BigDecimal("2.0"))
+    it "copies drawers_qty" do
+      expect(line_item.drawers_qty).to eq(BigDecimal("3.0"))
+    end
+
+    it "copies pulls_qty" do
+      expect(line_item.pulls_qty).to eq(BigDecimal("2.0"))
+    end
+
+    it "copies hinges_qty" do
+      expect(line_item.hinges_qty).to eq(BigDecimal("4.0"))
+    end
+
+    it "copies slides_qty" do
+      expect(line_item.slides_qty).to eq(BigDecimal("2.0"))
+    end
+
+    it "copies locks_qty" do
+      expect(line_item.locks_qty).to eq(BigDecimal("1.0"))
     end
 
     it "copies all six labor hour fields" do
@@ -97,6 +97,19 @@ RSpec.describe Product, type: :model do
 
     it "copies unit" do
       expect(line_item.unit).to eq("EA")
+    end
+
+    it "does not set any _material_id on the line item" do
+      %i[exterior interior interior2 back banding drawers pulls hinges slides].each do |slot|
+        expect(line_item.public_send(:"#{slot}_material_id")).to be_nil
+      end
+    end
+
+    it "does not raise NoMethodError for _unit_price or _description (those columns are gone)" do
+      li = build(:line_item)
+      expect { product.apply_to(li) }.not_to raise_error
+      expect(li).not_to respond_to(:exterior_unit_price)
+      expect(li).not_to respond_to(:exterior_description)
     end
 
     it "does not save the line item" do
