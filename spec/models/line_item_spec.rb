@@ -56,4 +56,41 @@ RSpec.describe LineItem, type: :model do
       expect(li).to be_valid
     end
   end
+
+  describe "#material_ids_belong_to_estimate" do
+    let(:estimate)       { create(:estimate) }
+    let(:other_estimate) { create(:estimate) }
+    let(:material)       { create(:material) }
+
+    it "is valid when all material ids belong to the same estimate" do
+      em = create(:estimate_material, estimate: estimate, material: material)
+      li = build(:line_item, estimate: estimate, exterior_material_id: em.id)
+      expect(li).to be_valid
+    end
+
+    it "is invalid when a material id belongs to a different estimate" do
+      em_other = create(:estimate_material, estimate: other_estimate, material: material)
+      li = build(:line_item, estimate: estimate, exterior_material_id: em_other.id)
+      expect(li).to be_invalid
+      expect(li.errors[:exterior_material_id]).not_to be_empty
+    end
+
+    it "is valid when all material id columns are nil" do
+      li = build(:line_item, estimate: estimate)
+      expect(li).to be_valid
+    end
+
+    it "marks only the offending column invalid when one slot is from a foreign estimate" do
+      own_material   = create(:material, name: "Own Mat")
+      other_material = create(:material, name: "Other Mat")
+      em_own   = create(:estimate_material, estimate: estimate,       material: own_material)
+      em_other = create(:estimate_material, estimate: other_estimate, material: other_material)
+      li = build(:line_item, estimate: estimate,
+                             exterior_material_id: em_own.id,
+                             interior_material_id: em_other.id)
+      expect(li).to be_invalid
+      expect(li.errors[:interior_material_id]).not_to be_empty
+      expect(li.errors[:exterior_material_id]).to be_empty
+    end
+  end
 end

@@ -38,4 +38,25 @@ class LineItem < ApplicationRecord
   validates :description, presence: true
   validates :quantity,    presence: true, numericality: { greater_than: 0 }
   validates :unit,        presence: true
+
+  MATERIAL_ID_COLUMNS = %i[
+    exterior_material_id interior_material_id interior2_material_id
+    back_material_id banding_material_id drawers_material_id
+    pulls_material_id hinges_material_id slides_material_id
+  ].freeze
+
+  validate :material_ids_belong_to_estimate
+
+  private
+
+  def material_ids_belong_to_estimate
+    submitted_ids = MATERIAL_ID_COLUMNS.filter_map { |col| public_send(col) }
+    return if submitted_ids.empty?
+
+    valid_ids = EstimateMaterial.where(estimate_id: estimate_id, id: submitted_ids).pluck(:id).to_set
+    MATERIAL_ID_COLUMNS.each do |col|
+      id = public_send(col)
+      errors.add(col, :invalid) if id.present? && !valid_ids.include?(id)
+    end
+  end
 end

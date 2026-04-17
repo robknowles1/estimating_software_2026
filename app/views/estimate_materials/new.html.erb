@@ -74,14 +74,15 @@
   <% else %>
     <%# Create new material section %>
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
-      <% if defined?(@new_material) && @new_material&.errors&.any? %>
+      <% combined_errors = [*(@new_material&.errors&.full_messages), *(@estimate_material&.errors&.full_messages)].uniq %>
+      <% if combined_errors.any? %>
         <div class="bg-red-50 border border-red-300 rounded-lg p-4 mb-4">
           <p class="text-sm font-semibold text-red-700 mb-2">
-            <%= t("materials.form.errors", count: @new_material.errors.count) %>
+            <%= t("materials.form.errors", count: combined_errors.count) %>
           </p>
           <ul class="list-disc list-inside space-y-1">
-            <% @new_material.errors.each do |error| %>
-              <li class="text-sm text-red-600"><%= error.full_message %></li>
+            <% combined_errors.each do |message| %>
+              <li class="text-sm text-red-600"><%= message %></li>
             <% end %>
           </ul>
         </div>
@@ -91,11 +92,11 @@
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2">
             <label class="<%= label_cls %>"><%= Material.human_attribute_name(:name) %></label>
-            <%= text_field_tag "material[name]", nil, class: input_cls, placeholder: "e.g. Maple Plywood 3/4" %>
+            <%= text_field_tag "material[name]", @new_material&.name, class: input_cls, placeholder: "e.g. Maple Plywood 3/4" %>
           </div>
           <div class="col-span-2">
             <label class="<%= label_cls %>"><%= Material.human_attribute_name(:description) %></label>
-            <%= text_field_tag "material[description]", nil, class: input_cls %>
+            <%= text_field_tag "material[description]", @new_material&.description, class: input_cls %>
           </div>
           <div>
             <label class="<%= label_cls %>"><%= Material.human_attribute_name(:category) %></label>
@@ -103,17 +104,17 @@
                 options_for_select([
                   [t("materials.form.category_sheet_good"), "sheet_good"],
                   [t("materials.form.category_hardware"),   "hardware"]
-                ]),
+                ], @new_material&.category),
                 include_blank: "— Select —",
                 class: input_cls %>
           </div>
           <div>
             <label class="<%= label_cls %>"><%= Material.human_attribute_name(:unit) %></label>
-            <%= text_field_tag "material[unit]", nil, class: input_cls, placeholder: "sheet, each…" %>
+            <%= text_field_tag "material[unit]", @new_material&.unit, class: input_cls, placeholder: "sheet, each…" %>
           </div>
           <div>
             <label class="<%= label_cls %>"><%= Material.human_attribute_name(:default_price) %></label>
-            <%= number_field_tag "material[default_price]", nil, class: input_cls, step: "0.0001", min: 0, placeholder: "0.0000" %>
+            <%= number_field_tag "material[default_price]", @new_material&.default_price, class: input_cls, step: "0.0001", min: 0, placeholder: "0.0000" %>
           </div>
         </div>
         <p class="text-xs text-slate-500 mt-2"><%= t(".default_price_hint") %></p>

@@ -52,8 +52,15 @@ class MaterialSetsController < ApplicationController
         skipped += 1
       else
         em.quote_price = item.material.default_price
-        em.save!
-        added += 1
+        begin
+          if em.save
+            added += 1
+          else
+            skipped += 1
+          end
+        rescue ActiveRecord::RecordNotUnique
+          skipped += 1
+        end
       end
     end
 

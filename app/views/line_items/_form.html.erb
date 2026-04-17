@@ -61,6 +61,8 @@
 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
   <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t("line_items.form.materials_heading") %></h2>
 
+  <% estimate_material_options = estimate.estimate_materials.includes(:material).to_a %>
+
   <%# Column headers %>
   <div class="grid grid-cols-12 gap-2 mb-2 px-1">
     <div class="col-span-1"></div>
@@ -82,7 +84,7 @@
       <div class="col-span-1 text-xs text-slate-500 font-medium"><%= slot[:label] %></div>
       <div class="col-span-6">
         <%= f.collection_select :"#{slot[:key]}_material_id",
-            estimate.estimate_materials.includes(:material),
+            estimate_material_options,
             :id,
             ->(em) { "#{em.material.name} ($#{number_with_precision(em.quote_price, precision: 2)})" },
             { include_blank: "— none —" },
@@ -99,7 +101,7 @@
     <div class="col-span-1 text-xs text-slate-500 font-medium"><%= t("line_items.form.material_slot_banding") %></div>
     <div class="col-span-6">
       <%= f.collection_select :banding_material_id,
-          estimate.estimate_materials.includes(:material),
+          estimate_material_options,
           :id,
           ->(em) { "#{em.material.name} ($#{number_with_precision(em.quote_price, precision: 2)})" },
           { include_blank: "— none —" },

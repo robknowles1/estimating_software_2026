@@ -18,45 +18,48 @@ class EstimateMaterialsController < ApplicationController
 
   def create
     if params[:material_id].present?
-      material = Material.find(params[:material_id])
-      em = @estimate.estimate_materials.find_by(material: material)
-
-      if em
-        redirect_to estimate_estimate_materials_path(@estimate), notice: t(".already_present")
-        return
-      end
+      material = Material.active.find(params[:material_id])
 
       em = @estimate.estimate_materials.build(material: material, quote_price: material.default_price)
-      if em.save
-        redirect_to estimate_estimate_materials_path(@estimate), notice: t(".notice")
-      else
-        @mode = "search"
-        @query = ""
-        @search_results = []
-        @estimate_material = em
-        @material_sets = MaterialSet.order(:name)
-        render :new, status: :unprocessable_content
-      end
-    elsif params[:material].present?
-      material = Material.new(new_material_params)
-      if material.save
-        em = @estimate.estimate_materials.build(material: material, quote_price: material.default_price)
+      begin
         if em.save
           redirect_to estimate_estimate_materials_path(@estimate), notice: t(".notice")
+        elsif em.errors[:material_id].any? { |msg| msg.match?(/taken/i) }
+          redirect_to estimate_estimate_materials_path(@estimate), notice: t(".already_present")
         else
-          @mode = "new"
+          @mode = "search"
           @query = ""
           @search_results = []
           @estimate_material = em
           @material_sets = MaterialSet.order(:name)
           render :new, status: :unprocessable_content
         end
+      rescue ActiveRecord::RecordNotUnique
+        redirect_to estimate_estimate_materials_path(@estimate), notice: t(".already_present")
+      end
+    elsif params[:material].present?
+      material = Material.new(new_material_params)
+      em       = nil
+      saved    = false
+
+      ActiveRecord::Base.transaction do
+        if material.save
+          em = @estimate.estimate_materials.build(material: material, quote_price: material.default_price)
+          unless em.save
+            raise ActiveRecord::Rollback
+          end
+          saved = true
+        end
+      end
+
+      if saved
+        redirect_to estimate_estimate_materials_path(@estimate), notice: t(".notice")
       else
         @mode = "new"
         @query = ""
         @search_results = []
-        @estimate_material = @estimate.estimate_materials.new
-        @new_material = material
+        @new_material      = material
+        @estimate_material = em || @estimate.estimate_materials.new
         @material_sets = MaterialSet.order(:name)
         render :new, status: :unprocessable_content
       end

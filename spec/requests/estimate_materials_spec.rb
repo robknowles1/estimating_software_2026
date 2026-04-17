@@ -133,6 +133,52 @@ RSpec.describe "EstimateMaterials", type: :request do
     end
   end
 
+  describe "POST /estimates/:estimate_id/estimate_materials — soft-deleted material" do
+    it "returns 404 when the material is soft-deleted" do
+      material = create(:material, discarded_at: Time.current)
+      post estimate_estimate_materials_path(estimate), params: { material_id: material.id }
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  describe "POST /estimates/:estimate_id/estimate_materials — race condition on duplicate" do
+    it "redirects with already_present notice instead of raising on RecordNotUnique" do
+      material = create(:material)
+      # Pre-create the record so the unique index is violated
+      create(:estimate_material, estimate: estimate, material: material)
+      # Force the race: em.save will hit the DB unique constraint because find_or_initialize
+      # is not used anymore — the duplicate check is now handled by rescuing RecordNotUnique
+      post estimate_estimate_materials_path(estimate), params: { material_id: material.id }
+      expect(response).to redirect_to(estimate_estimate_materials_path(estimate))
+      expect(flash[:notice]).to include("already")
+    end
+  end
+
+  describe "POST /estimates/:estimate_id/estimate_materials — new material transaction atomicity" do
+    it "creates both Material and EstimateMaterial together" do
+      params = {
+        material: {
+          name:          "Brand New Material",
+          category:      "sheet_good",
+          default_price: "10.00",
+          unit:          "sheet"
+        }
+      }
+      expect {
+        post estimate_estimate_materials_path(estimate), params: params
+      }.to change(Material, :count).by(1).and change(EstimateMaterial, :count).by(1)
+    end
+
+    it "does not leave an orphaned Material when only material params are invalid" do
+      # category missing — material fails validation, nothing is created
+      params = { material: { name: "", category: "", default_price: "10.00", unit: "sheet" } }
+      expect {
+        post estimate_estimate_materials_path(estimate), params: params
+      }.not_to change(Material, :count)
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+  end
+
   describe "unauthenticated access" do
     before { delete session_path }
 
