@@ -381,8 +381,6 @@ en:
       search_label: "Search materials library"
       search_placeholder: "Type to search…"
       no_results: "No materials found — try the Create New tab"
-      search_button: "Search"
-      select_button: "Add to Price Book"
       default_price_hint: "This will become the initial quote price for this estimate."
       col_name: "Name"
       col_category: "Category"

@@ -17,9 +17,7 @@ export default class extends Controller {
       options: this.materialsValue,
       placeholder: this.placeholderValue,
       create: false,
-      render: {
-        no_results: () => `<div class="no-results">${this.emptyStateValue}</div>`
-      },
+      noResultsText: this.emptyStateValue,
       onItemAdd: (value) => {
         if (this.hasHiddenFieldTarget) {
           this.hiddenFieldTarget.value = value
