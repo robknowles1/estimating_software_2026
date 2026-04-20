@@ -1,7 +1,7 @@
 # Spec: Searchable Material Combobox — Add Material to Price Book
 
 **ID:** SPEC-015
-**Status:** ready
+**Status:** done
 **Priority:** medium
 **Created:** 2026-04-17
 **Author:** pm-agent

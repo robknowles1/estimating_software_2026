@@ -10,8 +10,7 @@ class EstimateMaterialsController < ApplicationController
 
   def new
     @mode = params[:mode] || "search"
-    @query = params[:q].to_s.strip
-    @search_results = @query.present? ? Material.search(@query) : []
+    @materials = Material.active.order(:name)
     @estimate_material = @estimate.estimate_materials.new
     @material_sets = MaterialSet.order(:name)
   end
@@ -28,8 +27,7 @@ class EstimateMaterialsController < ApplicationController
           redirect_to estimate_estimate_materials_path(@estimate), notice: t(".already_present")
         else
           @mode = "search"
-          @query = ""
-          @search_results = []
+          @materials = Material.active.order(:name)
           @estimate_material = em
           @material_sets = MaterialSet.order(:name)
           render :new, status: :unprocessable_content
@@ -56,8 +54,7 @@ class EstimateMaterialsController < ApplicationController
         redirect_to estimate_estimate_materials_path(@estimate), notice: t(".notice")
       else
         @mode = "new"
-        @query = ""
-        @search_results = []
+        @materials = Material.active.order(:name)
         @new_material      = material
         @estimate_material = em || @estimate.estimate_materials.new
         @material_sets = MaterialSet.order(:name)
