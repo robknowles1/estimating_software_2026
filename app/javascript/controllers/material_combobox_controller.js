@@ -17,6 +17,7 @@ export default class extends Controller {
       options: this.materialsValue,
       placeholder: this.placeholderValue,
       create: false,
+      dropdownParent: document.body,
       render: {
         no_results: () => {
           const div = document.createElement("div")
