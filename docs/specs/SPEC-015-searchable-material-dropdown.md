@@ -126,7 +126,7 @@ Client-side filtering means no new `/materials/search.json` route is required. I
 Responsibilities:
 - On `connect()`: initialize Tom Select on the `<select>` element identified by the `selectTarget`.
 - Pass `options` from the `materialsValue` (JSON array parsed from the controller's data attribute).
-- Configure Tom Select with: `valueField: "id"`, `labelField: "label"`, `searchField: ["label"]`, `placeholder` from the `placeholderValue` string, `noResultsText` from the `emptyStateValue` string, `create: false` (no inline creation — that is the "Create New" tab's job).
+- Configure Tom Select with: `valueField: "id"`, `labelField: "label"`, `searchField: ["label"]`, `placeholder` from the `placeholderValue` string, a `render.no_results` function that builds a `<div class="no-results">` element using DOM methods (`document.createElement` + `textContent`) with text from `emptyStateValue` (note: `noResultsText` is not a valid Tom Select 2.x option and is silently ignored — use `render.no_results` instead), `create: false` (no inline creation — that is the "Create New" tab's job).
 - On item selection (`onItemAdd` callback): submit the enclosing form.
 - On `disconnect()`: call `this.tomSelect.destroy()` if `this.tomSelect` is defined.
 
