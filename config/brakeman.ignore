@@ -1,0 +1,27 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "Mass Assignment",
+      "warning_code": 105,
+      "fingerprint": "4994836953040a471cb83e7654e6d2c16958a626e8c39f4cb949d983f319f8e1",
+      "check_name": "PermitAttributes",
+      "message": "Potentially dangerous key allowed for mass assignment",
+      "file": "app/controllers/estimate_materials_controller.rb",
+      "line": 94,
+      "link": "https://brakemanscanner.org/docs/warning_types/mass_assignment/",
+      "code": "params.require(:estimate_material).permit(:quote_price, :role)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "EstimateMaterialsController",
+        "method": "estimate_material_params"
+      },
+      "user_input": ":role",
+      "confidence": "Medium",
+      "cwe_id": [
+        915
+      ],
+      "note": "False positive. The `role` column on estimate_materials is a domain concept (marks a material's functional purpose within an estimate, e.g. 'locks') — it is not a user privilege or access-control field. The permitted value is constrained at two layers: (1) the controller sanitizes the value via presence_in(EstimateMaterial::ROLES) before update, coercing anything outside the allowlist to nil, and (2) the model validates :role with inclusion: { in: ROLES }, allow_nil: true. An attacker cannot escalate privileges by submitting this field."
+    }
+  ]
+}

@@ -35,16 +35,13 @@
   </div>
 </div>
 
-<%# ── Materials ── %>
+<%# ── Material Quantities ── %>
 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
   <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t("products.form.materials_heading") %></h2>
 
-  <%# Column headers %>
   <div class="grid grid-cols-12 gap-2 mb-2 px-1">
     <div class="col-span-1"></div>
-    <div class="col-span-5 text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t("products.form.material_description_col") %></div>
-    <div class="col-span-3 text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t("products.form.material_unit_price_col") %></div>
-    <div class="col-span-3 text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t("products.form.material_qty_col") %></div>
+    <div class="col-span-10 text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t("products.form.material_qty_col") %></div>
   </div>
 
   <% [
@@ -55,34 +52,21 @@
     { key: :drawers,   label: t("products.form.material_slot_drawers") },
     { key: :pulls,     label: t("products.form.material_slot_pulls") },
     { key: :hinges,    label: t("products.form.material_slot_hinges") },
-    { key: :slides,    label: t("products.form.material_slot_slides") },
-    { key: :locks,     label: t("products.form.material_slot_locks") }
+    { key: :slides,    label: t("products.form.material_slot_slides") }
   ].each do |slot| %>
     <div class="grid grid-cols-12 gap-2 mb-2 items-center">
       <div class="col-span-1 text-xs text-slate-500 font-medium"><%= slot[:label] %></div>
-      <div class="col-span-5">
-        <%= f.text_field :"#{slot[:key]}_description", class: input_cls, placeholder: "e.g. MDF" %>
-      </div>
-      <div class="col-span-3">
-        <%= f.number_field :"#{slot[:key]}_unit_price", class: input_cls, step: "0.0001", min: 0, placeholder: "0.0000" %>
-      </div>
-      <div class="col-span-3">
+      <div class="col-span-4">
         <%= f.number_field :"#{slot[:key]}_qty", class: input_cls, step: "0.0001", min: 0, placeholder: "0.0000" %>
       </div>
     </div>
   <% end %>
 
-  <%# Banding — no qty %>
+  <%# Locks qty %>
   <div class="grid grid-cols-12 gap-2 mb-2 items-center">
-    <div class="col-span-1 text-xs text-slate-500 font-medium"><%= t("products.form.material_slot_banding") %></div>
-    <div class="col-span-5">
-      <%= f.text_field :banding_description, class: input_cls, placeholder: "e.g. Melamine edge band" %>
-    </div>
-    <div class="col-span-3">
-      <%= f.number_field :banding_unit_price, class: input_cls, step: "0.0001", min: 0, placeholder: "0.0000" %>
-    </div>
-    <div class="col-span-3">
-      <span class="text-xs text-slate-400 italic"><%= t("products.form.banding_flat_rate") %></span>
+    <div class="col-span-1 text-xs text-slate-500 font-medium"><%= t("products.form.material_slot_locks") %></div>
+    <div class="col-span-4">
+      <%= f.number_field :locks_qty, class: input_cls, step: "0.0001", min: 0, placeholder: "0.0000" %>
     </div>
   </div>
 

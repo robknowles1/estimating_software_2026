@@ -18,12 +18,8 @@ export default class extends Controller {
 
     set("unit", product.unit)
     ;["exterior","interior","interior2","back","drawers","pulls","hinges","slides","locks"].forEach(slot => {
-      set(`${slot}_description`, product[`${slot}_description`] ?? "")
-      set(`${slot}_unit_price`,  product[`${slot}_unit_price`]  ?? "")
-      set(`${slot}_qty`,         product[`${slot}_qty`]         ?? "")
+      set(`${slot}_qty`, product[`${slot}_qty`] ?? "")
     })
-    set("banding_description", product.banding_description ?? "")
-    set("banding_unit_price",  product.banding_unit_price  ?? "")
     set("other_material_cost", product.other_material_cost ?? "")
     ;["detail","mill","assembly","customs","finish","install"].forEach(cat => {
       set(`${cat}_hrs`, product[`${cat}_hrs`] ?? "")

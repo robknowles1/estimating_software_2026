@@ -51,9 +51,11 @@
           <% end %>
         </div>
 
-        <%# Right: status badge + Back link %>
+        <%# Right: Materials link + status badge + Back link %>
         <div class="flex items-center gap-3 flex-shrink-0">
           <% if _topbar_estimate %>
+            <%= link_to t("nav.materials"), estimate_estimate_materials_path(_topbar_estimate),
+                class: "inline-flex items-center gap-1.5 text-slate-600 hover:text-amber-700 text-xs font-medium border border-slate-300 rounded-lg px-3 py-1.5 transition-colors" %>
             <%= render "estimates/status_badge", status: _topbar_estimate.status %>
           <% end %>
           <%= link_to t("estimates.layout.back_to_estimates"), estimates_path,

@@ -4,21 +4,15 @@
 #   Core:                description, quantity, unit, position
 #   Catalog Reference:   product_id (nullable FK to products, ON DELETE SET NULL;
 #                        display/audit only — not used by calculator)
-#   Material Descriptions + Unit Prices (flat columns, per-slot):
-#               exterior_description, exterior_unit_price
-#               interior_description, interior_unit_price
-#               interior2_description, interior2_unit_price
-#               back_description, back_unit_price
-#               banding_description, banding_unit_price  (no qty — flat per-unit cost)
-#               drawers_description, drawers_unit_price
-#               pulls_description, pulls_unit_price
-#               hinges_description, hinges_unit_price
-#               slides_description, slides_unit_price
-#               locks_description, locks_unit_price
+#   Material FKs (nullable, each → estimate_materials ON DELETE SET NULL):
+#               exterior_material_id, interior_material_id, interior2_material_id,
+#               back_material_id, banding_material_id, drawers_material_id,
+#               pulls_material_id, hinges_material_id, slides_material_id
+#               (locks has no _material_id — resolved by role="locks" on estimate_materials)
 #   Material Quantities (nullable):
 #               exterior_qty, interior_qty, interior2_qty, back_qty,
 #               drawers_qty, pulls_qty, hinges_qty, slides_qty, locks_qty
-#               (banding has no qty per ADR-008)
+#               (banding has no qty per ADR-008; banding_material_id cost is applied flat)
 #   Other cost: other_material_cost — freeform per-unit cost
 #   Labor hrs:  detail_hrs, mill_hrs, assembly_hrs, customs_hrs, finish_hrs, install_hrs
 #   Equipment:  equipment_hrs, equipment_rate
@@ -29,9 +23,40 @@ class LineItem < ApplicationRecord
   belongs_to :estimate
   belongs_to :product, optional: true
 
+  belongs_to :exterior_material,  class_name: "EstimateMaterial", foreign_key: :exterior_material_id,  optional: true
+  belongs_to :interior_material,  class_name: "EstimateMaterial", foreign_key: :interior_material_id,  optional: true
+  belongs_to :interior2_material, class_name: "EstimateMaterial", foreign_key: :interior2_material_id, optional: true
+  belongs_to :back_material,      class_name: "EstimateMaterial", foreign_key: :back_material_id,      optional: true
+  belongs_to :banding_material,   class_name: "EstimateMaterial", foreign_key: :banding_material_id,   optional: true
+  belongs_to :drawers_material,   class_name: "EstimateMaterial", foreign_key: :drawers_material_id,   optional: true
+  belongs_to :pulls_material,     class_name: "EstimateMaterial", foreign_key: :pulls_material_id,     optional: true
+  belongs_to :hinges_material,    class_name: "EstimateMaterial", foreign_key: :hinges_material_id,    optional: true
+  belongs_to :slides_material,    class_name: "EstimateMaterial", foreign_key: :slides_material_id,    optional: true
+
   acts_as_list scope: :estimate
 
   validates :description, presence: true
   validates :quantity,    presence: true, numericality: { greater_than: 0 }
   validates :unit,        presence: true
+
+  MATERIAL_ID_COLUMNS = %i[
+    exterior_material_id interior_material_id interior2_material_id
+    back_material_id banding_material_id drawers_material_id
+    pulls_material_id hinges_material_id slides_material_id
+  ].freeze
+
+  validate :material_ids_belong_to_estimate
+
+  private
+
+  def material_ids_belong_to_estimate
+    submitted_ids = MATERIAL_ID_COLUMNS.filter_map { |col| public_send(col) }
+    return if submitted_ids.empty?
+
+    valid_ids = EstimateMaterial.where(estimate_id: estimate_id, id: submitted_ids).pluck(:id).to_set
+    MATERIAL_ID_COLUMNS.each do |col|
+      id = public_send(col)
+      errors.add(col, :invalid) if id.present? && !valid_ids.include?(id)
+    end
+  end
 end

@@ -1,0 +1,133 @@
+<% input_cls = "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+<% label_cls = "block text-xs font-medium text-slate-700 mb-1" %>
+
+<div class="max-w-3xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-xl font-bold text-slate-900"><%= t(".title") %></h1>
+    <p class="text-sm text-slate-500 mt-0.5"><%= t(".subtitle") %></p>
+  </div>
+
+  <%# Tab switcher %>
+  <div class="flex border-b border-slate-200 mb-6">
+    <%= link_to t(".search_tab"),
+        new_estimate_estimate_material_path(@estimate, mode: "search"),
+        class: "px-4 py-2 text-sm font-medium border-b-2 transition-colors #{@mode == 'search' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}" %>
+    <%= link_to t(".create_tab"),
+        new_estimate_estimate_material_path(@estimate, mode: "new"),
+        class: "px-4 py-2 text-sm font-medium border-b-2 transition-colors #{@mode == 'new' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}" %>
+  </div>
+
+  <% if @mode == "search" %>
+    <%# Search section %>
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+      <%= form_with url: new_estimate_estimate_material_path(@estimate), method: :get do |f| %>
+        <%= hidden_field_tag :mode, "search" %>
+        <div class="flex gap-3">
+          <div class="flex-1">
+            <%= text_field_tag :q, @query, placeholder: t(".search_placeholder"),
+                class: input_cls %>
+          </div>
+          <%= f.submit t(".search_button"),
+              class: "bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>
+        </div>
+      <% end %>
+    </div>
+
+    <% if @query.present? %>
+      <% if @search_results.any? %>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_name") %></th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_category") %></th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_unit") %></th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_default_price") %></th>
+                <th class="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <% @search_results.each do |material| %>
+                <tr class="hover:bg-slate-50">
+                  <td class="px-4 py-3 font-medium text-slate-900"><%= material.name %></td>
+                  <td class="px-4 py-3 text-slate-600"><%= material.category.humanize.downcase.split.map(&:capitalize).join(" ") %></td>
+                  <td class="px-4 py-3 text-slate-600"><%= material.unit.presence || t("common.not_provided") %></td>
+                  <td class="px-4 py-3 text-right font-mono">$<%= number_with_precision(material.default_price, precision: 4) %></td>
+                  <td class="px-4 py-3 text-right">
+                    <%= button_to t(".select_button"),
+                        estimate_estimate_materials_path(@estimate),
+                        params: { material_id: material.id },
+                        method: :post,
+                        class: "text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-semibold transition-colors" %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-center mb-6">
+          <p class="text-slate-500 text-sm"><%= t(".no_results") %></p>
+        </div>
+      <% end %>
+    <% end %>
+  <% else %>
+    <%# Create new material section %>
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+      <% combined_errors = [*(@new_material&.errors&.full_messages), *(@estimate_material&.errors&.full_messages)].uniq %>
+      <% if combined_errors.any? %>
+        <div class="bg-red-50 border border-red-300 rounded-lg p-4 mb-4">
+          <p class="text-sm font-semibold text-red-700 mb-2">
+            <%= t("materials.form.errors", count: combined_errors.count) %>
+          </p>
+          <ul class="list-disc list-inside space-y-1">
+            <% combined_errors.each do |message| %>
+              <li class="text-sm text-red-600"><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <%= form_with url: estimate_estimate_materials_path(@estimate), method: :post do |f| %>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="<%= label_cls %>"><%= Material.human_attribute_name(:name) %></label>
+            <%= text_field_tag "material[name]", @new_material&.name, class: input_cls, placeholder: "e.g. Maple Plywood 3/4" %>
+          </div>
+          <div class="col-span-2">
+            <label class="<%= label_cls %>"><%= Material.human_attribute_name(:description) %></label>
+            <%= text_field_tag "material[description]", @new_material&.description, class: input_cls %>
+          </div>
+          <div>
+            <label class="<%= label_cls %>"><%= Material.human_attribute_name(:category) %></label>
+            <%= select_tag "material[category]",
+                options_for_select([
+                  [t("materials.form.category_sheet_good"), "sheet_good"],
+                  [t("materials.form.category_hardware"),   "hardware"]
+                ], @new_material&.category),
+                include_blank: "— Select —",
+                class: input_cls %>
+          </div>
+          <div>
+            <label class="<%= label_cls %>"><%= Material.human_attribute_name(:unit) %></label>
+            <%= text_field_tag "material[unit]", @new_material&.unit, class: input_cls, placeholder: "sheet, each…" %>
+          </div>
+          <div>
+            <label class="<%= label_cls %>"><%= Material.human_attribute_name(:default_price) %></label>
+            <%= number_field_tag "material[default_price]", @new_material&.default_price, class: input_cls, step: "0.0001", min: 0, placeholder: "0.0000" %>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500 mt-2"><%= t(".default_price_hint") %></p>
+        <div class="mt-4">
+          <%= submit_tag t("estimate_materials.new.create_tab"),
+              class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="mt-4">
+    <%= link_to t(".back_link"), estimate_estimate_materials_path(@estimate),
+        class: "text-sm text-slate-600 hover:text-slate-900 font-medium" %>
+  </div>
+</div>

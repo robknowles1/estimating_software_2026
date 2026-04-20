@@ -1,7 +1,9 @@
 class Estimate < ApplicationRecord
   belongs_to :client
   belongs_to :created_by, class_name: "User", foreign_key: :created_by_user_id
-  has_many :line_items, -> { order(:position) }, dependent: :destroy
+  has_many :line_items,         -> { order(:position) }, dependent: :destroy
+  has_many :estimate_materials, dependent: :destroy
+  has_many :materials,          through: :estimate_materials
 
   enum :status, { draft: "draft", sent: "sent", approved: "approved", lost: "lost", archived: "archived" }, default: "draft"
 
@@ -18,6 +20,8 @@ class Estimate < ApplicationRecord
   before_validation :assign_estimate_number, on: :create
   before_create     :copy_tax_exempt_from_client
 
+  after_save :recalculate_material_costs, if: -> { saved_change_to_tax_rate? || saved_change_to_tax_exempt? }
+
   scope :with_status, ->(s) { s.present? ? where(status: s) : all }
   scope :search, ->(q) {
     if q.present?
@@ -28,6 +32,14 @@ class Estimate < ApplicationRecord
   }
 
   private
+
+  def recalculate_material_costs
+    if tax_exempt?
+      estimate_materials.update_all("cost_with_tax = quote_price")
+    else
+      estimate_materials.update_all([ "cost_with_tax = quote_price * ?", BigDecimal("1") + tax_rate.to_d ])
+    end
+  end
 
   def assign_estimate_number
     return if estimate_number.present?

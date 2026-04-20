@@ -59,16 +59,16 @@ class LineItemsController < ApplicationController
 
   SHARED_LINE_ITEM_PARAMS = [
     :description, :quantity, :unit,
-    :exterior_description, :exterior_unit_price, :exterior_qty,
-    :interior_description, :interior_unit_price, :interior_qty,
-    :interior2_description, :interior2_unit_price, :interior2_qty,
-    :back_description, :back_unit_price, :back_qty,
-    :banding_description, :banding_unit_price,
-    :drawers_description, :drawers_unit_price, :drawers_qty,
-    :pulls_description, :pulls_unit_price, :pulls_qty,
-    :hinges_description, :hinges_unit_price, :hinges_qty,
-    :slides_description, :slides_unit_price, :slides_qty,
-    :locks_description, :locks_unit_price, :locks_qty,
+    :exterior_material_id, :exterior_qty,
+    :interior_material_id, :interior_qty,
+    :interior2_material_id, :interior2_qty,
+    :back_material_id, :back_qty,
+    :banding_material_id,
+    :drawers_material_id, :drawers_qty,
+    :pulls_material_id, :pulls_qty,
+    :hinges_material_id, :hinges_qty,
+    :slides_material_id, :slides_qty,
+    :locks_qty,
     :other_material_cost,
     :detail_hrs, :mill_hrs, :assembly_hrs, :customs_hrs, :finish_hrs, :install_hrs,
     :equipment_hrs, :equipment_rate
@@ -77,7 +77,7 @@ class LineItemsController < ApplicationController
   private
 
   def set_estimate
-    @estimate = Estimate.includes(line_items: :product).find(params[:estimate_id])
+    @estimate = Estimate.includes(line_items: :product, estimate_materials: :material).find(params[:estimate_id])
   end
 
   def line_item_params

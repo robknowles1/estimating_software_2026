@@ -6,8 +6,6 @@ FactoryBot.define do
     detail_hrs      { BigDecimal("1.0") }
     mill_hrs        { BigDecimal("2.0") }
     assembly_hrs    { BigDecimal("1.5") }
-    exterior_unit_price { BigDecimal("50.0") }
-    exterior_qty        { BigDecimal("2.5") }
-    exterior_description { "MDF" }
+    exterior_qty    { BigDecimal("2.5") }
   end
 end

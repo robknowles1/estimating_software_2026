@@ -1,8 +1,9 @@
 # ADR-009: Product Catalog — Data Model and Integration with Line Items
 
-**Status:** accepted
+**Status:** superseded
 **Date:** 2026-04-11
 **Deciders:** architect-agent
+**Superseded by:** ADR-010 (2026-04-13)
 
 Extends: ADR-008 (estimating refactor — flat column line items, no stored calculated fields)
 

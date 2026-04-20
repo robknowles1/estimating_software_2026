@@ -1,0 +1,101 @@
+<div class="max-w-5xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl font-bold text-slate-900"><%= t(".title") %></h1>
+      <p class="text-sm text-slate-500 mt-0.5"><%= t(".subtitle") %></p>
+    </div>
+    <div class="flex items-center gap-3">
+      <%# Apply set dropdown %>
+      <% if @material_sets.any? %>
+        <form action="#" method="get" data-apply-set>
+          <select name="material_set_select" id="material_set_select"
+                  class="border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500">
+            <option value=""><%= t(".apply_set_button") %>...</option>
+            <% @material_sets.each do |ms| %>
+              <option value="<%= apply_to_estimate_material_set_path(ms) %>"><%= ms.name %></option>
+            <% end %>
+          </select>
+        </form>
+        <script type="module">
+          const initializeApplySetDropdown = () => {
+            const sel = document.getElementById("material_set_select");
+            if (!sel || sel.dataset.applySetInitialized === "true") return;
+            sel.dataset.applySetInitialized = "true";
+            sel.addEventListener("change", () => {
+              if (sel.value) {
+                const form = document.createElement("form");
+                form.method = "post";
+                form.action = sel.value;
+                const csrf = document.createElement("input");
+                csrf.type = "hidden";
+                csrf.name = document.querySelector("meta[name='csrf-param']").content;
+                csrf.value = document.querySelector("meta[name='csrf-token']").content;
+                const estimateInput = document.createElement("input");
+                estimateInput.type = "hidden";
+                estimateInput.name = "estimate_id";
+                estimateInput.value = "<%= @estimate.id %>";
+                form.appendChild(csrf);
+                form.appendChild(estimateInput);
+                document.body.appendChild(form);
+                form.submit();
+              }
+            });
+          };
+
+          document.addEventListener("turbo:load", initializeApplySetDropdown);
+        </script>
+      <% end %>
+      <%= link_to t(".add_button"), new_estimate_estimate_material_path(@estimate),
+          class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors" %>
+    </div>
+  </div>
+
+  <% if @estimate_materials.any? %>
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_name") %></th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_category") %></th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_unit") %></th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_quote_price") %></th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_cost_with_tax") %></th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_role") %></th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_actions") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% @estimate_materials.each do |em| %>
+            <tr class="hover:bg-slate-50">
+              <td class="px-4 py-3 font-medium text-slate-900"><%= em.material.name %></td>
+              <td class="px-4 py-3 text-slate-600"><%= em.material.category.humanize.downcase.split.map(&:capitalize).join(" ") %></td>
+              <td class="px-4 py-3 text-slate-600"><%= em.material.unit.presence || t("common.not_provided") %></td>
+              <td class="px-4 py-3 text-right font-mono text-slate-900">$<%= number_with_precision(em.quote_price, precision: 4) %></td>
+              <td class="px-4 py-3 text-right font-mono text-slate-900">$<%= number_with_precision(em.cost_with_tax, precision: 4) %></td>
+              <td class="px-4 py-3">
+                <% if em.role == "locks" %>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                    <%= t(".locks_role_badge") %>
+                  </span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <%= link_to t("common.edit"), edit_estimate_estimate_material_path(@estimate, em),
+                      class: "text-xs text-slate-600 hover:text-slate-900 font-medium" %>
+                  <%= button_to t("common.delete"), estimate_estimate_material_path(@estimate, em), method: :delete,
+                      class: "text-xs text-red-600 hover:text-red-800 font-medium" %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+      <p class="text-slate-700 font-medium"><%= t(".empty_title") %></p>
+      <p class="text-slate-500 text-sm mt-1"><%= t(".empty_description") %></p>
+    </div>
+  <% end %>
+</div>

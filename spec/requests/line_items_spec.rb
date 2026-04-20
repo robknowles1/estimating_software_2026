@@ -25,7 +25,7 @@ RSpec.describe "LineItems", type: :request do
         }
       end
 
-      it "creates a line item with product_id nil (freeform — AC-15)" do
+      it "creates a line item with product_id nil (freeform)" do
         expect {
           post estimate_line_items_path(estimate), params: freeform_params
         }.to change(LineItem, :count).by(1)
@@ -33,7 +33,7 @@ RSpec.describe "LineItems", type: :request do
         expect(LineItem.last.product_id).to be_nil
       end
 
-      it "does not create a catalog product for a freeform line item (AC-15)" do
+      it "does not create a catalog product for a freeform line item" do
         expect {
           post estimate_line_items_path(estimate), params: freeform_params
         }.not_to change(Product, :count)
@@ -43,20 +43,6 @@ RSpec.describe "LineItems", type: :request do
         post estimate_line_items_path(estimate), params: freeform_params
         expect(LineItem.last.description).to eq("Custom shelf unit")
       end
-
-      it "ignores removed _material_id columns (schema no longer has them)" do
-        post estimate_line_items_path(estimate), params: {
-          line_item: {
-            description: "Test",
-            quantity: "1",
-            unit: "EA",
-            exterior_material_id: "999"  # filtered by strong params; column does not exist
-          }
-        }
-        expect(response).to redirect_to(edit_estimate_path(estimate))
-        expect(LineItem.last.description).to eq("Test")
-        expect(LineItem.last.product_id).to be_nil
-      end
     end
 
     context "with product_id" do
@@ -64,8 +50,6 @@ RSpec.describe "LineItems", type: :request do
         create(:product,
                name: "MDF Base 2-door",
                unit: "EA",
-               exterior_description: "MDF",
-               exterior_unit_price: BigDecimal("45.00"),
                exterior_qty: BigDecimal("2.5"),
                detail_hrs: BigDecimal("0.75"))
       end
@@ -82,7 +66,7 @@ RSpec.describe "LineItems", type: :request do
         expect(LineItem.last.description).to eq("MDF Base 2-door")
       end
 
-      it "copies exterior_description from the product" do
+      it "copies exterior_qty from the product" do
         post estimate_line_items_path(estimate), params: {
           line_item: {
             product_id: product.id,
@@ -91,7 +75,7 @@ RSpec.describe "LineItems", type: :request do
             unit: "EA"
           }
         }
-        expect(LineItem.last.exterior_description).to eq("MDF")
+        expect(LineItem.last.exterior_qty).to eq(BigDecimal("2.5"))
       end
 
       it "respects an overridden description param over the product name" do
@@ -116,6 +100,23 @@ RSpec.describe "LineItems", type: :request do
           }
         }
         expect(LineItem.last.product_id).to eq(product.id)
+      end
+    end
+
+    context "with exterior_material_id" do
+      let!(:material) { create(:material, default_price: BigDecimal("50.00")) }
+      let!(:em)       { create(:estimate_material, estimate: estimate, material: material, quote_price: BigDecimal("50.00")) }
+
+      it "creates line item with the FK set" do
+        post estimate_line_items_path(estimate), params: {
+          line_item: {
+            description: "Test cabinet",
+            quantity: "1",
+            unit: "EA",
+            exterior_material_id: em.id.to_s
+          }
+        }
+        expect(LineItem.last.exterior_material_id).to eq(em.id)
       end
     end
 
@@ -152,6 +153,23 @@ RSpec.describe "LineItems", type: :request do
         line_item: { description: "New Name", quantity: "1", unit: "EA" }
       }
       expect(response).to redirect_to(edit_estimate_path(estimate))
+    end
+
+    context "with exterior_material_id" do
+      let!(:material) { create(:material, default_price: BigDecimal("50.00")) }
+      let!(:em)       { create(:estimate_material, estimate: estimate, material: material, quote_price: BigDecimal("50.00")) }
+
+      it "updates the FK" do
+        patch estimate_line_item_path(estimate, line_item), params: {
+          line_item: {
+            description: "New Name",
+            quantity: "1",
+            unit: "EA",
+            exterior_material_id: em.id.to_s
+          }
+        }
+        expect(line_item.reload.exterior_material_id).to eq(em.id)
+      end
     end
 
     it "redirects to login when unauthenticated" do

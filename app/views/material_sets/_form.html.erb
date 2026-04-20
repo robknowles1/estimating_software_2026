@@ -1,0 +1,47 @@
+<% input_cls = "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+<% label_cls = "block text-xs font-medium text-slate-700 mb-1" %>
+
+<% if f.object.errors.any? %>
+  <div class="bg-red-50 border border-red-300 rounded-lg p-4 mb-6">
+    <p class="text-sm font-semibold text-red-700 mb-2">
+      <%= t("material_sets.form.errors", count: f.object.errors.count) %>
+    </p>
+    <ul class="list-disc list-inside space-y-1">
+      <% f.object.errors.each do |error| %>
+        <li class="text-sm text-red-600"><%= error.full_message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+  <div class="mb-4">
+    <%= f.label :name, class: label_cls %>
+    <%= f.text_field :name, class: input_cls, placeholder: "e.g. Standard Maple" %>
+  </div>
+
+  <h3 class="text-sm font-semibold text-slate-700 mb-3"><%= t("material_sets.form.materials_heading") %></h3>
+  <% existing_ids = f.object.persisted? ? f.object.material_set_items.pluck(:material_id) : [] %>
+  <div class="space-y-2 max-h-64 overflow-y-auto border border-slate-200 rounded-lg p-3">
+    <% if @materials.any? %>
+      <% @materials.each do |material| %>
+        <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded">
+          <input type="checkbox" name="material_set[material_ids][]"
+                 value="<%= material.id %>"
+                 <%= "checked" if existing_ids.include?(material.id) %>
+                 class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+          <span class="text-sm text-slate-700"><%= material.name %></span>
+          <span class="text-xs text-slate-400 ml-auto">$<%= number_with_precision(material.default_price, precision: 2) %></span>
+        </label>
+      <% end %>
+    <% else %>
+      <p class="text-sm text-slate-500 p-2">No active materials in the library yet.</p>
+    <% end %>
+  </div>
+</div>
+
+<div class="flex items-center gap-3">
+  <%= f.submit class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>
+  <%= link_to t("material_sets.form.cancel"), material_sets_path,
+      class: "text-sm text-slate-600 hover:text-slate-900 font-medium" %>
+</div>
