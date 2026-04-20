@@ -37,6 +37,7 @@ en:
     clients: "Clients"
     users: "Users"
     materials: "Materials"
+    material_sets: "Material Sets"
     sign_out: "Sign Out"
 
   flash:
@@ -370,6 +371,8 @@ en:
       col_role: "Role"
       col_actions: "Actions"
       locks_role_badge: "Locks"
+      back_to_estimate: "← Back to estimate"
+      no_sets_link: "No sets yet — create one"
     new:
       title: "Add Material"
       subtitle: "Search the library or create a new material."
