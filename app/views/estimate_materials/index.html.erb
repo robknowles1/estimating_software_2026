@@ -1,3 +1,7 @@
+<%= link_to edit_estimate_path(@estimate), class: "inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-4" do %>
+  <%= t(".back_to_estimate") %>
+<% end %>
+
 <div class="max-w-5xl mx-auto">
   <div class="flex items-center justify-between mb-6">
     <div>
@@ -5,7 +9,7 @@
       <p class="text-sm text-slate-500 mt-0.5"><%= t(".subtitle") %></p>
     </div>
     <div class="flex items-center gap-3">
-      <%# Apply set dropdown %>
+      <%# Apply set dropdown or empty-state link %>
       <% if @material_sets.any? %>
         <form action="#" method="get" data-apply-set>
           <select name="material_set_select" id="material_set_select"
@@ -44,6 +48,8 @@
 
           document.addEventListener("turbo:load", initializeApplySetDropdown);
         </script>
+      <% else %>
+        <%= link_to t(".no_sets_link"), new_material_set_path, class: "text-sm text-slate-500 hover:text-slate-700 underline underline-offset-2" %>
       <% end %>
       <%= link_to t(".add_button"), new_estimate_estimate_material_path(@estimate),
           class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors" %>
