@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 import TomSelect from "tom-select"
 
 export default class extends Controller {
-  static targets = ["select", "hiddenField"]
+  static targets = ["control", "hiddenField"]
   static values = {
     materials: Array,
     placeholder: String,
@@ -10,7 +10,7 @@ export default class extends Controller {
   }
 
   connect() {
-    this.tomSelect = new TomSelect(this.selectTarget, {
+    this.tomSelect = new TomSelect(this.controlTarget, {
       valueField: "id",
       labelField: "label",
       searchField: ["label"],
@@ -26,11 +26,11 @@ export default class extends Controller {
           return div
         }
       },
-      onItemAdd: (value) => {
-        if (this.hasHiddenFieldTarget) {
+      onChange: (value) => {
+        if (value && this.hasHiddenFieldTarget) {
           this.hiddenFieldTarget.value = value
+          this.controlTarget.closest("form").requestSubmit()
         }
-        this.selectTarget.closest("form").requestSubmit()
       }
     })
   }
