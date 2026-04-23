@@ -124,23 +124,21 @@ Client-side filtering means no new `/materials/search.json` route is required. I
 #### Stimulus controller: `app/javascript/controllers/material_combobox_controller.js`
 
 Responsibilities:
-- On `connect()`: initialize Tom Select on the `<select>` element identified by the `selectTarget`.
-- Pass `options` from the `materialsValue` (JSON array parsed from the controller's data attribute).
-- Configure Tom Select with: `valueField: "id"`, `labelField: "label"`, `searchField: ["label"]`, `placeholder` from the `placeholderValue` string, a `render.no_results` function that builds a `<div class="no-results">` element using DOM methods (`document.createElement` + `textContent`) with text from `emptyStateValue` (note: `noResultsText` is not a valid Tom Select 2.x option and is silently ignored — use `render.no_results` instead), `create: false` (no inline creation — that is the "Create New" tab's job).
-- On item selection (`onItemAdd` callback): submit the enclosing form.
+- On `connect()`: initialize Tom Select on the `<select>` element identified by the `controlTarget`. Tom Select reads the `<option>` elements already rendered in the DOM — no explicit `valueField`/`labelField`/`searchField` configuration is needed because Tom Select defaults to `value`/`text` from the `<option>` markup.
+- Configure Tom Select with: `placeholder` from the `placeholderValue` string, `create: false` (no inline creation — that is the "Create New" tab's job), `dropdownParent: "body"` so Tom Select's `positionDropdown()` positions the dropdown correctly, and a `render.no_results` function that builds a `<div class="no-results">` element using DOM methods (`document.createElement` + `textContent`) with text from `emptyStateValue` (note: `noResultsText` is not a valid Tom Select 2.x option and is silently ignored — use `render.no_results` instead).
+- On item selection (`onItemAdd` callback): populate the hidden `material_id` field (identified by the `hiddenFieldTarget`) with the selected value and call `this.element.requestSubmit()` (the controller is mounted on the `<form>` element, so `this.element` is the form itself).
 - On `disconnect()`: call `this.tomSelect.destroy()` if `this.tomSelect` is defined.
 
 Controller values interface:
 
 ```javascript
 static values = {
-  materials: Array,   // [{ id: 1, label: "Maple Plywood 3/4 — sheet_good" }, ...]
   placeholder: String,
   emptyState: String
 }
 ```
 
-The `label` field combines `material.name` and `material.category.humanize` for disambiguation (e.g., "Maple Plywood 3/4 — Sheet Good"). This formatting is done in the view helper or directly in the view, not in the controller.
+Material options are rendered server-side as `<option value="<id>"><name> — <category.humanize></option>` elements inside the `<select>`. The combination of name and humanized category provides disambiguation (e.g., "Maple Plywood 3/4 — Sheet Good"). No JSON data attribute is required.
 
 #### View: `app/views/estimate_materials/new.html.erb` — Search Library tab section
 

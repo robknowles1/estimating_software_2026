@@ -10,7 +10,7 @@ class EstimateMaterialsController < ApplicationController
 
   def new
     @mode = params[:mode] || "search"
-    @materials = Material.active.order(:name)
+    @materials = Material.active.order(:name) if @mode == "search"
     @estimate_material = @estimate.estimate_materials.new
     @material_sets = MaterialSet.order(:name)
   end
@@ -54,7 +54,6 @@ class EstimateMaterialsController < ApplicationController
         redirect_to estimate_estimate_materials_path(@estimate), notice: t(".notice")
       else
         @mode = "new"
-        @materials = Material.active.order(:name)
         @new_material      = material
         @estimate_material = em || @estimate.estimate_materials.new
         @material_sets = MaterialSet.order(:name)
