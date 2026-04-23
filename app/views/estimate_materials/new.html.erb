@@ -23,13 +23,10 @@
 
   <% if @mode == "search" %>
     <%# Combobox section %>
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6 overflow-visible">
       <%= form_with url: estimate_estimate_materials_path(@estimate), method: :post,
           data: {
             controller: "material-combobox",
-            "material-combobox-materials-value": @materials.map { |m|
-              { id: m.id, label: "#{m.name} — #{m.category.humanize}" }
-            }.to_json,
             "material-combobox-placeholder-value": t(".search_placeholder"),
             "material-combobox-empty-state-value": t(".no_results")
           } do |f| %>
@@ -39,10 +36,13 @@
           <label class="block text-xs font-medium text-slate-700">
             <%= t(".search_label") %>
           </label>
-          <input type="text"
-                 data-material-combobox-target="control"
-                 class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                 autocomplete="off">
+          <select data-material-combobox-target="control"
+                  class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+            <option value=""></option>
+            <% @materials.each do |m| %>
+              <option value="<%= m.id %>"><%= m.name %> — <%= m.category.humanize %></option>
+            <% end %>
+          </select>
         </div>
       <% end %>
     </div>

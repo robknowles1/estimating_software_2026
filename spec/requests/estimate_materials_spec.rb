@@ -7,17 +7,17 @@ RSpec.describe "EstimateMaterials", type: :request do
   before { sign_in(user) }
 
   describe "GET /estimates/:estimate_id/estimate_materials/new" do
-    it "includes active material names in the combobox data attribute" do
+    it "includes active material names as <option> elements inside the select" do
       create(:material, name: "Cherry Plywood", category: "sheet_good")
       get new_estimate_estimate_material_path(estimate)
-      expect(response.body).to include("data-material-combobox-materials-value")
       expect(response.body).to include("Cherry Plywood")
+      expect(response.body).to match(/<option value="\d+">Cherry Plywood/)
     end
 
-    it "sets the combobox materials value to an empty JSON array when no active materials exist" do
+    it "renders no material <option> elements when no active materials exist" do
       get new_estimate_estimate_material_path(estimate)
-      expect(response.body).to include("data-material-combobox-materials-value")
-      expect(response.body).to match(/material-combobox-materials-value[^>]*\[\]/)
+      # Only the blank placeholder option should be present; no material options
+      expect(response.body).not_to match(/<option value="\d+">/)
     end
   end
 
