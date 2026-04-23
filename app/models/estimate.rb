@@ -11,8 +11,8 @@ class Estimate < ApplicationRecord
   validates :client_id,              presence: true
   validates :created_by_user_id,     presence: true
   validates :estimate_number,        presence: true, uniqueness: true
-  validates :installer_crew_size,    numericality: { greater_than_or_equal_to: 1 }
-  validates :delivery_crew_size,     numericality: { greater_than_or_equal_to: 1 }
+  validates :installer_crew_size,    numericality: { only_integer: true, greater_than_or_equal_to: 1 }
+  validates :delivery_crew_size,     numericality: { only_integer: true, greater_than_or_equal_to: 1 }
   validates :profit_overhead_percent, numericality: { greater_than_or_equal_to: 0 }
   validates :pm_supervision_percent,  numericality: { greater_than_or_equal_to: 0 }
   validates :tax_rate,               numericality: { greater_than_or_equal_to: 0 }

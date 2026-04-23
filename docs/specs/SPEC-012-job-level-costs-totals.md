@@ -1,7 +1,7 @@
 # Spec: Job-Level Costs and Final Totals
 
 **ID:** SPEC-012
-**Status:** ready
+**Status:** done
 **Priority:** high
 **Created:** 2026-04-10
 **Author:** pm-agent

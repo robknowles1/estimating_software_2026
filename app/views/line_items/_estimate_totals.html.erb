@@ -1,21 +1,113 @@
-<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mt-4">
-  <div class="flex items-center justify-between">
+<div id="<%= "estimate_#{estimate.id}_totals" %>" class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mt-4" style="position: sticky; bottom: 0;">
+  <%# Headline totals %>
+  <div class="flex items-center justify-between mb-4">
     <div>
       <p class="text-xs text-slate-500 uppercase tracking-wide font-medium"><%= t(".grand_non_burdened_label") %></p>
-      <p class="text-2xl font-bold text-slate-800 mt-1"><%= number_to_currency(totals.grand_non_burdened_total) %></p>
+      <p class="text-xl font-semibold text-slate-700 mt-0.5"><%= number_to_currency(totals.grand_non_burdened_total) %></p>
       <p class="text-xs text-slate-400 mt-1"><%= t(".burden_note", multiplier: number_with_precision(totals.burden_multiplier, precision: 3)) %></p>
     </div>
-    <% if estimate.line_items.any? %>
-      <div class="text-right space-y-1">
+    <div class="text-right">
+      <p class="text-xs text-slate-500 uppercase tracking-wide font-medium"><%= t(".burdened_total_label") %></p>
+      <p class="text-2xl font-bold text-slate-800 mt-0.5"><%= number_to_currency(totals.burdened_total) %></p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+    <%# COGS Breakdown %>
+    <div>
+      <h3 class="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2"><%= t(".cogs_heading") %></h3>
+      <table class="w-full text-xs">
+        <tbody>
+          <tr>
+            <td class="py-0.5 text-slate-600"><%= t(".cogs_100_materials") %></td>
+            <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.cogs_breakdown["100_materials"]) %></td>
+          </tr>
+          <tr>
+            <td class="py-0.5 text-slate-600"><%= t(".cogs_200_engineering") %></td>
+            <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.cogs_breakdown["200_engineering"]) %></td>
+          </tr>
+          <tr>
+            <td class="py-0.5 text-slate-600"><%= t(".cogs_300_shop_labor") %></td>
+            <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.cogs_breakdown["300_shop_labor"]) %></td>
+          </tr>
+          <tr>
+            <td class="py-0.5 text-slate-600"><%= t(".cogs_400_install") %></td>
+            <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.cogs_breakdown["400_install"]) %></td>
+          </tr>
+          <tr>
+            <td class="py-0.5 text-slate-500 italic"><%= t(".cogs_500_sub_install") %></td>
+            <td class="py-0.5 text-right font-medium text-slate-500"><%= number_to_currency(totals.cogs_breakdown["500_sub_install"]) %></td>
+          </tr>
+          <tr>
+            <td class="py-0.5 text-slate-600"><%= t(".cogs_600_countertops") %></td>
+            <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.cogs_breakdown["600_countertops"]) %></td>
+          </tr>
+          <tr>
+            <td class="py-0.5 text-slate-500 italic"><%= t(".cogs_700_sub_other") %></td>
+            <td class="py-0.5 text-right font-medium text-slate-500"><%= number_to_currency(totals.cogs_breakdown["700_sub_other"]) %></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <%# Job costs + Labor Hours %>
+    <div>
+      <h3 class="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2"><%= t(".job_costs_heading") %></h3>
+      <table class="w-full text-xs mb-3">
+        <tbody>
+          <tr>
+            <td class="py-0.5 text-slate-600"><%= t(".job_cost_install_travel") %></td>
+            <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.job_level_costs[:install_travel]) %></td>
+          </tr>
+          <tr>
+            <td class="py-0.5 text-slate-600"><%= t(".job_cost_delivery") %></td>
+            <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.job_level_costs[:delivery]) %></td>
+          </tr>
+          <tr>
+            <td class="py-0.5 text-slate-600"><%= t(".job_cost_per_diem") %></td>
+            <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.job_level_costs[:per_diem]) %></td>
+          </tr>
+          <tr>
+            <td class="py-0.5 text-slate-600"><%= t(".job_cost_hotel") %></td>
+            <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.job_level_costs[:hotel]) %></td>
+          </tr>
+          <tr>
+            <td class="py-0.5 text-slate-600"><%= t(".job_cost_airfare") %></td>
+            <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.job_level_costs[:airfare]) %></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 class="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2"><%= t(".labor_hours_heading") %></h3>
+      <table class="w-full text-xs">
+        <tbody>
+          <% EstimateTotalsCalculator::LABOR_CATEGORIES.each do |cat| %>
+            <tr>
+              <td class="py-0.5 text-slate-600"><%= t(".labor_#{cat}") %></td>
+              <td class="py-0.5 text-right font-medium text-slate-800"><%= number_with_precision(totals.labor_hours_summary[cat], precision: 2) %> hrs</td>
+            </tr>
+          <% end %>
+          <tr class="border-t border-slate-100">
+            <td class="pt-1 text-slate-600"><%= t(".man_days_install_label") %></td>
+            <td class="pt-1 text-right font-medium text-slate-800"><%= number_with_precision(totals.man_days_install, precision: 2) %></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if estimate.line_items.any? %>
+    <div class="border-t border-slate-100 pt-3 mt-3">
+      <div class="space-y-0.5">
         <% estimate.line_items.each do |li| %>
           <% result = totals.line_item_results[li.id] %>
           <% next unless result %>
-          <div class="text-xs text-slate-500">
+          <div class="text-xs text-slate-500 flex justify-between">
             <span class="font-medium text-slate-700"><%= li.description %></span>
-            — <%= number_to_currency(result[:non_burdened_total]) %>
+            <span><%= number_to_currency(result[:non_burdened_total]) %></span>
           </div>
         <% end %>
       </div>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
 </div>

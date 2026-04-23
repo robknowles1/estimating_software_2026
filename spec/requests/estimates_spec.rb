@@ -172,6 +172,116 @@ RSpec.describe "Estimates", type: :request do
       expect(estimate.profit_overhead_percent).to eq(BigDecimal("20.0"))
       expect(estimate.tax_rate).to eq(BigDecimal("0.09"))
     end
+
+    it "persists job-level cost fields on the estimate" do
+      patch estimate_path(estimate),
+        params: {
+          estimate: {
+            title: estimate.title,
+            client_id: estimate.client_id,
+            install_travel_qty: "3",
+            delivery_qty:       "2",
+            delivery_rate:      "450.00",
+            per_diem_qty:       "4",
+            per_diem_rate:      "70.00",
+            hotel_qty:          "2",
+            airfare_qty:        "1",
+            countertop_quote:   "1500.00"
+          }
+        }
+
+      expect(response).to redirect_to(edit_estimate_path(estimate))
+      estimate.reload
+      expect(estimate.install_travel_qty).to eq(BigDecimal("3"))
+      expect(estimate.delivery_qty).to eq(BigDecimal("2"))
+      expect(estimate.delivery_rate).to eq(BigDecimal("450.00"))
+      expect(estimate.per_diem_qty).to eq(BigDecimal("4"))
+      expect(estimate.per_diem_rate).to eq(BigDecimal("70.00"))
+      expect(estimate.hotel_qty).to eq(BigDecimal("2"))
+      expect(estimate.airfare_qty).to eq(BigDecimal("1"))
+      expect(estimate.countertop_quote).to eq(BigDecimal("1500.00"))
+    end
+
+    it "recalculates burdened_total when pm_supervision_percent is updated" do
+      create(:labor_rate, labor_category: "detail",   hourly_rate: BigDecimal("20.00"))
+      create(:labor_rate, labor_category: "mill",     hourly_rate: BigDecimal("22.00"))
+      create(:labor_rate, labor_category: "assembly", hourly_rate: BigDecimal("25.00"))
+      create(:labor_rate, labor_category: "customs",  hourly_rate: BigDecimal("18.00"))
+      create(:labor_rate, labor_category: "finish",   hourly_rate: BigDecimal("21.00"))
+      create(:labor_rate, labor_category: "install",  hourly_rate: BigDecimal("23.00"))
+
+      patch estimate_path(estimate),
+        params: {
+          estimate: {
+            title: estimate.title,
+            client_id: estimate.client_id,
+            pm_supervision_percent: "8.0",
+            profit_overhead_percent: "10.0"
+          }
+        },
+        headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+      estimate.reload
+      expect(estimate.pm_supervision_percent).to eq(BigDecimal("8.0"))
+
+      # Turbo Stream response must include the updated totals partial targeting the correct id
+      expect(response.media_type).to eq("text/vnd.turbo-stream.html")
+      expect(response.body).to include("estimate_#{estimate.id}_totals")
+      # The burdened total (with no line items, just burden multiplier) should appear as $0.00
+      expect(response.body).to include("Final Burdened Total")
+    end
+
+    it "recalculates material cost_with_tax when tax_rate is updated" do
+      material = create(:material, default_price: BigDecimal("100.00"))
+      em       = create(:estimate_material, estimate: estimate, material: material,
+                        quote_price: BigDecimal("100.00"))
+
+      patch estimate_path(estimate),
+        params: {
+          estimate: {
+            title: estimate.title,
+            client_id: estimate.client_id,
+            tax_rate: "0.10"
+          }
+        }
+
+      expect(response).to redirect_to(edit_estimate_path(estimate))
+      expect(em.reload.cost_with_tax).to eq(BigDecimal("110.00"))
+    end
+  end
+
+  describe "GET /estimates/:id/edit — totals panel" do
+    let(:estimate) { create(:estimate, client: client) }
+
+    before do
+      create(:labor_rate, labor_category: "detail",   hourly_rate: BigDecimal("20.00"))
+      create(:labor_rate, labor_category: "mill",     hourly_rate: BigDecimal("22.00"))
+      create(:labor_rate, labor_category: "assembly", hourly_rate: BigDecimal("25.00"))
+      create(:labor_rate, labor_category: "customs",  hourly_rate: BigDecimal("18.00"))
+      create(:labor_rate, labor_category: "finish",   hourly_rate: BigDecimal("21.00"))
+      create(:labor_rate, labor_category: "install",  hourly_rate: BigDecimal("23.00"))
+    end
+
+    it "renders the sticky totals panel with COGS breakdown labels" do
+      get edit_estimate_path(estimate)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("COGS Breakdown")
+      expect(response.body).to include("100 — Materials")
+      expect(response.body).to include("Final Burdened Total")
+    end
+
+    it "renders job-level fixed cost labels in the totals panel" do
+      get edit_estimate_path(estimate)
+      expect(response.body).to include("Job-Level Fixed Costs")
+      expect(response.body).to include("Install Travel")
+      expect(response.body).to include("Delivery")
+    end
+
+    it "renders labor hours summary in the totals panel" do
+      get edit_estimate_path(estimate)
+      expect(response.body).to include("Labor Hours Summary")
+      expect(response.body).to include("Man-Days (Install)")
+    end
   end
 
   describe "DELETE /estimates/:id" do
