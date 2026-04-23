@@ -1,6 +1,17 @@
 // Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
-import "@hotwired/turbo-rails"
+import { Turbo } from "@hotwired/turbo-rails"
 import "controllers"
+
+// Ensure data-turbo-confirm buttons always use native window.confirm so that
+// Selenium's accept_confirm helper (which waits for a native browser dialog)
+// can reliably intercept the dialog in all environments, including headless
+// Chrome in CI.  Turbo 8 falls back to FormSubmission.confirmMethod by
+// default, which also calls window.confirm(), but some headless Chrome
+// versions dispatch the dialog before Capybara's find_modal starts polling
+// when the call goes through the async Promise chain.  Setting this
+// explicitly keeps the confirm call synchronous and on the window object,
+// which Chrome's CDP dialog event fires against synchronously.
+Turbo.config.forms.confirm = (message) => window.confirm(message)
 
 // Mark the HTML element once all JS modules have initialised.  System specs
 // can wait on this attribute to ensure Turbo event listeners are registered
