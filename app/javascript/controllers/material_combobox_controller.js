@@ -11,7 +11,7 @@ export default class extends Controller {
   connect() {
     this.tomSelect = new TomSelect(this.controlTarget, {
       create: false,
-      dropdownParent: document.body,
+      dropdownParent: "body",
       placeholder: this.placeholderValue,
       render: {
         no_results: () => {
@@ -25,7 +25,7 @@ export default class extends Controller {
         if (this.hasHiddenFieldTarget) {
           this.hiddenFieldTarget.value = value
         }
-        this.controlTarget.closest("form").requestSubmit()
+        this.element.requestSubmit()
       }
     })
   }

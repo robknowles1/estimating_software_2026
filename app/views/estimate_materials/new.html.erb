@@ -33,10 +33,11 @@
         <%= hidden_field_tag :material_id, nil,
             data: { "material-combobox-target": "hiddenField" } %>
         <div class="flex flex-col gap-2">
-          <label class="block text-xs font-medium text-slate-700">
+          <label class="block text-xs font-medium text-slate-700" for="material_search">
             <%= t(".search_label") %>
           </label>
-          <select data-material-combobox-target="control"
+          <select id="material_search"
+                  data-material-combobox-target="control"
                   class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
             <option value=""></option>
             <% @materials.each do |m| %>
