@@ -106,9 +106,9 @@ class EstimateTotalsCalculator
 
   def calculate_job_level_costs
     constants         = Rails.application.config.burden_constants
-    mileage_rate      = constants[:mileage_rate]
-    hotel_rate        = constants[:hotel_rate]
-    airfare_rate      = constants[:airfare_rate]
+    mileage_rate      = constants[:mileage_rate]  || BigDecimal("0")
+    hotel_rate        = constants[:hotel_rate]     || BigDecimal("0")
+    airfare_rate      = constants[:airfare_rate]   || BigDecimal("0")
     crew              = @estimate.installer_crew_size.to_d
 
     install_travel_cost = (@estimate.install_travel_qty || 0).to_d * crew * mileage_rate * BigDecimal("2")
