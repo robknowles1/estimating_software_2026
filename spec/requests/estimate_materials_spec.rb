@@ -6,6 +6,21 @@ RSpec.describe "EstimateMaterials", type: :request do
 
   before { sign_in(user) }
 
+  describe "GET /estimates/:estimate_id/estimate_materials/new" do
+    it "includes active material names as <option> elements inside the select" do
+      create(:material, name: "Cherry Plywood", category: "sheet_good")
+      get new_estimate_estimate_material_path(estimate)
+      expect(response.body).to include("Cherry Plywood")
+      expect(response.body).to match(/<option value="\d+">Cherry Plywood/)
+    end
+
+    it "renders no material <option> elements when no active materials exist" do
+      get new_estimate_estimate_material_path(estimate)
+      # Only the blank placeholder option should be present; no material options
+      expect(response.body).not_to match(/<option value="\d+">/)
+    end
+  end
+
   describe "GET /estimates/:estimate_id/estimate_materials" do
     it "returns http ok" do
       get estimate_estimate_materials_path(estimate)
