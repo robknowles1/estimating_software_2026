@@ -651,6 +651,50 @@ RSpec.describe EstimateTotalsCalculator do
   end
 
   # -----------------------------------------------------------------------
+  # Nil-safety: job-level cost fields should not raise when nil
+  # -----------------------------------------------------------------------
+
+  describe "#call with nil job-level cost fields" do
+    it "does not raise when all job-level cost fields are nil" do
+      # Simulate a pre-migration record by bypassing model defaults via update_columns
+      estimate.update_columns(
+        install_travel_qty: nil,
+        delivery_qty:       nil,
+        delivery_rate:      nil,
+        per_diem_qty:       nil,
+        per_diem_rate:      nil,
+        hotel_qty:          nil,
+        airfare_qty:        nil,
+        countertop_quote:   nil,
+        on_site_time_hrs:   nil
+      )
+      reloaded = Estimate.includes(:line_items).find(estimate.id)
+      expect { described_class.new(reloaded).call }.not_to raise_error
+    end
+
+    it "treats nil job-level cost fields as zero" do
+      estimate.update_columns(
+        install_travel_qty: nil,
+        delivery_qty:       nil,
+        delivery_rate:      nil,
+        per_diem_qty:       nil,
+        per_diem_rate:      nil,
+        hotel_qty:          nil,
+        airfare_qty:        nil,
+        countertop_quote:   nil
+      )
+      reloaded = Estimate.includes(:line_items).find(estimate.id)
+      result = described_class.new(reloaded).call
+      expect(result.job_level_costs[:install_travel]).to eq(BigDecimal("0"))
+      expect(result.job_level_costs[:delivery]).to eq(BigDecimal("0"))
+      expect(result.job_level_costs[:per_diem]).to eq(BigDecimal("0"))
+      expect(result.job_level_costs[:hotel]).to eq(BigDecimal("0"))
+      expect(result.job_level_costs[:airfare]).to eq(BigDecimal("0"))
+      expect(result.cogs_breakdown["600_countertops"]).to eq(BigDecimal("0"))
+    end
+  end
+
+  # -----------------------------------------------------------------------
   # SPEC-012: Reference estimate fixture — AC-10
   # -----------------------------------------------------------------------
   # Synthetic reference estimate with round numbers.

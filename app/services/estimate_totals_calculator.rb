@@ -111,11 +111,11 @@ class EstimateTotalsCalculator
     airfare_rate      = constants[:airfare_rate]
     crew              = @estimate.installer_crew_size.to_d
 
-    install_travel_cost = @estimate.install_travel_qty.to_d * crew * mileage_rate * BigDecimal("2")
-    delivery_cost       = @estimate.delivery_qty.to_d * @estimate.delivery_rate.to_d
-    per_diem_cost       = @estimate.per_diem_qty.to_d * @estimate.per_diem_rate.to_d * crew
-    hotel_cost          = @estimate.hotel_qty.to_d * crew * hotel_rate
-    airfare_cost        = @estimate.airfare_qty.to_d * crew * airfare_rate
+    install_travel_cost = (@estimate.install_travel_qty || 0).to_d * crew * mileage_rate * BigDecimal("2")
+    delivery_cost       = (@estimate.delivery_qty || 0).to_d * (@estimate.delivery_rate || 0).to_d
+    per_diem_cost       = (@estimate.per_diem_qty || 0).to_d * (@estimate.per_diem_rate || 0).to_d * crew
+    hotel_cost          = (@estimate.hotel_qty || 0).to_d * crew * hotel_rate
+    airfare_cost        = (@estimate.airfare_qty || 0).to_d * crew * airfare_rate
 
     {
       install_travel: install_travel_cost,
@@ -164,7 +164,7 @@ class EstimateTotalsCalculator
                     job_level_costs[:airfare]
 
     # 600 Countertops: countertop_quote
-    countertop = @estimate.countertop_quote.to_d
+    countertop = (@estimate.countertop_quote || 0).to_d
 
     {
       "100_materials"   => materials_total,

@@ -7,6 +7,16 @@ class Estimate < ApplicationRecord
 
   enum :status, { draft: "draft", sent: "sent", approved: "approved", lost: "lost", archived: "archived" }, default: "draft"
 
+  attribute :install_travel_qty, :decimal, default: 0
+  attribute :delivery_qty,        :decimal, default: 0
+  attribute :delivery_rate,       :decimal, default: 400
+  attribute :per_diem_qty,        :decimal, default: 0
+  attribute :per_diem_rate,       :decimal, default: 65
+  attribute :hotel_qty,           :decimal, default: 0
+  attribute :airfare_qty,         :decimal, default: 0
+  attribute :countertop_quote,    :decimal, default: 0
+  attribute :on_site_time_hrs,    :decimal, default: 0
+
   validates :title,                  presence: true
   validates :client_id,              presence: true
   validates :created_by_user_id,     presence: true
