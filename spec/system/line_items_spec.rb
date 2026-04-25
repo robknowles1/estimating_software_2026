@@ -103,13 +103,13 @@ RSpec.describe "Line Items", type: :system do
       expect(page).to have_css("html[data-js-ready='true']", wait: 5)
     end
 
-    def edit_qty_and_blur(value, expected_value: value)
+    def edit_qty_and_blur(value, expected_value: value, field: "line_item[quantity]")
       wait_for_js
-      qty_field = find_field("line_item[quantity]")
+      qty_field = find_field(field)
       qty_field.click
       qty_field.fill_in(with: value)
-      execute_script("document.querySelector('[name=\"line_item[quantity]\"]').blur()")
-      expect(page).to have_field("line_item[quantity]", with: expected_value)
+      execute_script("document.querySelector('[name=\"#{field}\"]').blur()")
+      expect(page).to have_field(field, with: expected_value)
     end
 
     before { login }
@@ -177,6 +177,19 @@ RSpec.describe "Line Items", type: :system do
       expect(page).to have_current_path(edit_estimate_path(estimate), wait: 5)
       line_item.reload
       expect(line_item.quantity).to eq(BigDecimal("0.2143"))
+    end
+
+    it "evaluates a division formula (12/24) to 0.5 on exterior_qty" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("12/24", expected_value: "0.5", field: "line_item[exterior_qty]")
+      expect(find_field("line_item[exterior_qty]").value).to eq("0.5")
+    end
+
+    it "passes through a plain integer unchanged on locks_qty" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("2", field: "line_item[locks_qty]")
+      value = find_field("line_item[locks_qty]").value
+      expect(value).to eq("2").or eq("2.0")
     end
   end
 end

@@ -1,4 +1,4 @@
-# Spec: Excel-Style Formula Evaluation on the Line Item Qty Field
+# Spec: Excel-Style Formula Evaluation on Line Item Qty Fields
 
 **ID:** SPEC-016
 **Status:** done
@@ -10,7 +10,7 @@
 
 ## Summary
 
-Estimators at this millwork shop are accustomed to entering formulas directly into cells in Excel — typing `+6/28` to express "6 pieces over a 28-inch run" rather than pre-calculating the result. The Edit Line Item form's Qty field is currently a plain `type="number"` input that rejects formula characters. This spec adds a `formula-input` Stimulus controller that evaluates simple arithmetic expressions client-side on blur, replacing the raw formula with its computed decimal result. No server changes are required: the `quantity` column already stores `DECIMAL(10, 4)` and the submitted value is always a plain decimal after client-side evaluation.
+Estimators at this millwork shop are accustomed to entering formulas directly into cells in Excel — typing `+6/28` to express "6 pieces over a 28-inch run" rather than pre-calculating the result. The Edit Line Item form's top-level Qty field and each material slot qty field (exterior, interior, interior2, back, drawers, pulls, hinges, slides, locks) are currently plain `type="number"` inputs that reject formula characters. This spec adds a `formula-input` Stimulus controller that evaluates simple arithmetic expressions client-side on blur, replacing the raw formula with its computed decimal result. No server changes are required: the underlying columns already store decimals and the submitted values are always plain decimals after client-side evaluation.
 
 ---
 
@@ -24,7 +24,7 @@ Estimators at this millwork shop are accustomed to entering formulas directly in
 
 ## Acceptance Criteria
 
-1. Given the Edit Line Item form, when the page loads, then the Qty field is rendered as `type="text"` with `inputmode="decimal"` (not `type="number"`), and the `formula-input` Stimulus controller is wired to it.
+1. Given the Edit Line Item form, when the page loads, then the Qty field AND each material slot qty field (exterior, interior, interior2, back, drawers, pulls, hinges, slides, locks) are rendered as `type="text"` with `inputmode="decimal"` and have the formula-input controller wired.
 
 2. Given the Qty field contains a valid arithmetic expression (digits, `+`, `-`, `*`, `/`, `.`, `(`, `)`, and spaces only), when the user leaves the field (blur), then the field value is replaced with the evaluated result rounded to 4 decimal places (e.g. `6/28` becomes `0.2143`).
 
@@ -77,13 +77,7 @@ No new npm or CDN dependencies are introduced. `Function(...)` is the standard J
 
 #### View change: `app/views/line_items/_form.html.erb`
 
-Replace the single Qty field (line 55) from:
-
-```erb
-<%= f.number_field :quantity, class: input_cls, step: "0.0001", min: 0.0001 %>
-```
-
-to:
+The top-level Qty field plus each material slot qty field rendered by the slot loop (line 98) and the `locks_qty` field (line 124) are converted from `f.number_field` (currently `step: "0.0001", min: 0`) to `f.text_field` with the same formula-input wiring. For example, each `f.number_field :"#{slot}_qty"` and `f.number_field :locks_qty` is replaced with the equivalent `f.text_field` form:
 
 ```erb
 <%= f.text_field :quantity,
@@ -93,7 +87,23 @@ to:
     data: { controller: "formula-input", action: "blur->formula-input#evaluate" } %>
 ```
 
-The `step` and `min` attributes are removed from the rendered HTML because `type="text"` does not respect them and they would generate browser warnings. Server-side validation on `quantity` (must be > 0) is unchanged and continues to enforce the minimum.
+```erb
+<%= f.text_field :"#{slot}_qty",
+    class: input_cls,
+    inputmode: "decimal",
+    autocomplete: "off",
+    data: { controller: "formula-input", action: "blur->formula-input#evaluate" } %>
+```
+
+```erb
+<%= f.text_field :locks_qty,
+    class: input_cls,
+    inputmode: "decimal",
+    autocomplete: "off",
+    data: { controller: "formula-input", action: "blur->formula-input#evaluate" } %>
+```
+
+The wiring is identical per field. The `step` and `min` attributes are removed from the rendered HTML because `type="text"` does not respect them and they would generate browser warnings. Server-side validation on each qty column (must be >= 0; `quantity` must be > 0) is unchanged and continues to enforce the minimum.
 
 No other fields in the form are changed by this spec.
 
@@ -119,21 +129,23 @@ No new request specs required. The existing `POST /estimates/:id/line_items` req
 
 ### End-to-End Tests
 
-**`spec/system/line_items_spec.rb` — new examples under a `"formula input on Qty field"` describe block:**
+**`spec/system/line_items_spec.rb` — new examples under a `"formula input on Qty fields"` describe block:**
 
 - Given a line item edit form, when the user fills the Qty field with `6/28` and tabs away, then the field value becomes `0.2143`.
 - Given a line item edit form, when the user fills the Qty field with `(12+4)/8` and tabs away, then the field value becomes `2`.
 - Given a line item edit form, when the user fills the Qty field with `2` (plain integer) and tabs away, then the field value remains `2` (or `2.0` — either is acceptable).
 - Given a line item edit form, when the user fills the Qty field with `abc` and tabs away, then the field value remains `abc` (whitelist rejection — field unchanged).
 - Given a line item edit form, when the user fills the Qty field with a valid formula and submits the form, then the line item is saved with the evaluated decimal and no validation error is shown.
+- Given a line item edit form, when the user fills the Exterior slot qty field (`exterior_qty`) with `6/28` and tabs away, then the field value becomes `0.2143` (proves slot wiring).
+- Given a line item edit form, when the user fills the Locks qty field (`locks_qty`) with `(12+4)/8` and tabs away, then the field value becomes `2` (proves locks wiring).
 
-System specs use Selenium with headless Chrome as per project conventions. Use `find_field` and `send_keys :tab` (or `blur` via JS execution) to trigger the blur event.
+The controller logic is identical across fields, so coverage of one slot (`exterior_qty`) plus `locks_qty` is sufficient to prove all slot wiring without duplicating nine specs. System specs use Selenium with headless Chrome as per project conventions. Use `find_field` and `send_keys :tab` (or `blur` via JS execution) to trigger the blur event.
 
 ---
 
 ## Out of Scope
 
-- Formula evaluation on any other numeric field in the line item form (material qty slots, labor hours, equipment hours, etc.) — only the top-level `quantity` field is in scope for this spec.
+- Formula evaluation on labor hour fields, equipment fields, or `other_material_cost` — only positive-quantity inputs in the materials section are in scope.
 - Formula evaluation on any other form in the application (estimate job-cost fields, material pricing, etc.).
 - Displaying the original formula after evaluation (e.g. showing `6/28` as a tooltip). The field always shows the resolved decimal after blur.
 - Server-side formula parsing or storage of the raw formula expression.
