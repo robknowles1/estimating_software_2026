@@ -93,4 +93,63 @@ RSpec.describe "Line Items", type: :system do
       expect(li.exterior_material_id).to be_nil
     end
   end
+
+  describe "formula input on Qty field" do
+    let!(:line_item) do
+      create(:line_item, estimate: estimate, description: "Formula Test Cabinet", quantity: 1)
+    end
+
+    def wait_for_js
+      expect(page).to have_css("html[data-js-ready='true']", wait: 5)
+    end
+
+    def edit_qty_and_blur(value)
+      wait_for_js
+      qty_field = find_field("line_item[quantity]")
+      qty_field.click
+      qty_field.fill_in(with: value)
+      # Dispatch blur directly via JavaScript to ensure the Stimulus controller fires
+      execute_script("document.querySelector('[name=\"line_item[quantity]\"]').blur()")
+      # Brief pause for the Stimulus handler to run synchronously
+      sleep 0.2
+    end
+
+    before { login }
+
+    it "evaluates a division formula (6/28) to 4 decimal places" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("6/28")
+      expect(find_field("line_item[quantity]").value).to eq("0.2143")
+    end
+
+    it "evaluates a compound formula ((12+4)/8) to its decimal result" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("(12+4)/8")
+      expect(find_field("line_item[quantity]").value).to eq("2")
+    end
+
+    it "passes through a plain integer unchanged" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("2")
+      value = find_field("line_item[quantity]").value
+      expect(value).to eq("2").or eq("2.0")
+    end
+
+    it "leaves the field unchanged when the value contains non-whitelist characters" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("abc")
+      expect(find_field("line_item[quantity]").value).to eq("abc")
+    end
+
+    it "saves the evaluated decimal when the form is submitted after entering a formula" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("6/28")
+      # Confirm evaluation happened before submitting
+      expect(find_field("line_item[quantity]").value).to eq("0.2143")
+      find("input[type='submit']").click
+      expect(page).to have_current_path(edit_estimate_path(estimate), wait: 5)
+      line_item.reload
+      expect(line_item.quantity).to eq(BigDecimal("0.2143"))
+    end
+  end
 end
