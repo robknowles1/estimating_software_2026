@@ -56,7 +56,17 @@ class EstimatesController < ApplicationController
 
   def update
     if @estimate.update(estimate_params)
-      redirect_to edit_estimate_path(@estimate), notice: t(".notice")
+      if params[:panel_update] == "totals"
+        @estimate = Estimate.includes(:client, :estimate_materials, line_items: :product).find(@estimate.id)
+        @totals   = EstimateTotalsCalculator.new(@estimate).call
+        render turbo_stream: turbo_stream.replace(
+          "estimate_#{@estimate.id}_totals",
+          partial: "line_items/estimate_totals",
+          locals: { estimate: @estimate, totals: @totals }
+        )
+      else
+        redirect_to edit_estimate_path(@estimate), notice: t(".notice")
+      end
     else
       @estimate = Estimate.includes(:client, :estimate_materials, line_items: :product).find(@estimate.id)
       @clients  = Client.alphabetical
@@ -80,7 +90,9 @@ class EstimatesController < ApplicationController
     params.require(:estimate).permit(
       :client_id, :title, :status, :job_start_date, :job_end_date, :notes, :client_notes,
       :miles_to_jobsite, :installer_crew_size, :delivery_crew_size, :on_site_time_hrs,
-      :profit_overhead_percent, :pm_supervision_percent, :tax_rate, :tax_exempt
+      :profit_overhead_percent, :pm_supervision_percent, :tax_rate, :tax_exempt,
+      :install_travel_qty, :delivery_qty, :delivery_rate,
+      :per_diem_qty, :per_diem_rate, :hotel_qty, :airfare_qty, :countertop_quote
     )
   end
 end

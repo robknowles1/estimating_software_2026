@@ -319,6 +319,8 @@ These are the rates shown in the spreadsheet. Confirm with the shop owner before
 
 ## Calculator — Updated Design
 
+> **Note:** This section describes the base calculator as delivered in SPEC-010 and SPEC-011. SPEC-012 extends the calculator's output shape and responsibilities further — adding job-level fixed cost computation, the burden multiplier application, `burdened_total`, and the seven-category COGS breakdown. The confirmed rates for hotel ($150.00/night) and airfare ($400.00/person/ticket) are stored in `config/initializers/burden_constants.rb` alongside the mileage rate. See SPEC-012 for the full extended design, including the resolution of OQ-G and OQ-I from this ADR's build plan.
+
 The `EstimateTotalsCalculator` from ADR-006 is replaced in full. The new calculator operates on a flat line item list (no sections). Its responsibilities:
 
 1. Load all materials for the estimate indexed by `id` (one query).

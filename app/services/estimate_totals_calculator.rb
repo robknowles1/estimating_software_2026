@@ -2,10 +2,16 @@ class EstimateTotalsCalculator
   Result = Data.define(
     :line_item_results,        # Hash keyed by line_item.id
     :grand_non_burdened_total, # BigDecimal
-    :burden_multiplier         # BigDecimal
+    :burden_multiplier,        # BigDecimal
+    :job_level_costs,          # Hash of named fixed costs
+    :burdened_total,           # BigDecimal
+    :cogs_breakdown,           # Hash keyed by COGS category code string
+    :labor_hours_summary,      # Hash of total hours per labor category
+    :man_days_install          # BigDecimal
   )
 
   LABOR_CATEGORIES = %w[detail mill assembly customs finish install].freeze
+  SHOP_LABOR_CATEGORIES = %w[detail mill assembly customs finish].freeze
 
   def initialize(estimate)
     @estimate = estimate
@@ -63,10 +69,29 @@ class EstimateTotalsCalculator
       grand_non_burdened_total += non_burdened_total
     end
 
+    job_level_costs = calculate_job_level_costs
+    job_level_costs_sum = job_level_costs.values.sum
+
+    burdened_total = (grand_non_burdened_total * burden_multiplier) + job_level_costs_sum
+
+    labor_hours_summary = calculate_labor_hours_summary(line_item_results)
+    man_days_install = labor_hours_summary["install"] / BigDecimal("8")
+
+    cogs_breakdown = calculate_cogs_breakdown(
+      line_item_results,
+      grand_non_burdened_total,
+      job_level_costs
+    )
+
     Result.new(
       line_item_results:        line_item_results,
       grand_non_burdened_total: grand_non_burdened_total,
-      burden_multiplier:        burden_multiplier
+      burden_multiplier:        burden_multiplier,
+      job_level_costs:          job_level_costs,
+      burdened_total:           burdened_total,
+      cogs_breakdown:           cogs_breakdown,
+      labor_hours_summary:      labor_hours_summary,
+      man_days_install:         man_days_install
     )
   end
 
@@ -77,5 +102,79 @@ class EstimateTotalsCalculator
     pm_pct     = @estimate.pm_supervision_percent.to_d
     (BigDecimal("1") + profit_pct / BigDecimal("100")) *
       (BigDecimal("1") + pm_pct   / BigDecimal("100"))
+  end
+
+  def calculate_job_level_costs
+    constants          = Rails.application.config.burden_constants
+    mileage_rate       = constants[:mileage_rate]       || BigDecimal("0")
+    round_trip_factor  = BigDecimal(constants[:round_trip_factor].to_s)
+    hotel_rate         = constants[:hotel_rate]         || BigDecimal("0")
+    airfare_rate       = constants[:airfare_rate]       || BigDecimal("0")
+    crew               = @estimate.installer_crew_size.to_d
+
+    install_travel_cost = (@estimate.install_travel_qty || 0).to_d * crew * mileage_rate * round_trip_factor
+    delivery_cost       = (@estimate.delivery_qty || 0).to_d * (@estimate.delivery_rate || 0).to_d
+    per_diem_cost       = (@estimate.per_diem_qty || 0).to_d * (@estimate.per_diem_rate || 0).to_d * crew
+    hotel_cost          = (@estimate.hotel_qty || 0).to_d * crew * hotel_rate
+    airfare_cost        = (@estimate.airfare_qty || 0).to_d * crew * airfare_rate
+
+    {
+      install_travel: install_travel_cost,
+      delivery:       delivery_cost,
+      per_diem:       per_diem_cost,
+      hotel:          hotel_cost,
+      airfare:        airfare_cost
+    }
+  end
+
+  def calculate_labor_hours_summary(line_item_results)
+    summary = LABOR_CATEGORIES.index_with { BigDecimal("0") }
+
+    @estimate.line_items.each do |li|
+      result = line_item_results[li.id]
+      next unless result
+
+      qty = li.quantity.to_d
+      LABOR_CATEGORIES.each do |cat|
+        summary[cat] += li.public_send(:"#{cat}_hrs").to_d * qty
+      end
+    end
+
+    summary
+  end
+
+  def calculate_cogs_breakdown(line_item_results, grand_non_burdened_total, job_level_costs)
+    # 100 Materials: sum of all line item subtotal_materials
+    materials_total = line_item_results.values.sum(BigDecimal("0")) { |r| r[:subtotal_materials] }
+
+    # 200 Engineering: grand_non_burdened_total * (pm_supervision_percent / 100)
+    pm_pct      = @estimate.pm_supervision_percent.to_d
+    engineering = grand_non_burdened_total * (pm_pct / BigDecimal("100"))
+
+    # 300 Shop Labor: sum of detail, mill, assembly, customs, finish labor subtotals
+    shop_labor = line_item_results.values.sum(BigDecimal("0")) do |r|
+      SHOP_LABOR_CATEGORIES.sum(BigDecimal("0")) { |cat| r[:labor_subtotals][cat] || BigDecimal("0") }
+    end
+
+    # 400 Install: install labor subtotals + install_travel + per_diem + hotel + airfare
+    install_labor = line_item_results.values.sum(BigDecimal("0")) { |r| r[:labor_subtotals]["install"] || BigDecimal("0") }
+    install_total = install_labor +
+                    job_level_costs[:install_travel] +
+                    job_level_costs[:per_diem] +
+                    job_level_costs[:hotel] +
+                    job_level_costs[:airfare]
+
+    # 600 Countertops: countertop_quote
+    countertop = (@estimate.countertop_quote || 0).to_d
+
+    {
+      "100_materials"   => materials_total,
+      "200_engineering" => engineering,
+      "300_shop_labor"  => shop_labor,
+      "400_install"     => install_total,
+      "500_sub_install" => BigDecimal("0"),
+      "600_countertops" => countertop,
+      "700_sub_other"   => BigDecimal("0")
+    }
   end
 end

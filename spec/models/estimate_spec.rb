@@ -16,6 +16,38 @@ RSpec.describe Estimate, type: :model do
     it { is_expected.to validate_presence_of(:client_id) }
     it { is_expected.to validate_uniqueness_of(:estimate_number) }
     it { is_expected.to validate_numericality_of(:tax_rate).is_greater_than_or_equal_to(0) }
+    it { is_expected.to validate_numericality_of(:pm_supervision_percent).is_greater_than_or_equal_to(0) }
+    it { is_expected.to validate_numericality_of(:profit_overhead_percent).is_greater_than_or_equal_to(0) }
+    it { is_expected.to validate_numericality_of(:installer_crew_size).only_integer.is_greater_than_or_equal_to(1) }
+    it { is_expected.to validate_numericality_of(:delivery_crew_size).only_integer.is_greater_than_or_equal_to(1) }
+  end
+
+  describe "defaults" do
+    subject(:estimate) { build(:estimate) }
+
+    it "defaults delivery_rate to 400.00" do
+      expect(estimate.delivery_rate).to eq(BigDecimal("400.00"))
+    end
+
+    it "defaults per_diem_rate to 65.00" do
+      expect(estimate.per_diem_rate).to eq(BigDecimal("65.00"))
+    end
+
+    it "defaults installer_crew_size to 2" do
+      expect(estimate.installer_crew_size).to eq(2)
+    end
+
+    it "defaults delivery_crew_size to 2" do
+      expect(estimate.delivery_crew_size).to eq(2)
+    end
+
+    it "defaults pm_supervision_percent to 4.0" do
+      expect(estimate.pm_supervision_percent).to eq(BigDecimal("4.0"))
+    end
+
+    it "defaults profit_overhead_percent to 10.0" do
+      expect(estimate.profit_overhead_percent).to eq(BigDecimal("10.0"))
+    end
   end
 
   describe "estimate number generation" do

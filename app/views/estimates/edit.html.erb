@@ -23,7 +23,7 @@
     <%# Status form (status-only update) %>
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
       <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t(".status_heading") %></h2>
-      <%= form_with url: estimate_path(@estimate), method: :patch do |f| %>
+      <%= form_with url: estimate_path(@estimate), method: :patch, data: { turbo: false } do |f| %>
         <div>
           <%= f.label :status, class: "block text-sm font-medium text-slate-700 mb-1.5" %>
           <%= f.select :status,
@@ -41,6 +41,76 @@
       <% end %>
     </div>
 
+    <%# Job costs form %>
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+      <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t(".job_costs_heading") %></h2>
+      <%= form_with url: estimate_path(@estimate), method: :patch do |f| %>
+        <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1"><%= t(".install_travel_qty") %></label>
+              <%= text_field_tag "estimate[install_travel_qty]", @estimate.install_travel_qty,
+                  type: :number, step: "any", min: 0,
+                  class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1"><%= t(".delivery_qty") %></label>
+              <%= text_field_tag "estimate[delivery_qty]", @estimate.delivery_qty,
+                  type: :number, step: "any", min: 0,
+                  class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1"><%= t(".delivery_rate") %></label>
+            <%= text_field_tag "estimate[delivery_rate]", @estimate.delivery_rate,
+                type: :number, step: "any", min: 0,
+                class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1"><%= t(".per_diem_qty") %></label>
+              <%= text_field_tag "estimate[per_diem_qty]", @estimate.per_diem_qty,
+                  type: :number, step: "any", min: 0,
+                  class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1"><%= t(".per_diem_rate") %></label>
+              <%= text_field_tag "estimate[per_diem_rate]", @estimate.per_diem_rate,
+                  type: :number, step: "any", min: 0,
+                  class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1"><%= t(".hotel_qty") %></label>
+              <%= text_field_tag "estimate[hotel_qty]", @estimate.hotel_qty,
+                  type: :number, step: "any", min: 0,
+                  class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1"><%= t(".airfare_qty") %></label>
+              <%= text_field_tag "estimate[airfare_qty]", @estimate.airfare_qty,
+                  type: :number, step: "any", min: 0,
+                  class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1"><%= t(".countertop_quote") %></label>
+            <%= text_field_tag "estimate[countertop_quote]", @estimate.countertop_quote,
+                type: :number, step: "any", min: 0,
+                class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+          </div>
+        </div>
+        <%= hidden_field_tag "estimate[title]", @estimate.title %>
+        <%= hidden_field_tag "estimate[client_id]", @estimate.client_id %>
+        <%= hidden_field_tag :panel_update, "totals" %>
+        <div class="mt-4">
+          <%= submit_tag t(".save_job_costs"),
+              class: "w-full bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>
+        </div>
+      <% end %>
+    </div>
+
     <%# Job settings form %>
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
       <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t(".job_settings_heading") %></h2>
@@ -54,8 +124,9 @@
           </div>
           <div class="flex items-center gap-2">
             <%= check_box_tag "estimate[tax_exempt]", "1", @estimate.tax_exempt?,
+                id: "estimate_tax_exempt",
                 class: "rounded border-slate-300 text-amber-600 focus:ring-amber-500" %>
-            <label class="text-xs font-medium text-slate-700"><%= t(".tax_exempt") %></label>
+            <label for="estimate_tax_exempt" class="text-xs font-medium text-slate-700"><%= t(".tax_exempt") %></label>
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-700 mb-1"><%= t(".miles_to_jobsite") %></label>
@@ -77,6 +148,12 @@
                   class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
             </div>
           </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1"><%= t(".on_site_time_hrs") %></label>
+            <%= text_field_tag "estimate[on_site_time_hrs]", @estimate.on_site_time_hrs,
+                type: :number, step: "any", min: 0,
+                class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+          </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-medium text-slate-700 mb-1"><%= t(".profit_overhead_percent") %></label>
@@ -94,6 +171,7 @@
         </div>
         <%= hidden_field_tag "estimate[title]", @estimate.title %>
         <%= hidden_field_tag "estimate[client_id]", @estimate.client_id %>
+        <%= hidden_field_tag :panel_update, "totals" %>
         <div class="mt-4">
           <%= submit_tag t(".save_job_settings"),
               class: "w-full bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>

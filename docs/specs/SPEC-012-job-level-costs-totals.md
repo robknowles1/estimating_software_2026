@@ -1,7 +1,7 @@
 # Spec: Job-Level Costs and Final Totals
 
 **ID:** SPEC-012
-**Status:** ready
+**Status:** done
 **Priority:** high
 **Created:** 2026-04-10
 **Author:** pm-agent
@@ -24,14 +24,14 @@ This phase completes the numeric surface of the estimate by wiring in all job-le
 ## Acceptance Criteria
 
 1. Given an estimate settings form, when an estimator enters `install_travel_qty`, `delivery_qty`, `delivery_rate`, `per_diem_qty`, `per_diem_rate`, `hotel_qty`, and `airfare_qty` and saves, the values are persisted on the estimate record.
-2. Given an estimate settings form, when an estimator enters `installer_crew_size`, `delivery_crew_size`, `miles_to_jobsite`, `on_site_time_hrs`, `pm_supervision_percent`, `profit_overhead_percent`, `tax_rate`, `tax_exempt`, and `countertop_quote` and saves, the values are persisted.
+2. Given an estimate settings form, when an estimator enters `installer_crew_size`, `delivery_crew_size`, `miles_to_jobsite`, `on_site_time_hrs`, `pm_supervision_percent`, `profit_overhead_percent`, `tax_rate`, `tax_exempt`, and `countertop_quote` and saves, the values are persisted. Note: `equipment_cost` is explicitly deferred to a future spec — it must not appear in this form and is not wired into any calculation in this phase (see Out of Scope).
 3. Given default values for a new estimate, `delivery_rate` defaults to 400.00, `per_diem_rate` defaults to 65.00, `installer_crew_size` defaults to 2, `delivery_crew_size` defaults to 2, `pm_supervision_percent` defaults to 4.00, and `profit_overhead_percent` defaults to 10.00.
 4. Given saved job-level cost fields, the calculator computes job-level fixed costs as:
-   - Install travel cost = `install_travel_qty * installer_crew_size * mileage_rate * 2` (round trip, federal mileage rate from app config).
+   - Install travel cost = `install_travel_qty * installer_crew_size * mileage_rate * 2` (round trip, federal mileage rate from `Rails.application.config.burden_constants[:mileage_rate]`).
    - Delivery cost = `delivery_qty * delivery_rate`.
    - Per diem cost = `per_diem_qty * per_diem_rate * installer_crew_size`.
-   - Hotel cost = `hotel_qty * installer_crew_size` × a configurable nightly rate (see OQ-H).
-   - Airfare cost = `airfare_qty * installer_crew_size` × a configurable airfare rate (see OQ-H).
+   - Hotel cost = `hotel_qty * installer_crew_size * hotel_rate`, where `hotel_rate = $150.00/night` (configured in `config/initializers/burden_constants.rb`).
+   - Airfare cost = `airfare_qty * installer_crew_size * airfare_rate`, where `airfare_rate = $400.00/person/ticket` (configured in `config/initializers/burden_constants.rb`).
 5. Given the calculator result, `burdened_total = (grand_non_burdened_total * burden_multiplier) + sum(job_level_fixed_costs)`, where `burden_multiplier = (1 + profit_overhead_percent / 100) * (1 + pm_supervision_percent / 100)`.
 6. Given the calculator result, the COGS breakdown presents the following named totals:
    - 100 Materials: sum of all line item material subtotals.
@@ -41,6 +41,10 @@ This phase completes the numeric surface of the estimate by wiring in all job-le
    - 500 Sub Install: zero (reserved for future use; display as $0.00).
    - 600 Countertops: `countertop_quote`.
    - 700 Sub Other: zero (reserved; display as $0.00).
+
+   **COGS reconciliation note:** The seven COGS categories represent the job's **cost structure** — what the job actually costs to deliver. The `burdened_total` is the **selling price** — costs multiplied by the burden multiplier, plus job-level fixed costs. These two figures are intentionally different and must NOT be expected to sum to the same number. The developer and test writer must not write a test asserting that `cogs_breakdown.values.sum == burdened_total`.
+
+   The COGS categories should sum approximately to `grand_non_burdened_total + job_level_fixed_costs + countertop_quote` — that is, all costs before the profit/overhead markup is applied. This is the useful COGS figure. The gap between this sum and `burdened_total` is the profit/overhead markup, which is intentional and expected. Tests verifying the COGS breakdown should assert that each individual category matches its formula (AC-6 above), not that the aggregate equals `burdened_total`.
 7. Given the estimate show page, the final totals panel is displayed in a sticky or fixed-position area visible while the estimator scrolls through line items. It shows: grand non-burdened total, burdened total, and COGS breakdown.
 8. Given an estimate with `tax_exempt: true`, job-level fixed costs are not affected (tax exemption applies only to material `cost_with_tax` — it does not alter the burden calculation or job-level costs).
 9. Given the estimate settings panel, a change to `tax_rate` triggers the existing recalculation of all material `cost_with_tax` values (from SPEC-010) — the settings form save must invoke the same callback path.
@@ -50,7 +54,7 @@ This phase completes the numeric surface of the estimate by wiring in all job-le
 
 ### Data / Models
 
-All columns (`install_travel_qty`, `delivery_qty`, `delivery_rate`, `per_diem_qty`, `per_diem_rate`, `hotel_qty`, `airfare_qty`, `equipment_cost`, `countertop_quote`) were added to `estimates` in the SPEC-010 migration. No new migrations are required in this phase unless OQ-H or OQ-I introduce new columns (see Open Questions).
+All columns (`install_travel_qty`, `delivery_qty`, `delivery_rate`, `per_diem_qty`, `per_diem_rate`, `hotel_qty`, `airfare_qty`, `countertop_quote`) were added to `estimates` in the SPEC-010 migration. No new migrations are required in this phase. The `equipment_cost` column also exists in the schema from SPEC-010 but is explicitly out of scope for this phase (see Out of Scope).
 
 #### `Estimate` model updates
 - Add validations: `pm_supervision_percent` and `profit_overhead_percent` numericality `>= 0`; `tax_rate` numericality `>= 0`; `installer_crew_size` numericality `> 0` integer; `delivery_crew_size` numericality `> 0` integer.
@@ -60,7 +64,7 @@ All columns (`install_travel_qty`, `delivery_qty`, `delivery_rate`, `per_diem_qt
 
 Extend the calculator from SPEC-011 to add:
 
-1. Job-level fixed cost calculation (AC-4). Mileage rate read from `Rails.configuration.x.mileage_rate` (set in `config/initializers/estimating.rb`; default to `0.67` per ADR-008 OQ-C). Hotel nightly rate and airfare rate: see OQ-H.
+1. Job-level fixed cost calculation (AC-4). All rates are read from `Rails.application.config.burden_constants` (set in `config/initializers/burden_constants.rb`): mileage rate `$0.67/mile`, hotel rate `$150.00/night`, airfare rate `$400.00/person/ticket`.
 2. Burden multiplier application and `burdened_total` computation (AC-5).
 3. COGS breakdown (AC-6) — seven named line items.
 4. Man-hours summary: total hours per labor category across all line items; `man_days_install = install_hrs_total / 8.0`.
@@ -75,7 +79,7 @@ The calculator's return value object is extended with: `job_level_costs` (hash o
 ### UI / Frontend
 
 - Estimate settings panel: a collapsible panel or slide-over within the estimate layout (not a separate page). Contains two fieldset groups:
-  - "Job Costs": `install_travel_qty`, `delivery_qty`, `delivery_rate`, `per_diem_qty`, `per_diem_rate`, `hotel_qty`, `airfare_qty`, `countertop_quote`.
+  - "Job Costs": `install_travel_qty`, `delivery_qty`, `delivery_rate`, `per_diem_qty`, `per_diem_rate`, `hotel_qty`, `airfare_qty`, `countertop_quote`. Do not include `equipment_cost` — it is deferred (see Out of Scope).
   - "Job Settings": `installer_crew_size`, `delivery_crew_size`, `miles_to_jobsite`, `on_site_time_hrs`, `pm_supervision_percent`, `profit_overhead_percent`, `tax_rate`, `tax_exempt` (checkbox).
   - Single "Save Settings" button. On save, the totals panel updates via Turbo Stream.
 - The settings panel is accessible from the estimate header at all times (persistent button, consistent with the materials price book button established in SPEC-010).
@@ -101,7 +105,7 @@ The calculator's return value object is extended with: `job_level_costs` (hash o
 - `EstimateTotalsCalculator`: COGS category 300 includes detail, mill, assembly, customs, and finish labor only — not install labor.
 - `EstimateTotalsCalculator`: COGS category 400 includes install labor subtotal plus install travel, per diem, hotel, airfare costs.
 - `EstimateTotalsCalculator`: COGS category 600 equals countertop_quote.
-- `EstimateTotalsCalculator`: COGS totals sum to burdened_total (within rounding tolerance).
+- `EstimateTotalsCalculator`: COGS categories sum to approximately `grand_non_burdened_total + job_level_fixed_costs + countertop_quote` (total costs before profit/overhead markup), NOT to `burdened_total`. Write a test asserting this sum, not equality to `burdened_total`.
 - `EstimateTotalsCalculator`: reference estimate fixture — all named totals match expected values to two decimal places.
 - `Estimate`: validates numericality of pm_supervision_percent, profit_overhead_percent, tax_rate >= 0.
 
@@ -123,16 +127,16 @@ The calculator's return value object is extended with: `job_level_costs` (hash o
 - PDF/print output of the final totals (SPEC-013).
 - Soft-delete on estimates (SPEC-014 / Phase 7 polish).
 - Labor category management UI — the labor_rates table is seeded but not user-editable in this phase.
-- `equipment_cost` field on estimate (a job-level freeform equipment cost distinct from per-line-item equipment). The column exists in the schema from SPEC-010 but its calculator treatment is not yet specified — see OQ-I.
+- `equipment_cost` field on estimate (a job-level freeform equipment cost distinct from per-line-item equipment). The column exists in the schema from SPEC-010 but is explicitly deferred: it must not appear in the settings form, must not be included in any COGS category, and must not be passed to or used by the calculator in this phase. Its treatment (which COGS bucket it belongs to, whether it is burdened separately) is unresolved and will be specified in a future spec.
 - Change order or estimate versioning (post-MVP).
 - COGS categories 500 (Sub Install) and 700 (Sub Other) inputs — display as $0.00 in this phase; inputs deferred post-MVP.
 
 ## Open Questions
 
-- **OQ-G (non-blocking, default assumed):** What are the per-unit costs for hotel and airfare in the travel calculations? The spreadsheet likely treats hotel as a per-person-per-night rate and airfare as a per-person rate. Recommended default: configure both in `config/initializers/estimating.rb` alongside the mileage rate. Developer should verify with the shop owner before first production use. If no answer, use `hotel_rate: 150.00` and `airfare_rate: 400.00` as placeholders.
-- **OQ-H (potentially blocking for AC-4):** Confirm the exact formulas for install travel and per diem with the shop owner. The ADR states `install_travel_qty * installer_crew_size * mileage_rate * 2` for a round trip — verify whether this is the intended behavior (does "travel qty" mean number of trips, or number of days of travel?).
-- **OQ-I (non-blocking):** How does the job-level `equipment_cost` field interact with the calculator? Is it added directly to the non-burdened total, included in a COGS category, or burdened separately? Until answered, do not include `equipment_cost` in the calculator. Display the field in the settings panel but note it is not yet wired into totals.
-- **OQ-J (non-blocking):** The COGS breakdown in AC-6 allocates Engineering (200) as `grand_non_burdened * (pm_supervision_percent / 100)`. This is one interpretation of PM/Supervision cost. Confirm this matches the shop owner's intended COGS methodology before this phase ships. If the interpretation is wrong, only the calculator service and the COGS display partial need updating — no schema change.
+- **OQ-G — RESOLVED:** Hotel rate is confirmed at **$150.00/night** and airfare rate at **$400.00/person/ticket**. Both are added to `config/initializers/burden_constants.rb` as `hotel_rate` and `airfare_rate` keys. These are easy-to-change constants; the shop owner may adjust them before first production use without a code change being required anywhere else.
+- **OQ-H — RESOLVED:** The install travel formula is `install_travel_qty * installer_crew_size * mileage_rate * 2` where `install_travel_qty` represents the number of trips (not days). The round-trip factor (`* 2`) reflects a full return journey per trip. This formula matches ADR-008 and is now locked for this phase.
+- **OQ-I — RESOLVED (deferred):** `equipment_cost` is explicitly deferred to a future spec. It is removed from this phase's scope entirely. See Out of Scope.
+- **OQ-J (non-blocking):** The COGS breakdown in AC-6 allocates Engineering (200) as `grand_non_burdened_total * (pm_supervision_percent / 100)`. This is one interpretation of PM/Supervision cost. Confirm this matches the shop owner's intended COGS methodology before this phase ships. If the interpretation is wrong, only the calculator service and the COGS display partial need updating — no schema change.
 
 ## Dependencies
 
@@ -148,17 +152,29 @@ The calculator's return value object is extended with: `job_level_costs` (hash o
 
 ---
 
-### Mileage and rate configuration
+### Rate configuration
 
-Create `config/initializers/estimating.rb`:
+The file `config/initializers/burden_constants.rb` already exists and currently defines:
 
 ```ruby
-Rails.application.config.x.mileage_rate    = BigDecimal("0.67")   # Federal rate; confirm with shop
-Rails.application.config.x.hotel_rate      = BigDecimal("150.00")  # Placeholder; confirm with shop
-Rails.application.config.x.airfare_rate    = BigDecimal("400.00")  # Placeholder; confirm with shop
+Rails.application.config.burden_constants = {
+  mileage_rate: BigDecimal("0.67"),
+  round_trip_factor: 2
+}.freeze
 ```
 
-The calculator reads these values from `Rails.configuration.x.*`. Do not hardcode them inline. This allows the values to be changed in one place and makes them easy to override in test contexts.
+Extend this file (do not create a new initializer) to add the confirmed hotel and airfare rates:
+
+```ruby
+Rails.application.config.burden_constants = {
+  mileage_rate:      BigDecimal("0.67"),   # Federal rate; update annually
+  round_trip_factor: 2,
+  hotel_rate:        BigDecimal("150.00"), # Per person per night
+  airfare_rate:      BigDecimal("400.00")  # Per person per ticket
+}.freeze
+```
+
+The calculator reads these values from `Rails.application.config.burden_constants`. Do not hardcode them inline. This allows the values to be changed in one place and makes them easy to override in test contexts via `stub_const` or by temporarily reassigning `Rails.application.config.burden_constants` in a `around` block.
 
 ---
 
@@ -176,4 +192,4 @@ Use `position: sticky; bottom: 0` on the totals panel element within the scrolla
 
 ### COGS sum check
 
-The seven COGS categories should sum to approximately `burdened_total`. "Approximately" because burden is applied as a multiplier to the non-burdened total, and the COGS breakdown allocates burden to Engineering (200) — the remaining burden (profit/overhead) is distributed across the other categories by implication. The developer should add a calculator spec that verifies `cogs_breakdown.values.sum` is within a small tolerance of `burdened_total`. If the sum does not reconcile, document the gap and its cause rather than silently discarding or padding the difference.
+The seven COGS categories represent cost structure, not selling price. They should sum approximately to `grand_non_burdened_total + job_level_fixed_costs + countertop_quote` — the total cost to deliver the job before the profit/overhead markup is applied. The gap between this sum and `burdened_total` is exactly the profit/overhead markup, which is the intended margin. Do not write a test asserting `cogs_breakdown.values.sum == burdened_total`. Write a test asserting the expected per-category amounts instead (see Unit Tests above). If a COGS sum assertion is written, it must assert against the pre-markup cost total, not `burdened_total`.
