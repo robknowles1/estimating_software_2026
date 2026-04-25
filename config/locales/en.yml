@@ -147,6 +147,7 @@ en:
       job_costs_heading: "Job Costs"
       update_status: "Update Status"
       save_job_settings: "Save Job Settings"
+      save_job_costs: "Save Job Costs"
       no_line_items: "No products added yet — select from the catalog or add a freeform product."
       line_items_heading: "Products"
       add_product: "Add Product"

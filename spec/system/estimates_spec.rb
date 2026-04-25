@@ -110,7 +110,7 @@ RSpec.describe "Estimates", type: :system do
 
       # Check the tax_exempt checkbox in Job Settings, submit
       within(".col-span-1") do
-        check "estimate[tax_exempt]"
+        check "Tax Exempt"
         find("input[name='estimate[tax_exempt]']").ancestor("form").find("input[type='submit']").click
       end
 
