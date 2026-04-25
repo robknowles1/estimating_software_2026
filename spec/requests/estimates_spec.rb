@@ -217,7 +217,8 @@ RSpec.describe "Estimates", type: :request do
             client_id: estimate.client_id,
             pm_supervision_percent: "8.0",
             profit_overhead_percent: "10.0"
-          }
+          },
+          panel_update: "totals"
         },
         headers: { "Accept" => "text/vnd.turbo-stream.html" }
 

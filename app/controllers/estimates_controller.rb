@@ -56,17 +56,16 @@ class EstimatesController < ApplicationController
 
   def update
     if @estimate.update(estimate_params)
-      respond_to do |format|
-        format.turbo_stream do
-          @estimate = Estimate.includes(:client, :estimate_materials, line_items: :product).find(@estimate.id)
-          @totals   = EstimateTotalsCalculator.new(@estimate).call
-          render turbo_stream: turbo_stream.replace(
-            "estimate_#{@estimate.id}_totals",
-            partial: "line_items/estimate_totals",
-            locals: { estimate: @estimate, totals: @totals }
-          )
-        end
-        format.html { redirect_to edit_estimate_path(@estimate), notice: t(".notice") }
+      if params[:panel_update] == "totals"
+        @estimate = Estimate.includes(:client, :estimate_materials, line_items: :product).find(@estimate.id)
+        @totals   = EstimateTotalsCalculator.new(@estimate).call
+        render turbo_stream: turbo_stream.replace(
+          "estimate_#{@estimate.id}_totals",
+          partial: "line_items/estimate_totals",
+          locals: { estimate: @estimate, totals: @totals }
+        )
+      else
+        redirect_to edit_estimate_path(@estimate), notice: t(".notice")
       end
     else
       @estimate = Estimate.includes(:client, :estimate_materials, line_items: :product).find(@estimate.id)

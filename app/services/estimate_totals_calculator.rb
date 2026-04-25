@@ -145,19 +145,19 @@ class EstimateTotalsCalculator
 
   def calculate_cogs_breakdown(line_item_results, grand_non_burdened_total, job_level_costs)
     # 100 Materials: sum of all line item subtotal_materials
-    materials_total = line_item_results.values.sum { |r| r[:subtotal_materials] }
+    materials_total = line_item_results.values.sum(BigDecimal("0")) { |r| r[:subtotal_materials] }
 
     # 200 Engineering: grand_non_burdened_total * (pm_supervision_percent / 100)
     pm_pct      = @estimate.pm_supervision_percent.to_d
     engineering = grand_non_burdened_total * (pm_pct / BigDecimal("100"))
 
     # 300 Shop Labor: sum of detail, mill, assembly, customs, finish labor subtotals
-    shop_labor = line_item_results.values.sum do |r|
-      SHOP_LABOR_CATEGORIES.sum { |cat| r[:labor_subtotals][cat] || BigDecimal("0") }
+    shop_labor = line_item_results.values.sum(BigDecimal("0")) do |r|
+      SHOP_LABOR_CATEGORIES.sum(BigDecimal("0")) { |cat| r[:labor_subtotals][cat] || BigDecimal("0") }
     end
 
     # 400 Install: install labor subtotals + install_travel + per_diem + hotel + airfare
-    install_labor = line_item_results.values.sum { |r| r[:labor_subtotals]["install"] || BigDecimal("0") }
+    install_labor = line_item_results.values.sum(BigDecimal("0")) { |r| r[:labor_subtotals]["install"] || BigDecimal("0") }
     install_total = install_labor +
                     job_level_costs[:install_travel] +
                     job_level_costs[:per_diem] +
