@@ -153,6 +153,24 @@ RSpec.describe "Line Items", type: :system do
       expect(find_field("line_item[quantity]").value).to eq("5-5")
     end
 
+    it "leaves the field unchanged when the value contains a JS comment token (6//28)" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("6//28")
+      expect(find_field("line_item[quantity]").value).to eq("6//28")
+    end
+
+    it "leaves the field unchanged when the value uses the JS exponentiation operator (2**3)" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("2**3")
+      expect(find_field("line_item[quantity]").value).to eq("2**3")
+    end
+
+    it "leaves the field unchanged when the result rounds to zero at 4dp (1/100000)" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("1/100000")
+      expect(find_field("line_item[quantity]").value).to eq("1/100000")
+    end
+
     it "saves the evaluated decimal when the form is submitted after entering a formula" do
       visit edit_estimate_line_item_path(estimate, line_item)
       edit_qty_and_blur("6/28", expected_value: "0.2143")

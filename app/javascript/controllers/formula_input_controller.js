@@ -28,6 +28,11 @@ export default class extends Controller {
     // Using a literal space (not \s) to exclude tabs, newlines, and other whitespace.
     if (!/^[\d +\-*/.()]+$/.test(trimmed)) return
 
+    // Reject JS-only token sequences that the whitelist allows character-by-character
+    // but would change semantics under Function(): "//" is a line comment, "/*"/"*/"
+    // are block comments, and "**" is exponentiation (not arithmetic-only).
+    if (/\/\/|\/\*|\*\/|\*\*/.test(trimmed)) return
+
     let result
     try {
       // eslint-disable-next-line no-new-func
@@ -41,6 +46,9 @@ export default class extends Controller {
 
     // Round to 4 decimal places, then strip unnecessary trailing zeros.
     const rounded = Math.round(num * 10000) / 10000
+    // A positive but tiny result (e.g. 1/100000) rounds to 0 at 4dp; reject it
+    // rather than writing "0" back, which would fail the server's quantity > 0 check.
+    if (rounded <= 0) return
     const formatted = parseFloat(rounded.toFixed(4)).toString()
 
     // Only update the field and notify dependents when the value actually changes.

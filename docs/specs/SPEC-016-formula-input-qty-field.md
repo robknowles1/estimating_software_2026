@@ -38,7 +38,7 @@ Estimators at this millwork shop are accustomed to entering formulas directly in
 
 7. Given the Qty field has been evaluated and the form is submitted, then the submitted `line_item[quantity]` parameter is a valid positive decimal accepted by the server's `DECIMAL(10, 4)` column with no validation errors.
 
-8. Given the `line_item_calculator_controller` is also mounted on the form and reads the Qty field value, when the formula-input controller fires its blur evaluation and updates the field value, then the calculator controller recalculates using the resolved decimal (the formula-input controller dispatches a native `input` event after writing the resolved value so that any `data-action="input->..."` wiring responds).
+8. Given the formula-input controller evaluates the Qty field on blur and writes a resolved decimal back into the field, then it dispatches a native `input` event afterward so any current or future `data-action="input->..."` listeners can respond to the updated value. (`line_item_calculator_controller` exists in the codebase but is not currently wired to the line item form; this AC keeps the integration point ready without requiring it.)
 
 ---
 
@@ -90,7 +90,7 @@ to:
     class: input_cls,
     inputmode: "decimal",
     autocomplete: "off",
-    data: { action: "blur->formula-input#evaluate" } %>
+    data: { controller: "formula-input", action: "blur->formula-input#evaluate" } %>
 ```
 
 The `step` and `min` attributes are removed from the rendered HTML because `type="text"` does not respect them and they would generate browser warnings. Server-side validation on `quantity` (must be > 0) is unchanged and continues to enforce the minimum.
