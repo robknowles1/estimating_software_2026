@@ -114,10 +114,10 @@ RSpec.describe "Line Items", type: :system do
 
     before { login }
 
-    it "evaluates a division formula (6/28) to 4 decimal places" do
+    it "evaluates a division formula (6/28) to 2 decimal places" do
       visit edit_estimate_line_item_path(estimate, line_item)
-      edit_qty_and_blur("6/28", expected_value: "0.2143")
-      expect(find_field("line_item[quantity]").value).to eq("0.2143")
+      edit_qty_and_blur("6/28", expected_value: "0.21")
+      expect(find_field("line_item[quantity]").value).to eq("0.21")
     end
 
     it "evaluates a compound formula ((12+4)/8) to its decimal result" do
@@ -163,7 +163,7 @@ RSpec.describe "Line Items", type: :system do
       expect(find_field("line_item[quantity]").value).to eq("2**3")
     end
 
-    it "leaves the field unchanged when the result rounds to zero at 4dp (1/100000)" do
+    it "leaves the field unchanged when the result rounds to zero at 2dp (1/100000)" do
       visit edit_estimate_line_item_path(estimate, line_item)
       edit_qty_and_blur("1/100000")
       expect(find_field("line_item[quantity]").value).to eq("1/100000")
@@ -171,12 +171,12 @@ RSpec.describe "Line Items", type: :system do
 
     it "saves the evaluated decimal when the form is submitted after entering a formula" do
       visit edit_estimate_line_item_path(estimate, line_item)
-      edit_qty_and_blur("6/28", expected_value: "0.2143")
-      expect(find_field("line_item[quantity]").value).to eq("0.2143")
+      edit_qty_and_blur("6/28", expected_value: "0.21")
+      expect(find_field("line_item[quantity]").value).to eq("0.21")
       find("input[type='submit']").click
       expect(page).to have_current_path(edit_estimate_path(estimate), wait: 5)
       line_item.reload
-      expect(line_item.quantity).to eq(BigDecimal("0.2143"))
+      expect(line_item.quantity).to eq(BigDecimal("0.21"))
     end
 
     it "evaluates a division formula (12/24) to 0.5 on exterior_qty" do

@@ -22,10 +22,10 @@ export default class extends Controller {
     const num = Number(result)
     if (!isFinite(num) || isNaN(num) || num <= 0) return
 
-    const rounded = Math.round(num * 10000) / 10000
-    // Reject sub-4dp results (e.g. 1/100000) so we don't write "0" and fail the server's quantity > 0 check.
+    const rounded = Math.round(num * 100) / 100
+    // Reject sub-2dp results (e.g. 1/100000) so we don't write "0" and fail the server's quantity > 0 check.
     if (rounded <= 0) return
-    const formatted = parseFloat(rounded.toFixed(4)).toString()
+    const formatted = parseFloat(rounded.toFixed(2)).toString()
 
     if (trimmed !== formatted) {
       this.element.value = formatted

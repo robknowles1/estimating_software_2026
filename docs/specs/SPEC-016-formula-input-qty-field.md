@@ -26,7 +26,7 @@ Estimators at this millwork shop are accustomed to entering formulas directly in
 
 1. Given the Edit Line Item form, when the page loads, then the Qty field AND each material slot qty field (exterior, interior, interior2, back, drawers, pulls, hinges, slides, locks) are rendered as `type="text"` with `inputmode="decimal"` and have the formula-input controller wired.
 
-2. Given the Qty field contains a valid arithmetic expression (digits, `+`, `-`, `*`, `/`, `.`, `(`, `)`, and spaces only), when the user leaves the field (blur), then the field value is replaced with the evaluated result rounded to 4 decimal places (e.g. `6/28` becomes `0.2143`).
+2. Given the Qty field contains a valid arithmetic expression (digits, `+`, `-`, `*`, `/`, `.`, `(`, `)`, and spaces only), when the user leaves the field (blur), then the field value is replaced with the evaluated result rounded to 2 decimal places (e.g. `6/28` becomes `0.21`).
 
 3. Given the Qty field contains a plain positive decimal (e.g. `1.5`), when the user leaves the field, then the field value is unchanged (it passes through the evaluator and remains `1.5`).
 
@@ -69,7 +69,7 @@ Evaluation pipeline on blur:
 3. Run a whitelist regex: `/^[\d\s\+\-\*\/\.\(\)]+$/`. If the value does not match, return without change.
 4. Evaluate using `Function("return " + trimmedValue)()` inside a `try/catch`. If an exception is thrown, return without change.
 5. Convert the result to a number with `Number(result)`. If the result is `NaN`, not finite, or `<= 0`, return without change.
-6. Round to 4 decimal places: `Math.round(result * 10000) / 10000`. Format as a plain decimal string (avoid scientific notation for very small values — use `toFixed(4)` then strip trailing zeros with a regex or accept 4 decimal places as-is per the column definition).
+6. Round to 2 decimal places: `Math.round(result * 100) / 100`. Format as a plain decimal string (avoid scientific notation for very small values — use `toFixed(2)` then strip trailing zeros with a regex or accept 2 decimal places as-is per the column definition).
 7. Set `this.element.value` to the formatted result.
 8. Dispatch `this.element.dispatchEvent(new Event("input", { bubbles: true }))` so that Stimulus `data-action="input->..."` listeners on ancestor elements receive the updated value.
 
@@ -131,12 +131,12 @@ No new request specs required. The existing `POST /estimates/:id/line_items` req
 
 **`spec/system/line_items_spec.rb` — new examples under a `"formula input on Qty fields"` describe block:**
 
-- Given a line item edit form, when the user fills the Qty field with `6/28` and tabs away, then the field value becomes `0.2143`.
+- Given a line item edit form, when the user fills the Qty field with `6/28` and tabs away, then the field value becomes `0.21`.
 - Given a line item edit form, when the user fills the Qty field with `(12+4)/8` and tabs away, then the field value becomes `2`.
 - Given a line item edit form, when the user fills the Qty field with `2` (plain integer) and tabs away, then the field value remains `2` (or `2.0` — either is acceptable).
 - Given a line item edit form, when the user fills the Qty field with `abc` and tabs away, then the field value remains `abc` (whitelist rejection — field unchanged).
 - Given a line item edit form, when the user fills the Qty field with a valid formula and submits the form, then the line item is saved with the evaluated decimal and no validation error is shown.
-- Given a line item edit form, when the user fills the Exterior slot qty field (`exterior_qty`) with `6/28` and tabs away, then the field value becomes `0.2143` (proves slot wiring).
+- Given a line item edit form, when the user fills the Exterior slot qty field (`exterior_qty`) with `6/28` and tabs away, then the field value becomes `0.21` (proves slot wiring).
 - Given a line item edit form, when the user fills the Locks qty field (`locks_qty`) with `(12+4)/8` and tabs away, then the field value becomes `2` (proves locks wiring).
 
 The controller logic is identical across fields, so coverage of one slot (`exterior_qty`) plus `locks_qty` is sufficient to prove all slot wiring without duplicating nine specs. System specs use Selenium with headless Chrome as per project conventions. Use `find_field` and `send_keys :tab` (or `blur` via JS execution) to trigger the blur event.
@@ -160,7 +160,7 @@ The controller logic is identical across fields, so coverage of one slot (`exter
 | OQ | Question | Blocks progress? |
 |----|---------|-----------------|
 | OQ-A | The `line_item_calculator_controller` reads the Qty field to produce a live price preview. The spec assumes dispatching a native `input` event after evaluation is sufficient to trigger recalculation. The developer should verify that `line_item_calculator_controller` wires its recalculation via `data-action="input->..."` on the Qty field (or an ancestor), or adjust accordingly. | No — developer resolves at implementation time |
-| OQ-B | `toFixed(4)` always emits four decimal places (e.g. `2.0000`). Stripping trailing zeros (giving `2`) is cosmetically nicer but requires a regex step. Developer decides which format to use; both are valid for the `DECIMAL(10,4)` column. | No — **Resolved**: trailing zeros are stripped via `parseFloat(rounded.toFixed(4)).toString()`, so `(12+4)/8` produces `"2"` not `"2.0000"`. |
+| OQ-B | `toFixed(2)` always emits two decimal places (e.g. `2.00`). Stripping trailing zeros (giving `2`) is cosmetically nicer but requires a regex step. Developer decides which format to use; both are valid for the `DECIMAL(10,4)` column. | No — **Resolved**: trailing zeros are stripped via `parseFloat(rounded.toFixed(2)).toString()`, so `(12+4)/8` produces `"2"` not `"2.00"`. |
 
 ---
 
