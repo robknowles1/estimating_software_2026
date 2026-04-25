@@ -93,4 +93,135 @@ RSpec.describe "Line Items", type: :system do
       expect(li.exterior_material_id).to be_nil
     end
   end
+
+  describe "formula input on Qty field" do
+    let!(:line_item) do
+      create(:line_item, estimate: estimate, description: "Formula Test Cabinet", quantity: 1)
+    end
+
+    def wait_for_js
+      expect(page).to have_css("html[data-js-ready='true']", wait: 5)
+    end
+
+    def edit_qty_and_blur(value, expected_value: value, field: "line_item[quantity]")
+      wait_for_js
+      qty_field = find_field(field)
+      qty_field.click
+      qty_field.fill_in(with: value)
+      execute_script("document.querySelector('[name=\"#{field}\"]').blur()")
+      expect(page).to have_field(field, with: expected_value)
+    end
+
+    before { login }
+
+    it "evaluates a division formula (6/28) to 2 decimal places" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("6/28", expected_value: "0.21")
+      expect(find_field("line_item[quantity]").value).to eq("0.21")
+    end
+
+    it "evaluates a compound formula ((12+4)/8) to its decimal result" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("(12+4)/8", expected_value: "2")
+      expect(find_field("line_item[quantity]").value).to eq("2")
+    end
+
+    it "passes through a plain integer unchanged" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("2")
+      value = find_field("line_item[quantity]").value
+      expect(value).to eq("2").or eq("2.0")
+    end
+
+    it "leaves the field unchanged when the value contains non-whitelist characters" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("abc")
+      expect(find_field("line_item[quantity]").value).to eq("abc")
+    end
+
+    it "leaves the field unchanged when the result is negative (-2)" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("-2")
+      expect(find_field("line_item[quantity]").value).to eq("-2")
+    end
+
+    it "leaves the field unchanged when the result is zero (5-5)" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("5-5")
+      expect(find_field("line_item[quantity]").value).to eq("5-5")
+    end
+
+    it "leaves the field unchanged when the value contains a JS comment token (6//28)" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("6//28")
+      expect(find_field("line_item[quantity]").value).to eq("6//28")
+    end
+
+    it "leaves the field unchanged when the value uses the JS exponentiation operator (2**3)" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("2**3")
+      expect(find_field("line_item[quantity]").value).to eq("2**3")
+    end
+
+    it "leaves the field unchanged when the result rounds to zero at 2dp (1/100000)" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("1/100000")
+      expect(find_field("line_item[quantity]").value).to eq("1/100000")
+    end
+
+    it "saves the evaluated decimal when the form is submitted after entering a formula" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("6/28", expected_value: "0.21")
+      expect(find_field("line_item[quantity]").value).to eq("0.21")
+      find("input[type='submit']").click
+      expect(page).to have_current_path(edit_estimate_path(estimate), wait: 5)
+      line_item.reload
+      expect(line_item.quantity).to eq(BigDecimal("0.21"))
+    end
+
+    it "evaluates a division formula (12/24) to 0.5 on exterior_qty" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("12/24", expected_value: "0.5", field: "line_item[exterior_qty]")
+      expect(find_field("line_item[exterior_qty]").value).to eq("0.5")
+    end
+
+    it "passes through a plain integer unchanged on locks_qty" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("2", field: "line_item[locks_qty]")
+      value = find_field("line_item[locks_qty]").value
+      expect(value).to eq("2").or eq("2.0")
+    end
+  end
+
+  describe "Enter key on the line item form" do
+    let!(:line_item) do
+      create(:line_item, estimate: estimate, description: "Enter Key Cabinet", quantity: 1)
+    end
+
+    before { login }
+
+    it "moves focus to the next field instead of submitting the form" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      expect(page).to have_css("html[data-js-ready='true']", wait: 5)
+
+      qty = find_field("line_item[quantity]")
+      qty.click
+      qty.fill_in(with: "6/28")
+      qty.send_keys(:enter)
+
+      expect(page).to have_current_path(edit_estimate_line_item_path(estimate, line_item), wait: 3)
+      expect(evaluate_script("document.activeElement.name")).to eq("line_item[exterior_material_id]")
+      expect(page).to have_field("line_item[quantity]", with: "0.21", wait: 3)
+    end
+
+    it "still submits the form when Enter is pressed on a focused text field via the submit button default" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      expect(page).to have_css("html[data-js-ready='true']", wait: 5)
+
+      execute_script("document.querySelector(\"input[type='submit']\").focus()")
+      page.driver.browser.action.send_keys(:return).perform
+
+      expect(page).to have_current_path(edit_estimate_path(estimate), wait: 5)
+    end
+  end
 end
