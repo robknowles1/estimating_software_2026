@@ -108,9 +108,7 @@ RSpec.describe "Line Items", type: :system do
       qty_field = find_field("line_item[quantity]")
       qty_field.click
       qty_field.fill_in(with: value)
-      # Dispatch blur directly via JavaScript to ensure the Stimulus controller fires
       execute_script("document.querySelector('[name=\"line_item[quantity]\"]').blur()")
-      # Wait for Capybara to observe the expected field value (Stimulus handler is synchronous)
       expect(page).to have_field("line_item[quantity]", with: expected_value)
     end
 
@@ -174,7 +172,6 @@ RSpec.describe "Line Items", type: :system do
     it "saves the evaluated decimal when the form is submitted after entering a formula" do
       visit edit_estimate_line_item_path(estimate, line_item)
       edit_qty_and_blur("6/28", expected_value: "0.2143")
-      # Confirm evaluation happened before submitting
       expect(find_field("line_item[quantity]").value).to eq("0.2143")
       find("input[type='submit']").click
       expect(page).to have_current_path(edit_estimate_path(estimate), wait: 5)
