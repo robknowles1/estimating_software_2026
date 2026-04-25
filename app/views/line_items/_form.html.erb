@@ -50,13 +50,13 @@
       <%= f.label :unit, class: label_cls %>
       <%= f.text_field :unit, class: input_cls, placeholder: "EA" %>
     </div>
-    <div data-controller="formula-input">
+    <div>
       <%= f.label :quantity, class: label_cls %>
       <%= f.text_field :quantity,
           class: input_cls,
           inputmode: "decimal",
           autocomplete: "off",
-          data: { action: "blur->formula-input#evaluate" } %>
+          data: { controller: "formula-input", action: "blur->formula-input#evaluate" } %>
     </div>
   </div>
 </div>

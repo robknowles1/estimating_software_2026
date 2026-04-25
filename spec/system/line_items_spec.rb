@@ -103,28 +103,28 @@ RSpec.describe "Line Items", type: :system do
       expect(page).to have_css("html[data-js-ready='true']", wait: 5)
     end
 
-    def edit_qty_and_blur(value)
+    def edit_qty_and_blur(value, expected_value: value)
       wait_for_js
       qty_field = find_field("line_item[quantity]")
       qty_field.click
       qty_field.fill_in(with: value)
       # Dispatch blur directly via JavaScript to ensure the Stimulus controller fires
       execute_script("document.querySelector('[name=\"line_item[quantity]\"]').blur()")
-      # Brief pause for the Stimulus handler to run synchronously
-      sleep 0.2
+      # Wait for Capybara to observe the expected field value (Stimulus handler is synchronous)
+      expect(page).to have_field("line_item[quantity]", with: expected_value)
     end
 
     before { login }
 
     it "evaluates a division formula (6/28) to 4 decimal places" do
       visit edit_estimate_line_item_path(estimate, line_item)
-      edit_qty_and_blur("6/28")
+      edit_qty_and_blur("6/28", expected_value: "0.2143")
       expect(find_field("line_item[quantity]").value).to eq("0.2143")
     end
 
     it "evaluates a compound formula ((12+4)/8) to its decimal result" do
       visit edit_estimate_line_item_path(estimate, line_item)
-      edit_qty_and_blur("(12+4)/8")
+      edit_qty_and_blur("(12+4)/8", expected_value: "2")
       expect(find_field("line_item[quantity]").value).to eq("2")
     end
 
@@ -141,9 +141,21 @@ RSpec.describe "Line Items", type: :system do
       expect(find_field("line_item[quantity]").value).to eq("abc")
     end
 
+    it "leaves the field unchanged when the result is negative (-2)" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("-2")
+      expect(find_field("line_item[quantity]").value).to eq("-2")
+    end
+
+    it "leaves the field unchanged when the result is zero (5-5)" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      edit_qty_and_blur("5-5")
+      expect(find_field("line_item[quantity]").value).to eq("5-5")
+    end
+
     it "saves the evaluated decimal when the form is submitted after entering a formula" do
       visit edit_estimate_line_item_path(estimate, line_item)
-      edit_qty_and_blur("6/28")
+      edit_qty_and_blur("6/28", expected_value: "0.2143")
       # Confirm evaluation happened before submitting
       expect(find_field("line_item[quantity]").value).to eq("0.2143")
       find("input[type='submit']").click

@@ -5,23 +5,28 @@ import { Controller } from "@hotwired/stimulus"
 // blur.  Any value that fails whitelist validation, causes an evaluation error,
 // or produces a non-positive / non-finite result is left unchanged (silent
 // no-op).  After writing the resolved value back to the field a native "input"
-// event is dispatched so any data-action="input->..." listeners (e.g.
-// line_item_calculator_controller) recalculate with the resolved decimal.
+// event is dispatched so any data-action="input->..." listeners recalculate
+// with the resolved decimal.
+//
+// The controller mounts directly on the <input> element itself (not a wrapping
+// ancestor), so this.element is always the input.
+//
+// NOTE on line_item_calculator_controller: that controller provides a live
+// price preview using quantityInput / unitCostInput / markupInput targets and
+// extendedCostDisplay / sellPriceDisplay display targets.  Those targets do not
+// exist on the current line item form (which uses a server-rendered burden
+// calculator, not a client-side preview panel).  Wire line_item_calculator_controller
+// when a client-side price preview panel is added to the form.
 export default class extends Controller {
-  // The controller mounts on the <div> wrapping the Qty input.  The
-  // data-action="blur->formula-input#evaluate" descriptor is on the <input>
-  // itself, so Stimulus delegates the blur event here; event.target is always
-  // the input element.
-
-  evaluate(event) {
-    const input = event.target
-    const raw = input.value
+  evaluate() {
+    const raw = this.element.value
     const trimmed = raw.trim()
 
     if (trimmed === "") return
 
-    // Whitelist: digits, arithmetic operators, dots, parens, whitespace only.
-    if (!/^[\d\s+\-*/.()]+$/.test(trimmed)) return
+    // Whitelist: digits, arithmetic operators, dots, parens, and literal spaces only.
+    // Using a literal space (not \s) to exclude tabs, newlines, and other whitespace.
+    if (!/^[\d +\-*/.()]+$/.test(trimmed)) return
 
     let result
     try {
@@ -41,9 +46,9 @@ export default class extends Controller {
     // Only update the field and notify dependents when the value actually changes.
     // A plain decimal like "1" evaluates to itself — no DOM mutation needed.
     if (trimmed !== formatted) {
-      input.value = formatted
+      this.element.value = formatted
       // Notify any dependent controllers that the value has changed.
-      input.dispatchEvent(new Event("input", { bubbles: true }))
+      this.element.dispatchEvent(new Event("input", { bubbles: true }))
     }
   }
 }

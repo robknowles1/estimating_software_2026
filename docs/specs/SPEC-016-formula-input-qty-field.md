@@ -122,7 +122,7 @@ No new request specs required. The existing `POST /estimates/:id/line_items` req
 **`spec/system/line_items_spec.rb` — new examples under a `"formula input on Qty field"` describe block:**
 
 - Given a line item edit form, when the user fills the Qty field with `6/28` and tabs away, then the field value becomes `0.2143`.
-- Given a line item edit form, when the user fills the Qty field with `(12+4)/8` and tabs away, then the field value becomes `2.0`.
+- Given a line item edit form, when the user fills the Qty field with `(12+4)/8` and tabs away, then the field value becomes `2`.
 - Given a line item edit form, when the user fills the Qty field with `2` (plain integer) and tabs away, then the field value remains `2` (or `2.0` — either is acceptable).
 - Given a line item edit form, when the user fills the Qty field with `abc` and tabs away, then the field value remains `abc` (whitelist rejection — field unchanged).
 - Given a line item edit form, when the user fills the Qty field with a valid formula and submits the form, then the line item is saved with the evaluated decimal and no validation error is shown.
@@ -148,7 +148,7 @@ System specs use Selenium with headless Chrome as per project conventions. Use `
 | OQ | Question | Blocks progress? |
 |----|---------|-----------------|
 | OQ-A | The `line_item_calculator_controller` reads the Qty field to produce a live price preview. The spec assumes dispatching a native `input` event after evaluation is sufficient to trigger recalculation. The developer should verify that `line_item_calculator_controller` wires its recalculation via `data-action="input->..."` on the Qty field (or an ancestor), or adjust accordingly. | No — developer resolves at implementation time |
-| OQ-B | `toFixed(4)` always emits four decimal places (e.g. `2.0000`). Stripping trailing zeros (giving `2`) is cosmetically nicer but requires a regex step. Developer decides which format to use; both are valid for the `DECIMAL(10,4)` column. | No |
+| OQ-B | `toFixed(4)` always emits four decimal places (e.g. `2.0000`). Stripping trailing zeros (giving `2`) is cosmetically nicer but requires a regex step. Developer decides which format to use; both are valid for the `DECIMAL(10,4)` column. | No — **Resolved**: trailing zeros are stripped via `parseFloat(rounded.toFixed(4)).toString()`, so `(12+4)/8` produces `"2"` not `"2.0000"`. |
 
 ---
 
