@@ -52,7 +52,11 @@
     </div>
     <div>
       <%= f.label :quantity, class: label_cls %>
-      <%= f.number_field :quantity, class: input_cls, step: "0.0001", min: 0.0001 %>
+      <%= f.text_field :quantity,
+          class: input_cls,
+          inputmode: "decimal",
+          autocomplete: "off",
+          data: { controller: "formula-input", action: "blur->formula-input#evaluate" } %>
     </div>
   </div>
 </div>
@@ -91,7 +95,11 @@
             class: input_cls %>
       </div>
       <div class="col-span-4">
-        <%= f.number_field :"#{slot[:key]}_qty", class: input_cls, step: "0.0001", min: 0 %>
+        <%= f.text_field :"#{slot[:key]}_qty",
+            class: input_cls,
+            inputmode: "decimal",
+            autocomplete: "off",
+            data: { controller: "formula-input", action: "blur->formula-input#evaluate" } %>
       </div>
     </div>
   <% end %>
@@ -117,7 +125,11 @@
     <div class="col-span-1 text-xs text-slate-500 font-medium"><%= t("line_items.form.material_slot_locks") %></div>
     <div class="col-span-6 text-xs text-slate-400 italic">Resolved by role "locks" in price book</div>
     <div class="col-span-4">
-      <%= f.number_field :locks_qty, class: input_cls, step: "0.0001", min: 0 %>
+      <%= f.text_field :locks_qty,
+          class: input_cls,
+          inputmode: "decimal",
+          autocomplete: "off",
+          data: { controller: "formula-input", action: "blur->formula-input#evaluate" } %>
     </div>
   </div>
 
