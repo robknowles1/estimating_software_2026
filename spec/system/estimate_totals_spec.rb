@@ -36,23 +36,21 @@ RSpec.describe "Estimate totals panel", type: :system do
     end
   end
 
-  def login
+  def totals
+    EstimateTotalsCalculator.new(estimate.reload).call
+  end
+
+  before do
     visit new_session_path
     fill_in "Email", with: user.email
     fill_in "Password", with: "password123"
     click_button "Sign In"
     expect(page).to have_current_path(estimates_path, wait: 5)
-  end
-
-  def totals
-    EstimateTotalsCalculator.new(estimate.reload).call
+    visit edit_estimate_path(estimate)
   end
 
   describe "Test 1 — no sticky inline style (AC-1)" do
     it "totals container has no inline style attribute with sticky or fixed" do
-      login
-      visit edit_estimate_path(estimate)
-
       totals_id = "estimate_#{estimate.id}_totals"
       expect(page).to have_css("##{totals_id}", wait: 5)
 
@@ -63,11 +61,10 @@ RSpec.describe "Estimate totals panel", type: :system do
 
   describe "Test 2 — per-line-item subtotal on card (AC-3)" do
     it "shows the non_burdened_total as currency within the line item card" do
-      login
-      visit edit_estimate_path(estimate)
-
-      result     = totals
-      expected   = number_to_currency(result.line_item_results[line_item.id][:non_burdened_total])
+      result = totals
+      li_result = result.line_item_results[line_item.id]
+      expect(li_result).not_to be_nil, "EstimateTotalsCalculator returned no result for line_item #{line_item.id} — check factory setup"
+      expected = number_to_currency(li_result[:non_burdened_total])
 
       within "##{dom_id(line_item)}" do
         expect(page).to have_text(expected, wait: 5)
@@ -77,9 +74,6 @@ RSpec.describe "Estimate totals panel", type: :system do
 
   describe "Test 3 — breakdown collapsed on load (AC-6)" do
     it "does not show COGS Breakdown text when page first loads" do
-      login
-      visit edit_estimate_path(estimate)
-
       # h3 uses uppercase CSS class so Selenium innerText returns all-caps
       expect(page).not_to have_text("COGS BREAKDOWN", wait: 5)
     end
@@ -87,10 +81,7 @@ RSpec.describe "Estimate totals panel", type: :system do
 
   describe "Test 4 — clicking summary expands breakdown (AC-7)" do
     it "reveals COGS Breakdown after clicking the summary toggle" do
-      login
-      visit edit_estimate_path(estimate)
-
-      find("summary").click
+      find("#estimate_#{estimate.id}_totals summary").click
 
       # h3 uses uppercase CSS class so Selenium innerText returns all-caps
       expect(page).to have_text("COGS BREAKDOWN", wait: 5)
@@ -99,23 +90,17 @@ RSpec.describe "Estimate totals panel", type: :system do
 
   describe "Test 5 — clicking summary again collapses breakdown (AC-8)" do
     it "hides COGS Breakdown after toggling open then closed" do
-      login
-      visit edit_estimate_path(estimate)
-
-      find("summary").click
+      find("#estimate_#{estimate.id}_totals summary").click
       # h3 uses uppercase CSS class so Selenium innerText returns all-caps
       expect(page).to have_text("COGS BREAKDOWN", wait: 5)
 
-      find("summary").click
+      find("#estimate_#{estimate.id}_totals summary").click
       expect(page).not_to have_text("COGS BREAKDOWN", wait: 5)
     end
   end
 
   describe "Test 6 — headline totals always visible (AC-9)" do
     it "shows burdened total on page load without user interaction" do
-      login
-      visit edit_estimate_path(estimate)
-
       result   = totals
       expected = number_to_currency(result.burdened_total)
 
