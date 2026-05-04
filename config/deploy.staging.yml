@@ -23,6 +23,9 @@ env:
   secret:
     - RAILS_MASTER_KEY
     - ESTIMATING_SOFTWARE_2026_DATABASE_PASSWORD
+    # SEED_ADMIN_PASSWORD is only required for the initial `kamal setup` / first seed run.
+    # Once the admin user has been created, this secret can be removed from your secrets
+    # file and from the GitHub Actions secret store — it serves no purpose on subsequent deploys.
     - SEED_ADMIN_PASSWORD
   clear:
     SEED_ADMIN_EMAIL: admin@example.com

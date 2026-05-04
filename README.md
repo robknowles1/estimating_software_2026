@@ -24,7 +24,7 @@ bin/rails db:create db:migrate db:seed
 
 `bin/rails db:seed` creates a development admin user and **prints the generated password to stdout** — copy it before the terminal scrolls. Sign in at `http://localhost:3000` and change the password via Users → Edit after first login.
 
-> **Production:** `db/seeds.rb` is gated to `Rails.env.development?` and will not run in production. Create the first production user via the Rails console with a strong password of your choosing.
+> **Staging / Production:** `db/seeds.rb` seeds an admin user in any environment when the `SEED_ADMIN_EMAIL` environment variable is set. `SEED_ADMIN_PASSWORD` must also be set; the seed will raise if `SEED_ADMIN_EMAIL` is present but `SEED_ADMIN_PASSWORD` is not. Both variables are only needed for the initial bootstrap — they can be removed from your secrets store once the admin user has been created. The development-only auto-generated password block still applies when running `Rails.env.development?`.
 
 ## Running the Application
 

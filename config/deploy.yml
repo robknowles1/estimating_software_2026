@@ -2,7 +2,7 @@
 service: estimating_software_2026
 
 # Name of the container image (use your-user/app-name on external registries).
-image: estimating_software_2026
+image: ghcr.io/robknowles1/estimating_software_2026
 
 # Deploy to these servers.
 servers:
