@@ -53,24 +53,40 @@ The test suite uses RSpec with FactoryBot, Shoulda Matchers, and DatabaseCleaner
 
 ## Deployment
 
-The application is deployed as a Docker container using [Kamal](https://kamal-deploy.org).
+The application is deployed as a Docker container using [Kamal 2](https://kamal-deploy.org). Container images are pushed to GitHub Container Registry (`ghcr.io`).
+
+See **[docs/deployment/digital_ocean.md](docs/deployment/digital_ocean.md)** for the full runbook, including first-time Droplet bootstrap, required GitHub secrets, and troubleshooting.
+
+### Automatic deploys
+
+Every merge to `main` triggers the `deploy_staging` job in `.github/workflows/ci.yml` (after all CI checks pass), which builds a new image and deploys it to the staging Droplet at `64.23.238.38:3000`.
+
+### Manual deploy (staging)
 
 ```bash
-# First-time setup
-kamal setup
+export RAILS_MASTER_KEY=$(cat config/master.key)
+export KAMAL_REGISTRY_PASSWORD=<github-pat-with-write-packages>
+export ESTIMATING_SOFTWARE_2026_DATABASE_PASSWORD=<db-password>
+export SEED_ADMIN_PASSWORD=<admin-password>
 
-# Deploy a new version
-kamal deploy
+# First time only — bootstraps Docker + Postgres on the Droplet
+bin/kamal setup -d staging
+
+# Subsequent deploys
+bin/kamal deploy -d staging
 ```
 
-Kamal configuration lives in `.kamal/`. Secrets are managed via `.kamal/secrets` (not committed to the repository).
+### Required secrets
 
-**Production requirements:**
-- `RAILS_MASTER_KEY` — required to decrypt credentials
-- `ESTIMATING_SOFTWARE_2026_DATABASE_PASSWORD` — PostgreSQL password for the production user
-- TLS must be terminated at the proxy level. `config.force_ssl = true` is enabled in production. Ensure the Kamal config includes a valid SSL certificate.
+| Secret | Purpose |
+|--------|---------|
+| `RAILS_MASTER_KEY` | Decrypts `config/credentials.yml.enc` |
+| `KAMAL_REGISTRY_PASSWORD` | GitHub PAT with `write:packages` scope — authenticates to `ghcr.io` |
+| `ESTIMATING_SOFTWARE_2026_DATABASE_PASSWORD` | Postgres password for the app user |
+| `SEED_ADMIN_PASSWORD` | Initial admin account password on first deploy |
+| `DEPLOY_SSH_PRIVATE_KEY` | Private key for SSH access to the Droplet (set in GitHub Actions secrets) |
 
-The production database runs four PostgreSQL databases (primary, cache, queue, cable) as defined in `config/database.yml`.
+Set these under **Settings → Secrets and variables → Actions** in the GitHub repo.
 
 ## Architecture
 
