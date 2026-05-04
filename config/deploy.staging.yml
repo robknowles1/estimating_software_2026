@@ -1,0 +1,62 @@
+service: estimating-software-staging
+
+deploy_timeout: 120
+
+image: ghcr.io/robknowles1/estimating_software_2026
+
+servers:
+  web:
+    - 64.23.238.38
+
+proxy:
+  run:
+    http_port: 3000
+    https_port: 3001
+
+registry:
+  server: ghcr.io
+  username: robknowles1
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+env:
+  secret:
+    - RAILS_MASTER_KEY
+    - ESTIMATING_SOFTWARE_2026_DATABASE_PASSWORD
+    # SEED_ADMIN_PASSWORD is only required for the initial `kamal setup` / first seed run.
+    # Once the admin user has been created, this secret can be removed from your secrets
+    # file and from the GitHub Actions secret store — it serves no purpose on subsequent deploys.
+    - SEED_ADMIN_PASSWORD
+  clear:
+    SEED_ADMIN_EMAIL: admin@example.com
+    SOLID_QUEUE_IN_PUMA: "true"
+    DB_HOST: estimating-software-staging-db
+    DB_PORT: "5432"
+
+aliases:
+  console: app exec --interactive --reuse "bin/rails console"
+  shell: app exec --interactive --reuse "bash"
+  logs: app logs -f
+  dbc: app exec --interactive --reuse "bin/rails dbconsole --include-password"
+
+volumes:
+  - "estimating_software_staging_storage:/rails/storage"
+
+asset_path: /rails/public/assets
+
+builder:
+  arch: amd64
+
+accessories:
+  db:
+    image: postgres:16
+    host: 64.23.238.38
+    port: "127.0.0.1:5432:5432"
+    env:
+      clear:
+        POSTGRES_USER: estimating_software_2026
+        POSTGRES_DB: estimating_software_2026_production
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - data:/var/lib/postgresql/data

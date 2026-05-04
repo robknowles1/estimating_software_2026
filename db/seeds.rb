@@ -21,6 +21,23 @@ LaborRate::CATEGORIES.each do |category|
 end
 puts "Seeded #{LaborRate.count} labor rates."
 
+if ENV["SEED_ADMIN_EMAIL"].present?
+  raise "SEED_ADMIN_PASSWORD must be set when SEED_ADMIN_EMAIL is provided" if ENV["SEED_ADMIN_PASSWORD"].blank?
+
+  user = User.find_or_initialize_by(email: ENV["SEED_ADMIN_EMAIL"])
+  if user.new_record?
+    user.assign_attributes(
+      name: "Admin",
+      password: ENV["SEED_ADMIN_PASSWORD"],
+      password_confirmation: ENV["SEED_ADMIN_PASSWORD"]
+    )
+    user.save!
+    puts "Seeded admin user: #{ENV["SEED_ADMIN_EMAIL"]}"
+  else
+    puts "Admin user #{ENV["SEED_ADMIN_EMAIL"]} already exists — skipping seed."
+  end
+end
+
 if Rails.env.development?
   require "securerandom"
 
