@@ -20,7 +20,7 @@ The estimating app needs a hosting environment for staging validation before it 
 
 **Host on Digital Ocean Droplets using Kamal 2.**
 
-- **Staging**: existing 1 vCPU / 1 GB Droplet at `64.23.238.38` (shared with syndicate-development.com)
+- **Staging**: dedicated 1 vCPU / 1 GB Droplet at `64.23.238.38` (`ubuntu-s-1vcpu-1gb-amd-sfo3`)
 - **Production** (future): dedicated Droplet provisioned when ready for real users
 - **Container registry**: GitHub Container Registry (`ghcr.io`) — free for public images, no separate DO Container Registry cost
 - **Database**: Postgres 16 as a Kamal accessory container on the same Droplet, storing data in a named Docker volume
@@ -52,7 +52,6 @@ DO Container Registry costs $5/month. Swapped to `ghcr.io` (free) instead.
 
 ### Accepted trade-offs
 
-- **Staging shares a Droplet with another site** — Nginx holds ports 80/443, so `kamal-proxy` runs on 3000/3001. This is a staging-only quirk; production will get a dedicated Droplet.
 - **1 vCPU is slow to build Docker images** — the CI runner builds the image and pushes to `ghcr.io`; the Droplet only pulls and runs it. Cold-start health check timeout is set to 120s to accommodate the slow boot.
 - **Single-node Postgres** — data loss on Droplet failure. Acceptable for staging; production will need a backup strategy (DO Managed Postgres or automated volume snapshots).
 - **No SSL on staging** — serving plain HTTP on port 3000. Acceptable for internal testing only.
@@ -70,8 +69,8 @@ DO Container Registry costs $5/month. Swapped to `ghcr.io` (free) instead.
 
 | Decision | Rationale |
 |---|---|
-| `proxy.run.http_port: 3000` | Nginx holds 80; avoid conflict |
-| `proxy.run.https_port: 3001` | Nginx holds 443; avoid conflict |
+| `proxy.run.http_port: 3000` | Staging uses non-standard ports; 80/443 are available on the dedicated Droplet and can be switched when ready |
+| `proxy.run.https_port: 3001` | Same as above |
 | `deploy_timeout: 120` | 1 vCPU boot takes >30s; default 30s caused false failures |
 | `DB_HOST: estimating-software-staging-db` | Docker container hostname; `127.0.0.1` is container loopback, not host |
 | `SEED_ADMIN_EMAIL` env-var gate in seeds.rb | Allows seeding an admin in non-development environments without hardcoding credentials |
