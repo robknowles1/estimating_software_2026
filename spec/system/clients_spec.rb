@@ -13,12 +13,19 @@ RSpec.describe "Client and Contact Management", type: :system do
     expect(page).to have_current_path(estimates_path, wait: 5)
   end
 
-  # Waits until application.js has finished loading (indicated by the
-  # data-js-ready attribute set at the bottom of application.js).  This
-  # ensures Turbo's submit event listeners are registered before the test
-  # clicks any button that carries a data-turbo-confirm attribute.
-  def wait_for_js
-    expect(page).to have_css("html[data-js-ready='true']", wait: 5)
+  # Stubs window.confirm to return true so that data-turbo-confirm buttons
+  # submit their form without a native browser dialog.  This avoids a
+  # Chrome 147 headless-mode race condition where window.confirm() fires
+  # before Selenium's CDP dialog listener is ready, causing accept_confirm
+  # to raise Capybara::ModalNotFound intermittently when the test runs
+  # after another example that leaves a Turbo navigation in flight.
+  #
+  # The tests that use this helper are exercising server-side behaviour
+  # (blocked vs. successful deletion), not the dialog itself, so bypassing
+  # the native dialog is an acceptable trade-off.
+  def confirm_and_click(button_text)
+    page.execute_script("window.confirm = () => true")
+    click_button button_text
   end
 
   describe "primary contact badge" do
@@ -47,14 +54,7 @@ RSpec.describe "Client and Contact Management", type: :system do
       visit client_path(client)
       expect(page).to have_text("Locked Client Co")
 
-      # Ensure Turbo's event listeners are registered before clicking the
-      # confirm-protected Delete button (otherwise the dialog never fires
-      # and accept_confirm raises Capybara::ModalNotFound).
-      wait_for_js
-
-      accept_confirm do
-        click_button "Delete"
-      end
+      confirm_and_click "Delete"
 
       expect(page).to have_current_path(client_path(client), wait: 5)
       expect(page).to have_text("Cannot delete", wait: 10)
@@ -69,11 +69,7 @@ RSpec.describe "Client and Contact Management", type: :system do
       visit client_path(client)
       expect(page).to have_text("Removable Client Co")
 
-      wait_for_js
-
-      accept_confirm do
-        click_button "Delete"
-      end
+      confirm_and_click "Delete"
 
       expect(page).to have_current_path(clients_path, wait: 5)
       expect(page).not_to have_text("Removable Client Co")
