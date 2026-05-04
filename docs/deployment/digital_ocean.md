@@ -19,7 +19,7 @@ Deployment uses **Kamal 2** (bundled with Rails 8.1). All environments run on Di
 - **Kamal proxy** runs on the Droplet alongside the app container.
 - **Postgres 16** runs as a Kamal accessory container (`estimating-software-staging-db`).
 - The app reaches Postgres via Docker network hostname (`DB_HOST=estimating-software-staging-db`), not `127.0.0.1`.
-- The staging Droplet is **dedicated** to this app (no Nginx or other services). The proxy is configured to run on ports 3000/3001 for now; 80/443 are available if you want to switch.
+- The staging Droplet is **dedicated** to this app. There is no Nginx or any other service holding ports 80 or 443 — those ports are free. Kamal proxy is currently configured to listen on 3000/3001; switching to 80/443 requires only a `proxy.run` config change and a `bin/kamal proxy reboot -d staging`.
 
 ---
 
@@ -39,7 +39,9 @@ Set these in **Settings → Secrets → Actions** on the repo. All five are alre
 
 ## First-Time Setup (Staging)
 
-> **Already completed** — `bin/kamal setup -d staging` has been run against `64.23.238.38` and the app is live. This section is kept for reference in case the Droplet is ever rebuilt.
+> **Status:** `bin/kamal setup -d staging` has already been run against `64.23.238.38` and the app is live.
+>
+> **If rebuilding the Droplet from scratch**, you must run `bin/kamal setup -d staging` again (step 4 below) before any other Kamal commands will work. The steps below document exactly what that requires.
 
 ### 1. Add your SSH public key to the Droplet
 

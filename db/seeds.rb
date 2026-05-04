@@ -22,6 +22,8 @@ end
 puts "Seeded #{LaborRate.count} labor rates."
 
 if ENV["SEED_ADMIN_EMAIL"].present?
+  raise "SEED_ADMIN_PASSWORD must be set when SEED_ADMIN_EMAIL is provided" if ENV["SEED_ADMIN_PASSWORD"].blank?
+
   user = User.find_or_initialize_by(email: ENV["SEED_ADMIN_EMAIL"])
   if user.new_record?
     user.assign_attributes(
