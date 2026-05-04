@@ -284,6 +284,8 @@ en:
       labor_finish: "Finish"
       labor_install: "Install"
       man_days_install_label: "Man-Days (Install)"
+      show_breakdown: "Show breakdown"
+      hide_breakdown: "Hide breakdown"
 
   users:
     create:

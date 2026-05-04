@@ -196,7 +196,7 @@
     <div id="line_items">
       <% if @estimate.line_items.any? %>
         <% @estimate.line_items.each do |line_item| %>
-          <%= render "line_items/line_item", line_item: line_item, estimate: @estimate %>
+          <%= render "line_items/line_item", line_item: line_item, estimate: @estimate, totals: @totals %>
         <% end %>
       <% else %>
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
