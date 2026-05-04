@@ -1,7 +1,7 @@
 # Architecture Decision Records — Index
 
 **Project:** Estimating Software MVP
-**Last updated:** 2026-04-13
+**Last updated:** 2026-04-25
 
 This directory contains Architecture Decision Records (ADRs) for the estimating software project. Each ADR documents a significant technical decision, the alternatives considered, and the rationale.
 
@@ -22,6 +22,7 @@ This directory contains Architecture Decision Records (ADRs) for the estimating 
 
 | ADR | Title | Status | Date | Key Decision |
 |-----|-------|--------|------|-------------|
+| [ADR-012](ADR-012-digital-ocean-hosting.md) | Digital Ocean Hosting with Kamal 2 | accepted | 2026-04-25 | Kamal 2 on DO Droplets; ghcr.io registry (free); staging shares existing Droplet on ports 3000/3001; `deploy_staging` CI job fires on every merge to main. |
 | [ADR-011](ADR-011-estimate-materials-controller-and-apply-to-estimate.md) | EstimateMaterialsController#create Transaction Design and apply_to_estimate Routing | accepted | 2026-04-13 | Inline transaction (not service object) for dual-path create; POST member route on material_sets for apply_to_estimate; partial application is success not failure; rescue RecordNotUnique on concurrent duplicate add. |
 | [ADR-010](ADR-010-materials-per-estimate-product-catalog.md) | Restore Per-Estimate Materials Price Book; Reframe Product Catalog as Template Only | accepted | 2026-04-13 | Restore materials table and _material_id FKs on line_items; remove _unit_price/_description columns from products and line_items; product catalog provides qty defaults and labor hours only, not prices. Supersedes ADR-009. |
 | [ADR-009](ADR-009-product-catalog.md) | Product Catalog — Data Model and Line Item Integration | superseded | 2026-04-11 | Superseded by ADR-010. Flat unit_price approach is domain-incorrect for job-specific material pricing. |
