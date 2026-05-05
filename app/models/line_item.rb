@@ -32,6 +32,7 @@ class LineItem < ApplicationRecord
   belongs_to :pulls_material,     class_name: "EstimateMaterial", foreign_key: :pulls_material_id,     optional: true
   belongs_to :hinges_material,    class_name: "EstimateMaterial", foreign_key: :hinges_material_id,    optional: true
   belongs_to :slides_material,    class_name: "EstimateMaterial", foreign_key: :slides_material_id,    optional: true
+  belongs_to :other_material,     class_name: "EstimateMaterial", foreign_key: :other_material_id,     optional: true
 
   acts_as_list scope: :estimate
 
@@ -43,6 +44,7 @@ class LineItem < ApplicationRecord
     exterior_material_id interior_material_id interior2_material_id
     back_material_id banding_material_id drawers_material_id
     pulls_material_id hinges_material_id slides_material_id
+    other_material_id
   ].freeze
 
   validate :material_ids_belong_to_estimate

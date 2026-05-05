@@ -44,7 +44,12 @@ class EstimateTotalsCalculator
 
       material_cost_per_unit += li.locks_qty.to_d * locks_em&.cost_with_tax.to_d
 
-      material_cost_per_unit += li.other_material_cost.to_d
+      if li.other_material_id.present?
+        material_cost_per_unit += li.other_qty.to_d *
+          estimate_materials_by_id[li.other_material_id]&.cost_with_tax.to_d
+      else
+        material_cost_per_unit += li.other_material_cost.to_d
+      end
 
       subtotal_materials = material_cost_per_unit * qty
 

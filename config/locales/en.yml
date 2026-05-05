@@ -181,6 +181,9 @@ en:
 
   activerecord:
     attributes:
+      line_item:
+        other_material_id: "Other Material"
+        other_qty: "Other Qty"
       product:
         name: "Product Name"
         category: "Category"
@@ -239,8 +242,8 @@ en:
       material_slot_slides: "Slides"
       material_slot_locks: "Locks"
       material_slot_banding: "Banding"
+      material_slot_other: "Other"
       banding_flat_rate: "Flat rate — no qty"
-      other_material_cost_label: "Other Material Cost"
       labor_heading: "Labor Hours"
       labor_detail_hrs: "Detail Hrs"
       labor_mill_hrs: "Mill Hrs"

@@ -120,6 +120,60 @@ RSpec.describe "LineItems", type: :request do
       end
     end
 
+    # SPEC-018: other_material_id / other_qty params
+    context "SPEC-018: with other_material_id and other_qty" do
+      let!(:material) { create(:material, default_price: BigDecimal("10.00")) }
+      let!(:em)       { create(:estimate_material, estimate: estimate, material: material, quote_price: BigDecimal("10.00")) }
+
+      it "saves other_material_id and other_qty on the created record" do
+        post estimate_line_items_path(estimate), params: {
+          line_item: {
+            description: "Other slot cabinet",
+            quantity: "1",
+            unit: "EA",
+            other_material_id: em.id.to_s,
+            other_qty: "3"
+          }
+        }
+        li = LineItem.last
+        expect(li.other_material_id).to eq(em.id)
+        expect(li.other_qty).to eq(BigDecimal("3"))
+      end
+    end
+
+    context "SPEC-018: with other_material_id from a different estimate (cross-estimate attack)" do
+      let!(:other_estimate) { create(:estimate, created_by: user) }
+      let!(:material)       { create(:material, default_price: BigDecimal("10.00")) }
+      let!(:em_other)       { create(:estimate_material, estimate: other_estimate, material: material, quote_price: BigDecimal("10.00")) }
+
+      it "is rejected with unprocessable_content" do
+        post estimate_line_items_path(estimate), params: {
+          line_item: {
+            description: "Attack cabinet",
+            quantity: "1",
+            unit: "EA",
+            other_material_id: em_other.id.to_s,
+            other_qty: "1"
+          }
+        }
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+
+      it "does not persist the line item" do
+        expect {
+          post estimate_line_items_path(estimate), params: {
+            line_item: {
+              description: "Attack cabinet",
+              quantity: "1",
+              unit: "EA",
+              other_material_id: em_other.id.to_s,
+              other_qty: "1"
+            }
+          }
+        }.not_to change(LineItem, :count)
+      end
+    end
+
     context "with invalid params" do
       it "returns unprocessable entity when description is blank" do
         post estimate_line_items_path(estimate), params: {
@@ -169,6 +223,46 @@ RSpec.describe "LineItems", type: :request do
           }
         }
         expect(line_item.reload.exterior_material_id).to eq(em.id)
+      end
+    end
+
+    # SPEC-018: other_material_id / other_qty on update
+    context "SPEC-018: updating other_material_id and other_qty" do
+      let!(:material) { create(:material, default_price: BigDecimal("10.00")) }
+      let!(:em)       { create(:estimate_material, estimate: estimate, material: material, quote_price: BigDecimal("10.00")) }
+
+      it "saves other_material_id and other_qty on the updated record" do
+        patch estimate_line_item_path(estimate, line_item), params: {
+          line_item: {
+            description: "Updated cabinet",
+            quantity: "1",
+            unit: "EA",
+            other_material_id: em.id.to_s,
+            other_qty: "5"
+          }
+        }
+        expect(line_item.reload.other_material_id).to eq(em.id)
+        expect(line_item.reload.other_qty).to eq(BigDecimal("5"))
+      end
+    end
+
+    context "SPEC-018: updating with other_material_id from a different estimate" do
+      let!(:other_estimate) { create(:estimate, created_by: user) }
+      let!(:material)       { create(:material, default_price: BigDecimal("10.00")) }
+      let!(:em_other)       { create(:estimate_material, estimate: other_estimate, material: material, quote_price: BigDecimal("10.00")) }
+
+      it "returns 422 and does not save" do
+        patch estimate_line_item_path(estimate, line_item), params: {
+          line_item: {
+            description: "Attack update",
+            quantity: "1",
+            unit: "EA",
+            other_material_id: em_other.id.to_s,
+            other_qty: "1"
+          }
+        }
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(line_item.reload.other_material_id).to be_nil
       end
     end
 

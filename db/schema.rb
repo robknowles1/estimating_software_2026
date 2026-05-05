@@ -10,9 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_13_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_05_043406) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "plpgsql"
+  enable_extension "pg_catalog.plpgsql"
 
   create_table "clients", force: :cascade do |t|
     t.string "address"
@@ -123,6 +123,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_100001) do
     t.decimal "locks_qty", precision: 10, scale: 4
     t.decimal "mill_hrs", precision: 10, scale: 4
     t.decimal "other_material_cost", precision: 10, scale: 2
+    t.bigint "other_material_id"
+    t.decimal "other_qty", precision: 10, scale: 4
     t.integer "position"
     t.bigint "product_id"
     t.bigint "pulls_material_id"
@@ -134,6 +136,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_100001) do
     t.datetime "updated_at", null: false
     t.index ["estimate_id", "position"], name: "index_line_items_on_estimate_id_and_position"
     t.index ["estimate_id"], name: "index_line_items_on_estimate_id"
+    t.index ["other_material_id"], name: "index_line_items_on_other_material_id"
     t.index ["product_id"], name: "index_line_items_on_product_id"
   end
 
@@ -213,6 +216,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_100001) do
   add_foreign_key "line_items", "estimate_materials", column: "hinges_material_id", on_delete: :nullify
   add_foreign_key "line_items", "estimate_materials", column: "interior2_material_id", on_delete: :nullify
   add_foreign_key "line_items", "estimate_materials", column: "interior_material_id", on_delete: :nullify
+  add_foreign_key "line_items", "estimate_materials", column: "other_material_id", on_delete: :nullify
   add_foreign_key "line_items", "estimate_materials", column: "pulls_material_id", on_delete: :nullify
   add_foreign_key "line_items", "estimate_materials", column: "slides_material_id", on_delete: :nullify
   add_foreign_key "line_items", "estimates", on_delete: :cascade

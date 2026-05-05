@@ -136,16 +136,109 @@ RSpec.describe EstimateTotalsCalculator do
       end
     end
 
-    context "with other_material_cost set" do
+    context "with other_material_cost set (legacy, other_material_id nil)" do
       let!(:li) do
         create(:line_item, estimate: estimate,
                other_material_cost: BigDecimal("15.00"),
                quantity: BigDecimal("1"))
       end
 
-      it "includes other_material_cost in material cost" do
+      it "includes other_material_cost in material cost via legacy fallback" do
         result = calculator.call
         expect(result.line_item_results[li.id][:material_cost_per_unit]).to eq(BigDecimal("15.00"))
+      end
+    end
+
+    # -----------------------------------------------------------------------
+    # SPEC-018: other_material_id slot tests
+    # -----------------------------------------------------------------------
+
+    context "SPEC-018: with other_material_id set and other_qty = 2, cost_with_tax = 5.00" do
+      let!(:material) { create(:material, default_price: BigDecimal("5.00")) }
+      let!(:em)       { create(:estimate_material, estimate: estimate, material: material, quote_price: BigDecimal("5.00")) }
+      let!(:li) do
+        create(:line_item, estimate: estimate,
+               other_material_id: em.id,
+               other_qty: BigDecimal("2.0"),
+               other_material_cost: BigDecimal("999.00"),
+               quantity: BigDecimal("1"))
+      end
+
+      it "computes material_cost_per_unit as other_qty * cost_with_tax (ignores other_material_cost)" do
+        result = calculator.call
+        expect(result.line_item_results[li.id][:material_cost_per_unit]).to eq(BigDecimal("10.00"))
+      end
+    end
+
+    context "SPEC-018: when other_material_id is nil and other_material_cost is 7.50 (legacy)" do
+      let!(:li) do
+        create(:line_item, estimate: estimate,
+               other_material_id: nil,
+               other_material_cost: BigDecimal("7.50"),
+               quantity: BigDecimal("1"))
+      end
+
+      it "falls back to other_material_cost" do
+        result = calculator.call
+        expect(result.line_item_results[li.id][:material_cost_per_unit]).to eq(BigDecimal("7.50"))
+      end
+    end
+
+    context "SPEC-018: when other_material_id is nil and other_material_cost is 0" do
+      let!(:li) do
+        create(:line_item, estimate: estimate,
+               other_material_id: nil,
+               other_material_cost: BigDecimal("0"),
+               quantity: BigDecimal("1"))
+      end
+
+      it "other cost contributes 0" do
+        result = calculator.call
+        expect(result.line_item_results[li.id][:material_cost_per_unit]).to eq(BigDecimal("0"))
+      end
+    end
+
+    context "SPEC-018: when other_material_id is set but the estimate_material has been removed from the price book" do
+      let!(:material) { create(:material, default_price: BigDecimal("5.00")) }
+      let!(:em)       { create(:estimate_material, estimate: estimate, material: material, quote_price: BigDecimal("5.00")) }
+      let!(:li) do
+        create(:line_item, estimate: estimate,
+               other_material_id: em.id,
+               other_qty: BigDecimal("3.0"),
+               quantity: BigDecimal("1"))
+      end
+
+      it "contributes 0 via safe-navigation when material is not in estimate_materials_by_id" do
+        # Simulate removal by deleting the estimate_material after the line item is created.
+        # The FK is ON DELETE SET NULL, so we nullify manually to keep the ID on the line item
+        # and instead build a calculator over an estimate whose price book no longer has that em.
+        other_estimate = create(:estimate,
+                                profit_overhead_percent: BigDecimal("0"),
+                                pm_supervision_percent:  BigDecimal("0"),
+                                tax_rate:                BigDecimal("0"),
+                                tax_exempt:              false,
+                                installer_crew_size:     2,
+                                install_travel_qty:      BigDecimal("0"),
+                                delivery_qty:            BigDecimal("0"),
+                                delivery_rate:           BigDecimal("400.00"),
+                                per_diem_qty:            BigDecimal("0"),
+                                per_diem_rate:           BigDecimal("65.00"),
+                                hotel_qty:               BigDecimal("0"),
+                                airfare_qty:             BigDecimal("0"),
+                                countertop_quote:        BigDecimal("0"))
+
+        # Create the line item on other_estimate but assign an other_material_id
+        # that belongs to a different price book (em from the original estimate).
+        # Use update_columns to bypass the validation (simulating orphaned data).
+        li_orphan = create(:line_item, estimate: other_estimate, quantity: BigDecimal("1"))
+        li_orphan.update_columns(other_material_id: em.id, other_qty: BigDecimal("3.0"))
+
+        loaded = Estimate.includes(:line_items).find(other_estimate.id)
+        result = described_class.new(loaded).call
+
+        # em is not in other_estimate's estimate_materials_by_id, so &.cost_with_tax returns nil,
+        # .to_d on nil gives 0, so contribution is 0.
+        expect(result.line_item_results[li_orphan.id][:material_cost_per_unit]).to eq(BigDecimal("0"))
       end
     end
 
