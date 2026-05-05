@@ -11,7 +11,6 @@ export default class extends Controller {
   connect() {
     this.tomSelect = new TomSelect(this.controlTarget, {
       create: false,
-      dropdownParent: "body",
       placeholder: this.placeholderValue,
       render: {
         no_results: () => {

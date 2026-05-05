@@ -20,7 +20,6 @@ export default class extends Controller {
 
     this.tomSelect = new TomSelect(this.element, {
       create: false,
-      dropdownParent: "body",
       placeholder: this.placeholderValue,
       render: {
         no_results: (data) => {
