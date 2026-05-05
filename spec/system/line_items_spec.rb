@@ -193,6 +193,37 @@ RSpec.describe "Line Items", type: :system do
     end
   end
 
+  # SPEC-018: other material slot — select + qty → correct non_burdened_total on card
+  describe "SPEC-018: other material slot calculates non_burdened_total" do
+    # Use a zero-tax estimate so cost_with_tax == quote_price and math is simple.
+    let!(:zero_tax_estimate) do
+      create(:estimate, client: client, title: "Zero Tax Estimate", created_by: user,
+                        tax_rate: BigDecimal("0"), tax_exempt: false)
+    end
+    let!(:material)     { create(:material, name: "Pine Sheet", default_price: BigDecimal("10.00")) }
+    let!(:estimate_mat) { create(:estimate_material, estimate: zero_tax_estimate, material: material, quote_price: BigDecimal("10.00")) }
+    let!(:line_item) do
+      create(:line_item, estimate: zero_tax_estimate, description: "Other Slot Cabinet", quantity: 1)
+    end
+
+    it "selects an other material, enters qty 3, saves, and shows $30.00 on the card" do
+      login
+      visit edit_estimate_line_item_path(zero_tax_estimate, line_item)
+      expect(page).to have_css("html[data-js-ready='true']", wait: 5)
+
+      select "Pine Sheet ($10.00)", from: "line_item[other_material_id]"
+      fill_in "line_item[other_qty]", with: "3"
+
+      find("input[type='submit']").click
+
+      expect(page).to have_current_path(edit_estimate_path(zero_tax_estimate), wait: 5)
+
+      within("#line_item_#{line_item.id}") do
+        expect(page).to have_text("$30.00", wait: 3)
+      end
+    end
+  end
+
   describe "Enter key on the line item form" do
     let!(:line_item) do
       create(:line_item, estimate: estimate, description: "Enter Key Cabinet", quantity: 1)

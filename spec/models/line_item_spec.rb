@@ -7,7 +7,7 @@ RSpec.describe LineItem, type: :model do
     it { is_expected.to belong_to(:estimate) }
     it { is_expected.to belong_to(:product).optional }
 
-    %i[exterior interior interior2 back banding drawers pulls hinges slides].each do |slot|
+    %i[exterior interior interior2 back banding drawers pulls hinges slides other].each do |slot|
       it { is_expected.to belong_to(:"#{slot}_material").class_name("EstimateMaterial").optional }
     end
   end
@@ -57,6 +57,29 @@ RSpec.describe LineItem, type: :model do
     end
   end
 
+  describe "SPEC-018: other_material_id and other_qty columns" do
+    it "has other_material_id attribute" do
+      expect(line_item).to respond_to(:other_material_id)
+    end
+
+    it "other_material_id is nullable (nil by default)" do
+      expect(line_item.other_material_id).to be_nil
+    end
+
+    it "has other_qty attribute" do
+      expect(line_item).to respond_to(:other_qty)
+    end
+
+    it "other_qty is nullable (nil by default from DB)" do
+      li = create(:line_item)
+      expect(li.reload.other_qty).to be_nil
+    end
+
+    it "other_material_cost column still exists" do
+      expect(line_item).to respond_to(:other_material_cost)
+    end
+  end
+
   describe "#material_ids_belong_to_estimate" do
     let(:estimate)       { create(:estimate) }
     let(:other_estimate) { create(:estimate) }
@@ -91,6 +114,19 @@ RSpec.describe LineItem, type: :model do
       expect(li).to be_invalid
       expect(li.errors[:interior_material_id]).not_to be_empty
       expect(li.errors[:exterior_material_id]).to be_empty
+    end
+
+    it "rejects other_material_id from a different estimate" do
+      em_other = create(:estimate_material, estimate: other_estimate, material: material)
+      li = build(:line_item, estimate: estimate, other_material_id: em_other.id)
+      expect(li).to be_invalid
+      expect(li.errors[:other_material_id]).not_to be_empty
+    end
+
+    it "accepts other_material_id from the same estimate" do
+      em = create(:estimate_material, estimate: estimate, material: material)
+      li = build(:line_item, estimate: estimate, other_material_id: em.id)
+      expect(li).to be_valid
     end
   end
 end

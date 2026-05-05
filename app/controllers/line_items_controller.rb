@@ -69,6 +69,7 @@ class LineItemsController < ApplicationController
     :hinges_material_id, :hinges_qty,
     :slides_material_id, :slides_qty,
     :locks_qty,
+    :other_material_id, :other_qty,
     :other_material_cost,
     :detail_hrs, :mill_hrs, :assembly_hrs, :customs_hrs, :finish_hrs, :install_hrs,
     :equipment_hrs, :equipment_rate
