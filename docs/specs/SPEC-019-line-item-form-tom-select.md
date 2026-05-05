@@ -42,7 +42,7 @@ The line item form currently uses plain `collection_select` dropdowns for both t
 
 ### Change 2 — Material Slot Comboboxes (search only, no create yet)
 
-6. Given the line item form materials section, when the page renders, then each of the 10 selector slots — exterior, interior, interior2, back, drawers, pulls, hinges, slides, other, and banding — has its plain `collection_select` replaced by a Tom Select combobox managed by a new `material-slot` Stimulus controller (`app/javascript/controllers/material_slot_controller.js`). This controller is distinct from `material_combobox_controller.js`. The controller must initialise Tom Select with `dropdownParent: 'body'` (string, not a DOM element reference) to prevent the dropdown being clipped by the form card's overflow styling. This matches the pattern in `material_combobox_controller.js`.
+6. Given the line item form materials section, when the page renders, then each of the 10 selector slots — exterior, interior, interior2, back, drawers, pulls, hinges, slides, other, and banding — has its plain `collection_select` replaced by a Tom Select combobox managed by a new `material-slot` Stimulus controller (`app/javascript/controllers/material_slot_controller.js`). This controller is distinct from `material_combobox_controller.js`. The controller must initialise Tom Select **without** a `dropdownParent` option — the dropdown is anchored to `.ts-wrapper` (Tom Select's default) so that it scrolls with the form and repositions correctly inside the `overflow-y-auto` main container. Setting `dropdownParent: 'body'` caused the dropdown to detach from its trigger and misalign during scroll; it was removed as a bug fix (see commit `fa545f7`).
 
 7. Given a material slot combobox, when a user types characters, then Tom Select filters the pre-loaded price book options client-side in real time. Options are pre-rendered in the underlying `<select>` as before; Tom Select searches them. No server round-trip occurs for filtering.
 
@@ -139,7 +139,7 @@ Note: `em.id` not `material.id` — the form params hold `estimate_material.id` 
 
 **New Stimulus controller: `app/javascript/controllers/product_combobox_controller.js`**
 
-- Wraps the existing product `<select>` with Tom Select (`create: false`, `dropdownParent: "body"`).
+- Wraps the existing product `<select>` with Tom Select (`create: false`). No `dropdownParent` option — the dropdown is anchored to `.ts-wrapper` so it scrolls with the form correctly inside the `overflow-y-auto` container (see AC#6 rationale).
 - Reads placeholder and no-results text from `data-` values on the controller element (set in the view from i18n).
 - Does not handle the `fill` behaviour — that remains in `product_selector_controller.js` which listens to the native `change` event, which Tom Select continues to dispatch.
 - Destroys Tom Select on `disconnect()`.
