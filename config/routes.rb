@@ -15,7 +15,11 @@ Rails.application.routes.draw do
         patch :move
       end
     end
-    resources :estimate_materials, only: [ :index, :new, :create, :edit, :update, :destroy ]
+    resources :estimate_materials, only: [ :index, :new, :create, :edit, :update, :destroy ] do
+      collection do
+        post :inline_create
+      end
+    end
   end
   resources :clients do
     resources :contacts, only: [ :new, :create, :edit, :update, :destroy ]

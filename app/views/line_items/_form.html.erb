@@ -21,6 +21,9 @@
   <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
     <h2 class="text-sm font-semibold text-slate-700 mb-3"><%= t("line_items.form.select_product") %></h2>
     <select name="line_item[product_id]"
+            data-controller="product-combobox"
+            data-product-combobox-placeholder-value="<%= t("line_items.form.product_combobox_placeholder") %>"
+            data-product-combobox-no-results-value="<%= t("line_items.form.product_combobox_no_results") %>"
             data-product-selector-target="select"
             data-action="change->product-selector#fill"
             class="<%= input_cls %>">
@@ -66,6 +69,19 @@
   <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t("line_items.form.materials_heading") %></h2>
 
   <% estimate_material_options = estimate.estimate_materials.includes(:material).to_a %>
+  <% material_slot_data = {
+    controller: "material-slot",
+    "material-slot-inline-create-url-value": inline_create_estimate_estimate_materials_path(estimate),
+    "material-slot-placeholder-value": t("line_items.form.material_slot_placeholder"),
+    "material-slot-add-option-template-value": t("line_items.form.material_slot_add_option", name: "%{name}"),
+    "material-slot-name-label-value": t("line_items.form.inline_create_name_label"),
+    "material-slot-cost-label-value": t("line_items.form.inline_create_cost_label"),
+    "material-slot-confirm-button-value": t("line_items.form.inline_create_confirm_button"),
+    "material-slot-cancel-button-value": t("line_items.form.inline_create_cancel_button"),
+    "material-slot-error-heading-value": t("line_items.form.inline_create_error_heading"),
+    "material-slot-unexpected-error-value": t("line_items.form.inline_create_unexpected_error"),
+    "material-slot-network-error-value": t("line_items.form.inline_create_network_error")
+  } %>
 
   <%# Column headers %>
   <div class="grid grid-cols-12 gap-2 mb-2 px-1">
@@ -92,7 +108,7 @@
             :id,
             ->(em) { "#{em.material.name} ($#{number_with_precision(em.quote_price, precision: 2)})" },
             { include_blank: "— none —" },
-            class: input_cls %>
+            class: input_cls, data: material_slot_data %>
       </div>
       <div class="col-span-4">
         <%= f.text_field :"#{slot[:key]}_qty",
@@ -113,7 +129,7 @@
           :id,
           ->(em) { "#{em.material.name} ($#{number_with_precision(em.quote_price, precision: 2)})" },
           { include_blank: "— none —" },
-          class: input_cls %>
+          class: input_cls, data: material_slot_data %>
     </div>
     <div class="col-span-4">
       <span class="text-xs text-slate-400 italic"><%= t("line_items.form.banding_flat_rate") %></span>
@@ -142,7 +158,7 @@
           :id,
           ->(em) { "#{em.material.name} ($#{number_with_precision(em.quote_price, precision: 2)})" },
           { include_blank: "— none —" },
-          class: input_cls %>
+          class: input_cls, data: material_slot_data %>
     </div>
     <div class="col-span-4">
       <%= f.text_field :other_qty,

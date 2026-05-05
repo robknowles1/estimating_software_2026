@@ -83,8 +83,47 @@ class EstimateMaterialsController < ApplicationController
     redirect_to estimate_estimate_materials_path(@estimate), notice: t(".notice")
   end
 
+  def inline_create
+    cost = inline_create_params[:cost]
+    material = Material.new(name: inline_create_params[:name],
+                            default_price: cost,
+                            category: "hardware",
+                            unit: "EA")
+    em = nil
+    em_errors = []
+    saved = false
+
+    ActiveRecord::Base.transaction do
+      if material.save
+        em = @estimate.estimate_materials.build(material: material, quote_price: cost)
+        if em.save
+          saved = true
+        else
+          em_errors = em.errors.full_messages
+          raise ActiveRecord::Rollback
+        end
+      end
+    end
+
+    if saved
+      render json: {
+        id: em.id,
+        name: material.name,
+        display: "#{material.name} ($#{format('%.2f', em.quote_price)})"
+      }, status: :created
+    else
+      all_errors = material.errors.full_messages + em_errors
+      render json: { errors: all_errors }, status: :unprocessable_content
+    end
+  end
+
   private
 
+  # NOTE: pre-existing tech-debt — set_estimate uses Estimate.find without scoping to
+  # current_user.estimates. Any authenticated user can hit estimate-scoped actions on
+  # any estimate ID. Documented in project memory ("Deferred: Estimate Ownership Auth
+  # Gap") and tracked separately. SPEC-019 inherits this gap by design (see ADR-014
+  # decision 6 and SPEC-019 AC-17). Do not attempt to fix it here.
   def set_estimate
     @estimate = Estimate.find(params[:estimate_id])
   end
@@ -97,5 +136,9 @@ class EstimateMaterialsController < ApplicationController
 
   def new_material_params
     params.require(:material).permit(:name, :description, :category, :unit, :default_price)
+  end
+
+  def inline_create_params
+    params.require(:material).permit(:name, :cost)
   end
 end

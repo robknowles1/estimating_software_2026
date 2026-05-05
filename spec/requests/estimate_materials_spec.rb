@@ -225,4 +225,133 @@ RSpec.describe "EstimateMaterials", type: :request do
       expect(response).to redirect_to(new_session_path)
     end
   end
+
+  describe "POST /estimates/:estimate_id/estimate_materials/inline_create" do
+    let(:url) { inline_create_estimate_estimate_materials_path(estimate) }
+
+    context "with valid params" do
+      it "returns HTTP 201 with JSON body containing id, name, and formatted display" do
+        post url, params: { material: { name: "Test Birch", cost: "42.50" } },
+                  as: :json
+
+        expect(response).to have_http_status(:created)
+        expect(response.media_type).to include("application/json")
+
+        body = JSON.parse(response.body)
+        expect(body["id"]).to be_a(Integer)
+        expect(body["name"]).to eq("Test Birch")
+        expect(body["display"]).to match(/Test Birch \(\$42\.50\)/)
+      end
+
+      it "creates a Material with default_price equal to the entered cost" do
+        expect {
+          post url, params: { material: { name: "Test Birch", cost: "42.50" } },
+                    as: :json
+        }.to change(Material, :count).by(1)
+
+        material = Material.find_by(name: "Test Birch")
+        expect(material).to be_present
+        expect(material.default_price).to eq(BigDecimal("42.50"))
+        expect(material.category).to eq("hardware")
+        expect(material.unit).to eq("EA")
+      end
+
+      it "creates an EstimateMaterial linking the new material to the estimate" do
+        expect {
+          post url, params: { material: { name: "Test Birch", cost: "42.50" } },
+                    as: :json
+        }.to change(EstimateMaterial, :count).by(1)
+
+        em = estimate.estimate_materials.last
+        expect(em.material.name).to eq("Test Birch")
+        expect(em.quote_price).to eq(BigDecimal("42.50"))
+      end
+
+      it "computes cost_with_tax via the existing before_save callback" do
+        post url, params: { material: { name: "Taxed Material", cost: "100.00" } },
+                  as: :json
+
+        em = estimate.estimate_materials.last
+        expect(em.cost_with_tax).to eq(BigDecimal("100.00") * BigDecimal("1.10"))
+      end
+
+      it "returns the EstimateMaterial id (not the Material id) so the form submits the correct slot value" do
+        post url, params: { material: { name: "Returned Id", cost: "5.00" } },
+                  as: :json
+
+        body = JSON.parse(response.body)
+        em = estimate.estimate_materials.last
+        expect(body["id"]).to eq(em.id)
+        expect(body["id"]).not_to eq(em.material.id)
+      end
+    end
+
+    context "with invalid params" do
+      it "returns HTTP 422 and an errors array when name is blank" do
+        expect {
+          post url, params: { material: { name: "", cost: "10.00" } },
+                    as: :json
+        }.not_to change(Material, :count)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        body = JSON.parse(response.body)
+        expect(body["errors"]).to be_an(Array)
+        expect(body["errors"]).to be_present
+        expect(body["errors"].any? { |m| m =~ /Name/i }).to be true
+      end
+
+      it "returns HTTP 422 and an errors array when cost is blank" do
+        expect {
+          post url, params: { material: { name: "Cedar Ply", cost: "" } },
+                    as: :json
+        }.not_to change(Material, :count)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        body = JSON.parse(response.body)
+        expect(body["errors"]).to be_an(Array)
+        expect(body["errors"]).to be_present
+      end
+
+      it "returns HTTP 422 and an errors array when cost is negative" do
+        expect {
+          post url, params: { material: { name: "Negative", cost: "-1.00" } },
+                    as: :json
+        }.not_to change(Material, :count)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        body = JSON.parse(response.body)
+        expect(body["errors"]).to be_present
+      end
+
+      it "creates a duplicate Material when the name already exists in the global library (AC-16)" do
+        create(:material, name: "Duplicate Name")
+        expect {
+          post url, params: { material: { name: "Duplicate Name", cost: "5.00" } },
+                    as: :json
+        }.to change(Material, :count).by(1)
+
+        expect(response).to have_http_status(:created)
+      end
+    end
+
+    context "without authentication" do
+      before { delete session_path }
+
+      it "redirects to the login page (HTTP 302) — require_login redirects, not 401" do
+        post url, params: { material: { name: "Anon", cost: "5.00" } },
+                  as: :json
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(new_session_path)
+      end
+    end
+
+    context "with an invalid estimate_id" do
+      it "returns HTTP 404" do
+        post "/estimates/9999999/estimate_materials/inline_create",
+             params: { material: { name: "X", cost: "1" } },
+             as: :json
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+  end
 end

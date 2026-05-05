@@ -1,7 +1,7 @@
 # Spec: Tom Select on Line Item Form — Product Selector + All Material Slots + Inline Find-or-Create
 
 **ID:** SPEC-019
-**Status:** ready
+**Status:** done
 **Priority:** medium
 **Created:** 2026-04-27
 **Author:** pm-agent
