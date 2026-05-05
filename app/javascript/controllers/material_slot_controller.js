@@ -25,17 +25,30 @@ export default class extends Controller {
       render: {
         no_results: (data) => {
           this.lastSearch = data.input
-          const div = document.createElement("div")
-          div.className = "no-results add-new-option"
-          div.textContent = this.addOptionLabel(data.input)
-          div.style.cursor = "pointer"
-          div.style.padding = "8px 12px"
-          div.addEventListener("mousedown", (event) => {
+          const button = document.createElement("button")
+          button.type = "button"
+          button.className = "no-results add-new-option block w-full text-left px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 focus:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer bg-transparent border-0"
+          button.textContent = this.addOptionLabel(data.input)
+
+          let suppressClick = false
+          const handleActivate = (event) => {
             event.preventDefault()
             event.stopPropagation()
+            if (event.type === "click" && suppressClick) {
+              suppressClick = false
+              return
+            }
+            if (event.type === "mousedown") {
+              suppressClick = true
+            }
             this.openInlineCreatePanel(data.input)
-          })
-          return div
+          }
+
+          // <button> natively dispatches click on Enter/Space, so no explicit
+          // keydown listener is needed for keyboard activation.
+          button.addEventListener("mousedown", handleActivate)
+          button.addEventListener("click", handleActivate)
+          return button
         }
       }
     })
@@ -54,6 +67,10 @@ export default class extends Controller {
     return template.replace("%{name}", name)
   }
 
+  inlineCreateFieldIdPrefix() {
+    return this.element.id || this.element.name || `material-slot-${this.idSuffix ||= Math.random().toString(36).slice(2, 10)}`
+  }
+
   openInlineCreatePanel(typedName) {
     this.removeInlineCreatePanel()
 
@@ -62,76 +79,52 @@ export default class extends Controller {
 
     this.lockDropdownOpen()
 
+    const idPrefix = this.inlineCreateFieldIdPrefix()
+    const nameInputId = `${idPrefix}-inline-create-name`
+    const costInputId = `${idPrefix}-inline-create-cost`
+
     const panel = document.createElement("div")
-    panel.className = "inline-create-panel"
-    panel.style.padding = "12px"
-    panel.style.borderTop = "1px solid #e2e8f0"
-    panel.style.background = "#f8fafc"
+    panel.className = "inline-create-panel p-3 border-t border-slate-200 bg-slate-50"
     panel.addEventListener("mousedown", (event) => event.stopPropagation())
 
     const nameLabel = document.createElement("label")
+    nameLabel.htmlFor = nameInputId
     nameLabel.textContent = this.nameLabelValue
-    nameLabel.style.display = "block"
-    nameLabel.style.fontSize = "12px"
-    nameLabel.style.fontWeight = "500"
-    nameLabel.style.marginBottom = "4px"
+    nameLabel.className = "block text-xs font-medium mb-1"
     panel.appendChild(nameLabel)
 
     const nameInput = document.createElement("input")
     nameInput.type = "text"
+    nameInput.id = nameInputId
     nameInput.value = typedName
-    nameInput.className = "inline-create-name"
-    nameInput.style.width = "100%"
-    nameInput.style.padding = "6px 8px"
-    nameInput.style.marginBottom = "8px"
-    nameInput.style.border = "1px solid #cbd5e1"
-    nameInput.style.borderRadius = "4px"
+    nameInput.className = "inline-create-name inline-create-input w-full px-2 py-1.5 mb-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
     panel.appendChild(nameInput)
 
     const costLabel = document.createElement("label")
+    costLabel.htmlFor = costInputId
     costLabel.textContent = this.costLabelValue
-    costLabel.style.display = "block"
-    costLabel.style.fontSize = "12px"
-    costLabel.style.fontWeight = "500"
-    costLabel.style.marginBottom = "4px"
+    costLabel.className = "block text-xs font-medium mb-1"
     panel.appendChild(costLabel)
 
     const costInput = document.createElement("input")
     costInput.type = "number"
+    costInput.id = costInputId
     costInput.step = "0.01"
     costInput.min = "0"
-    costInput.className = "inline-create-cost"
-    costInput.style.width = "100%"
-    costInput.style.padding = "6px 8px"
-    costInput.style.marginBottom = "8px"
-    costInput.style.border = "1px solid #cbd5e1"
-    costInput.style.borderRadius = "4px"
+    costInput.className = "inline-create-cost inline-create-input w-full px-2 py-1.5 mb-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
     panel.appendChild(costInput)
 
     const errorContainer = document.createElement("div")
-    errorContainer.className = "inline-create-errors"
-    errorContainer.style.color = "#b91c1c"
-    errorContainer.style.fontSize = "12px"
-    errorContainer.style.marginBottom = "8px"
-    errorContainer.style.display = "none"
+    errorContainer.className = "inline-create-errors hidden text-red-700 text-xs mb-2"
     panel.appendChild(errorContainer)
 
     const buttonRow = document.createElement("div")
-    buttonRow.style.display = "flex"
-    buttonRow.style.gap = "8px"
+    buttonRow.className = "flex gap-2"
 
     const confirmButton = document.createElement("button")
     confirmButton.type = "button"
     confirmButton.textContent = this.confirmButtonValue
-    confirmButton.className = "inline-create-confirm"
-    confirmButton.style.padding = "6px 12px"
-    confirmButton.style.background = "#d97706"
-    confirmButton.style.color = "white"
-    confirmButton.style.border = "none"
-    confirmButton.style.borderRadius = "4px"
-    confirmButton.style.fontSize = "13px"
-    confirmButton.style.fontWeight = "600"
-    confirmButton.style.cursor = "pointer"
+    confirmButton.className = "inline-create-confirm px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white border-0 rounded text-sm font-semibold cursor-pointer disabled:opacity-50"
     confirmButton.addEventListener("click", (event) => {
       event.preventDefault()
       this.submitInlineCreate(nameInput.value, costInput.value, errorContainer, confirmButton)
@@ -141,14 +134,7 @@ export default class extends Controller {
     const cancelButton = document.createElement("button")
     cancelButton.type = "button"
     cancelButton.textContent = this.cancelButtonValue
-    cancelButton.className = "inline-create-cancel"
-    cancelButton.style.padding = "6px 12px"
-    cancelButton.style.background = "white"
-    cancelButton.style.color = "#475569"
-    cancelButton.style.border = "1px solid #cbd5e1"
-    cancelButton.style.borderRadius = "4px"
-    cancelButton.style.fontSize = "13px"
-    cancelButton.style.cursor = "pointer"
+    cancelButton.className = "inline-create-cancel px-3 py-1.5 bg-white text-slate-600 border border-slate-300 rounded text-sm cursor-pointer hover:bg-slate-50"
     cancelButton.addEventListener("click", (event) => {
       event.preventDefault()
       this.removeInlineCreatePanel()
@@ -189,7 +175,7 @@ export default class extends Controller {
   }
 
   async submitInlineCreate(name, cost, errorContainer, confirmButton) {
-    errorContainer.style.display = "none"
+    errorContainer.classList.add("hidden")
     errorContainer.innerHTML = ""
     confirmButton.disabled = true
 
@@ -233,19 +219,17 @@ export default class extends Controller {
 
     const heading = document.createElement("div")
     heading.textContent = this.errorHeadingValue
-    heading.style.fontWeight = "600"
-    heading.style.marginBottom = "4px"
+    heading.className = "font-semibold mb-1"
     container.appendChild(heading)
 
     const list = document.createElement("ul")
-    list.style.margin = "0"
-    list.style.paddingLeft = "16px"
+    list.className = "m-0 pl-4 list-disc"
     messages.forEach((message) => {
       const li = document.createElement("li")
       li.textContent = message
       list.appendChild(li)
     })
     container.appendChild(list)
-    container.style.display = "block"
+    container.classList.remove("hidden")
   }
 }

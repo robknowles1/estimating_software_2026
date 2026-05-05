@@ -415,10 +415,10 @@ RSpec.describe "Line Items", type: :system do
       # Inline create panel appears inside the dropdown.
       panel = find(".ts-dropdown .inline-create-panel", wait: 3)
       within(panel) do
-        # Name field is pre-filled with the typed text.
-        name_input = find(".inline-create-name")
-        expect(name_input.value).to eq("Acrylic Panel")
-        find(".inline-create-cost").set("28.00")
+        # Name field is pre-filled with the typed text.  Using fill_in with the
+        # label text verifies the label-for/input-id association works.
+        expect(page).to have_field("Material name", with: "Acrylic Panel")
+        fill_in "Cost ($)", with: "28.00"
         find(".inline-create-confirm").click
       end
 
