@@ -22,6 +22,11 @@ RSpec.describe Material, type: :model do
       material.category = "hardware"
       expect(material).to be_valid
     end
+
+    it "is valid with category hardware and default_price 0 (inline-create defaults)" do
+      m = build(:material, category: "hardware", default_price: BigDecimal("0"))
+      expect(m).to be_valid
+    end
   end
 
   describe "factory" do
