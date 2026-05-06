@@ -5,8 +5,8 @@ export default class extends Controller {
 
   copyToBack(event) {
     const sourceValue = event.target.value.trim()
-    if (sourceValue === "") return
     if (this.backTarget.value.trim() !== "") return
+    if (sourceValue === "") return
     this.backTarget.value = event.target.value
   }
 }

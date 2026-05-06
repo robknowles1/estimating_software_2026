@@ -23,7 +23,9 @@ On the line item form, the `back_qty` field is almost always identical to `exter
 
 ## Acceptance Criteria
 
-1. Given the line item new or edit form, when the page renders, then the `exterior_qty` text field has `data-controller="qty-mirror"` and `data-action="blur->qty-mirror#copyToBack"` wired to it, and the `back_qty` text field has `data-qty-mirror-target="back"` on it. The `formula-input` controller attributes on both fields are unchanged.
+1. Given the line item new or edit form, when the page renders, then a wrapper `<div class="contents">` element carries `data-controller="qty-mirror"`. The `exterior_qty` text field (a descendant of that wrapper) has `data-action="blur->qty-mirror#copyToBack"` on it, and the `back_qty` text field (also a descendant) has `data-qty-mirror-target="back"` on it. The `formula-input` controller attributes on both fields are unchanged.
+
+   Note: Stimulus target lookup is restricted to descendants of `this.element` (the element carrying `data-controller`). Because `exterior_qty` and `back_qty` are siblings rather than one being an ancestor of the other, placing `data-controller="qty-mirror"` on either field itself would prevent the controller from seeing the other field as a target. The accepted implementation therefore places `data-controller` on a shared wrapper element (`<div class="contents">`) that is an ancestor of both fields. The `data-action` directive on the `exterior_qty` field and the `data-qty-mirror-target` directive on the `back_qty` field remain on the fields themselves.
 
 2. Given `back_qty` is empty and the user types a value into `exterior_qty` and then leaves the field (blur), then `back_qty` is immediately populated with the same value as `exterior_qty`.
 
@@ -53,9 +55,9 @@ No new endpoints. No changes to existing controllers or business logic.
 
 - `targets`: `["back"]` — identifies the `back_qty` field.
 - `copyToBack()` action handler:
-  - Reads the current value of the source element (the `exterior_qty` field, accessed via `this.element` since the action is on the field itself, or via `event.target`).
+  - Reads the current value of the source element via `event.target`.
   - Reads the current value of `this.backTarget`.
-  - If `this.backTarget.value` is non-empty (after trimming), returns immediately — never overwrite.
+  - If `this.backTarget.value` is non-empty (after trimming), returns immediately — never overwrite. This is the primary guard and is checked first.
   - If the source value is empty (after trimming), returns immediately — do not copy a blank.
   - Otherwise, sets `this.backTarget.value` to the source value.
 - No state property is needed. The "already touched" guard is the non-empty check on `back_qty` itself (AC#4 — once the first copy fires, `back_qty` is non-empty, so subsequent blurs on `exterior_qty` will be blocked by the non-empty guard).
@@ -64,11 +66,14 @@ No new endpoints. No changes to existing controllers or business logic.
 
 **`app/views/line_items/_form.html.erb`**
 
-The material slots are rendered by a single `each` loop over a slot array. The exterior and back rows are currently produced inside this shared loop, so they cannot independently receive different `data-` attributes without breaking the loop structure. The required change is to extract the `exterior` and `back` rows from the shared loop and render them explicitly with their additional attributes, leaving the remaining six slots (interior, interior2, drawers, pulls, hinges, slides) in the loop.
+The material slots are rendered by a single `each` loop over a slot array. The exterior and back rows are currently produced inside this shared loop, so they cannot independently receive different `data-` attributes without breaking the loop structure. The required change is to extract the `exterior` and `back` rows from the shared loop and render them explicitly, wrapping both in a shared ancestor element that carries `data-controller="qty-mirror"`.
+
+Why a wrapper element is required: Stimulus resolves targets by searching among the descendants of `this.element` (the element bearing `data-controller`). `exterior_qty` and `back_qty` are siblings — neither is an ancestor of the other — so `data-controller` cannot be placed on either field itself. A `<div class="contents">` wrapper (which is invisible to CSS layout because `display: contents` is applied) is placed around both rows and carries `data-controller="qty-mirror"`, making both fields reachable as descendants.
 
 Specifically:
-- Render the `exterior` row explicitly before the loop. Add `data: { controller: "qty-mirror formula-input", action: "blur->qty-mirror#copyToBack blur->formula-input#evaluate" }` to the `exterior_qty` text field. (Stimulus supports multiple controllers and actions in a single `data-controller` / `data-action` attribute.)
-- Render the `back` row explicitly after the exterior row (but before the remaining loop rows). Add `data-qty-mirror-target="back"` to the `back_qty` text field, alongside the existing `formula-input` controller attributes.
+- Wrap the explicit `exterior` and `back` rows in `<div class="contents" data-controller="qty-mirror">`.
+- On the `exterior_qty` text field, add `data-action="blur->qty-mirror#copyToBack"` alongside the existing `blur->formula-input#evaluate` action.
+- On the `back_qty` text field, add `data-qty-mirror-target="back"` alongside the existing `formula-input` controller attributes.
 - The shared loop then iterates over `[:interior, :interior2, :drawers, :pulls, :hinges, :slides]`.
 - The material selector column of both explicit rows is identical to the loop-rendered version — no structural layout changes.
 
