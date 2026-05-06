@@ -74,7 +74,7 @@ The line item form currently uses plain `collection_select` dropdowns for both t
 
 16. Given a concurrent duplicate: if the typed material name already exists in the `Material` table (case-insensitive), when the inline create endpoint processes the request, then it creates a new `Material` record regardless (it does not deduplicate by name — names are not unique in the global library). A later deduplication UX is out of scope.
 
-17. Given the inline create endpoint, when the request is received, then it is protected by `require_login` (inherited from `ApplicationController`) and scoped to the estimate via `Estimate.find(params[:estimate_id])`. An unauthenticated request receives HTTP 302 (redirect to login — `require_login` redirects, it does not render 401) and a request with an invalid `estimate_id` receives HTTP 404.
+17. Given the inline create endpoint, when the request is received, then it is protected by `require_login` (inherited from `ApplicationController`) and scoped to the estimate via `Estimate.find(params[:estimate_id])`. An unauthenticated request receives HTTP 302 (redirect to login — `require_login` redirects, it does not render 401) and a request with an invalid `estimate_id` receives HTTP 404. The `Estimate.find` call is unscoped — any authenticated user can POST to another user's estimate. This ownership gap is inherited by design (ADR-014, decision 6) and tracked as pre-production tech debt; no code comment is required in the controller.
 
 ### General / Cross-Cutting
 
@@ -99,7 +99,7 @@ No schema changes. No model changes. The `Material` validation requires `categor
 - Route: add `member` or `collection` route in `config/routes.rb`. Prefer a collection route: `post :inline_create, on: :collection` under the `estimate_materials` resource.
 - Action location: add `inline_create` action to `EstimateMaterialsController`.
 - Auth: inherited `require_login` before action already covers it.
-- Scope: `@estimate = Estimate.find(params[:estimate_id])` (existing `set_estimate` before action covers it). **Security note:** `Estimate.find` here is unscoped — any authenticated user can POST to another user's estimate. This is a pre-existing gap documented in the project's pre-production tech debt. Do not attempt to fix it in SPEC-019; it has a dedicated remediation track. Add an explicit comment in the controller action noting this gap.
+- Scope: `@estimate = Estimate.find(params[:estimate_id])` (existing `set_estimate` before action covers it). **Security note:** `Estimate.find` here is unscoped — any authenticated user can POST to another user's estimate. This ownership gap is inherited by design (ADR-014, decision 6) and tracked as pre-production tech debt. Do not attempt to fix it in SPEC-019; it has a dedicated remediation track. No inline code comment is required.
 - Params: `params.require(:material).permit(:name, :cost)` — note `cost` maps to `default_price` on `Material` and `quote_price` on `EstimateMaterial`. `unit` is not permitted via params; the controller sets it as a hardcoded default (see transaction pattern below).
 - Transaction: wrap `Material#save` and `EstimateMaterial#save` in a single `ActiveRecord::Base.transaction` block. Collect errors into variables declared before the block so they are accessible after a rollback. Use the following pattern:
 
