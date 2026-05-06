@@ -19,10 +19,8 @@ RSpec.describe "Line Items", type: :system do
     expect(page).to have_css("html[data-js-ready='true']", wait: 5)
   end
 
-  # Picks a product from the Tom Select-enhanced product combobox by typing
-  # `text` into the visible search input and clicking the matching dropdown
-  # option.  The original native <select> is hidden by Tom Select, so
-  # Capybara's `select` helper cannot operate on it.
+  # Tom Select hides the native <select>, so Capybara's `select` helper cannot reach it;
+  # we type into the visible search input and click the option directly.
   def pick_product(text)
     product_combobox = find("select[name='line_item[product_id]']", visible: false)
     product_control = product_combobox.find(:xpath, "following-sibling::*[contains(@class,'ts-wrapper')][1]/*[contains(@class,'ts-control')]")
@@ -34,7 +32,6 @@ RSpec.describe "Line Items", type: :system do
     click_tom_select_option(option)
   end
 
-  # Picks a material for a slot via Tom Select.  Slot is e.g. :exterior or :other.
   def pick_material(slot, text)
     input = open_material_slot(slot)
     type_into_tom_select(input, text)
@@ -113,13 +110,10 @@ RSpec.describe "Line Items", type: :system do
       qty_field = find_field("line_item[quantity]")
       qty_field.set("2")
 
-      # Verify the values stuck before submitting — under certain headless
-      # Chrome focus states from a previous spec, fill_in can be no-op'd.
       expect(desc_field.value).to eq("Custom Freeform Cabinet")
 
-      # Dispatch the click via JS — a bare `.click()` on the submit button is
-      # occasionally swallowed by headless Chrome after a previous spec has
-      # driven Selenium's action chain on a Tom Select dropdown option.
+      # A bare .click() on the submit button is occasionally swallowed by headless Chrome
+      # after a previous spec has driven Selenium's action chain on a Tom Select option.
       page.execute_script("document.querySelector('input[type=\"submit\"]').click()")
 
       expect(page).to have_current_path(edit_estimate_path(estimate), wait: 5)
@@ -164,7 +158,6 @@ RSpec.describe "Line Items", type: :system do
       fill_in "line_item[description]", with: "Test Cabinet"
       fill_in "line_item[quantity]", with: "1"
 
-      # Wait for JS to prefill fields (product_selector_controller#fill)
       expect(page).to have_field("line_item[exterior_qty]", with: "2.0", wait: 3)
 
       find("input[type='submit']").click
@@ -272,9 +265,8 @@ RSpec.describe "Line Items", type: :system do
     end
   end
 
-  # SPEC-018: other material slot — select + qty → correct non_burdened_total on card
-  describe "SPEC-018: other material slot calculates non_burdened_total" do
-    # Use a zero-tax estimate so cost_with_tax == quote_price and math is simple.
+  describe "other material slot calculates non_burdened_total" do
+    # Zero tax so cost_with_tax == quote_price and the expected dollar amount is trivially derivable.
     let!(:zero_tax_estimate) do
       create(:estimate, client: client, title: "Zero Tax Estimate", created_by: user,
                         tax_rate: BigDecimal("0"), tax_exempt: false)
@@ -349,14 +341,12 @@ RSpec.describe "Line Items", type: :system do
     end
   end
 
-  # SPEC-019 scenarios A-D — Tom Select on product + material slots, plus inline create.
-  describe "SPEC-019: Tom Select on product and material slot comboboxes" do
+  describe "Tom Select on product and material slot comboboxes" do
     let!(:zero_tax_estimate) do
       create(:estimate, client: client, title: "SPEC-019 Estimate", created_by: user,
                         tax_rate: BigDecimal("0"), tax_exempt: false)
     end
 
-    # Scenario A — product combobox filters and the description auto-fills
     it "filters the product combobox by typing and fills the description on selection" do
       create(:product, name: "MDF Base 2-door", category: "Base Cabinets", unit: "EA")
 
@@ -366,12 +356,9 @@ RSpec.describe "Line Items", type: :system do
 
       pick_product("MDF Base 2-door")
 
-      # product_selector_controller#fill should populate the description from the
-      # native change event that Tom Select dispatches on item add.
       expect(page).to have_field("line_item[description]", with: "MDF Base 2-door", wait: 3)
     end
 
-    # Scenario B — material slot combobox filters the price book client-side
     it "filters a material slot combobox by typing so only matches appear" do
       maple = create(:material, name: "Maple Plywood", default_price: BigDecimal("60.00"))
       birch = create(:material, name: "Birch Plywood", default_price: BigDecimal("55.00"))
@@ -393,7 +380,6 @@ RSpec.describe "Line Items", type: :system do
       expect(page).to have_no_css(".ts-dropdown-content .option", text: "Birch Plywood", wait: 3)
     end
 
-    # Scenario C — full inline find-or-create flow ending in saved line item with the new material slot populated
     it "creates a new material inline, selects it, saves the line item, and shows non-zero material cost" do
       line_item = create(:line_item, estimate: zero_tax_estimate, description: "Inline Create Cabinet", quantity: 1)
 
@@ -412,20 +398,15 @@ RSpec.describe "Line Items", type: :system do
       add_option = find(".ts-dropdown .add-new-option", text: /Add 'Acrylic Panel'/, wait: 3)
       add_option.click
 
-      # Inline create panel appears inside the dropdown.
       panel = find(".ts-dropdown .inline-create-panel", wait: 3)
       within(panel) do
-        # Name field is pre-filled with the typed text.  Using fill_in with the
-        # label text verifies the label-for/input-id association works.
+        # fill_in with the label text deliberately verifies the label-for/input-id association.
         expect(page).to have_field("Material name", with: "Acrylic Panel")
         fill_in "Cost ($)", with: "28.00"
         find(".inline-create-confirm").click
       end
 
-      # Wait for fetch round-trip and Tom Select to add+select+close.
       expect(page).to have_no_css(".inline-create-panel", wait: 5)
-
-      # The selected display item should now read "Acrylic Panel ($28.00)".
       expect(page).to have_css(".ts-wrapper .item", text: /Acrylic Panel \(\$28\.00\)/, wait: 3)
 
       fill_in "line_item[exterior_qty]", with: "2"
@@ -447,7 +428,6 @@ RSpec.describe "Line Items", type: :system do
       end
     end
 
-    # Scenario D — inline create error surfaces in the panel without closing the dropdown
     it "shows errors inside the dropdown when cost is blank and does not create a Material" do
       line_item = create(:line_item, estimate: zero_tax_estimate, description: "Error Test", quantity: 1)
 
@@ -462,15 +442,11 @@ RSpec.describe "Line Items", type: :system do
 
       panel = find(".ts-dropdown .inline-create-panel", wait: 3)
       within(panel) do
-        # Leave cost blank.
         find(".inline-create-confirm").click
         expect(page).to have_css(".inline-create-errors", visible: true, wait: 5)
       end
 
-      # Dropdown stays open; panel stays visible.
       expect(page).to have_css(".ts-dropdown .inline-create-panel")
-
-      # No Material was created.
       expect(Material.where(name: "Cedar Ply")).to be_empty
     end
   end

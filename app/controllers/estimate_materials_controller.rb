@@ -119,11 +119,6 @@ class EstimateMaterialsController < ApplicationController
 
   private
 
-  # NOTE: pre-existing tech-debt — set_estimate uses Estimate.find without scoping to
-  # current_user.estimates. Any authenticated user can hit estimate-scoped actions on
-  # any estimate ID. Documented in project memory ("Deferred: Estimate Ownership Auth
-  # Gap") and tracked separately. SPEC-019 inherits this gap by design (see ADR-014
-  # decision 6 and SPEC-019 AC-17). Do not attempt to fix it here.
   def set_estimate
     @estimate = Estimate.find(params[:estimate_id])
   end

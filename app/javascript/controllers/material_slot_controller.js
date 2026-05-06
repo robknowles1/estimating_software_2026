@@ -149,9 +149,7 @@ export default class extends Controller {
     this.tomSelect.open()
   }
 
-  // Replace tomSelect.close with a no-op while the inline panel is visible so
-  // that blur events from the user clicking into the cost input do not collapse
-  // the dropdown.  The original close is restored when the panel is removed.
+  // Patch out close() to prevent blur on cost input collapsing the dropdown; restored in unlockDropdownOpen.
   lockDropdownOpen() {
     if (!this.tomSelect || this.dropdownLocked) return
     this.originalClose = this.tomSelect.close.bind(this.tomSelect)
