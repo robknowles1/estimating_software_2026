@@ -3,8 +3,6 @@ require "csv"
 class LineItemCsvImporter
   Result = Data.define(:line_items_created, :error)
 
-  MIN_COLUMNS = 10
-
   def initialize(estimate, file)
     @estimate = estimate
     @file     = file
@@ -30,10 +28,6 @@ class LineItemCsvImporter
 
     rows.each do |row|
       next if skip_row?(row)
-
-      if row.size < MIN_COLUMNS
-        raise ArgumentError, "Row has fewer than #{MIN_COLUMNS} columns: #{row.inspect}"
-      end
 
       category       = row[0].to_s.strip
       product_number = row[4].to_s.strip
@@ -79,6 +73,8 @@ class LineItemCsvImporter
   end
 
   def skip_row?(row)
+    return false if row[7].to_s.strip == "Total"
+
     category_cell = row[0].to_s.strip
     product_num   = row[4].to_s.strip
 

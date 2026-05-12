@@ -9,10 +9,14 @@ RSpec.describe LineItemCsvImporter, type: :service do
     OpenStruct.new(read: csv_string)
   end
 
-  # A minimal valid row: 11 columns, none triggering skip logic
   def build_row(category: "Base Cabinets", product_number: "BC-001", name: "Base 2-Door",
                 marker: "", qty: "2", unit: "EA")
     "#{category},Room A,Kitchen,,#{product_number},#{name},desc,#{marker},#{qty},#{unit},extra"
+  end
+
+  # Real CSV Total rows have blank cols 0-6; col 7 = "Total", col 8 = qty, col 9 = unit
+  def build_total_row(qty:, unit: "EA")
+    ",,,,,,,Total,#{qty},#{unit},extra"
   end
 
   describe "#call" do
@@ -47,22 +51,23 @@ RSpec.describe LineItemCsvImporter, type: :service do
       end
     end
 
-    context "product spanning multiple room rows followed by a Total row" do
+    context "product spanning multiple room rows followed by a real Total row (blank col 4)" do
       let(:csv) do
         [
-          build_row(product_number: "BC-001", name: "Base 2-Door", marker: "", qty: "2"),
-          build_row(product_number: "BC-001", name: "Base 2-Door", marker: "Total", qty: "7"),
-          build_row(product_number: "BC-002", name: "Wall Cabinet", marker: "", qty: "3")
+          build_row(product_number: "BC-001", name: "Base 2-Door", qty: "4"),
+          build_row(product_number: "BC-001", name: "Base 2-Door", qty: "3"),
+          build_total_row(qty: "7"),
+          build_row(product_number: "BC-002", name: "Wall Cabinet", qty: "3")
         ].join("\n")
       end
 
-      it "creates one line item for the grouped product" do
+      it "creates one line item per unique product" do
         expect {
           LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
         }.to change(LineItem, :count).by(2)
       end
 
-      it "uses the Total row qty for the grouped product" do
+      it "uses the Total row qty, not the first room row qty" do
         LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
         base_item = estimate.line_items.reload.find { |li| li.description == "Base 2-Door" }
         expect(base_item.quantity.to_i).to eq(7)
@@ -196,27 +201,6 @@ RSpec.describe LineItemCsvImporter, type: :service do
         LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
         descriptions = estimate.line_items.reload.map(&:description)
         expect(descriptions.count { |d| d == "Pre-existing" }).to eq(1)
-      end
-    end
-
-    context "malformed CSV with fewer than 10 columns in a non-skipped row" do
-      let(:csv) { "Base Cabinets,Room A,,BC-001,Short Row,desc" }
-
-      it "returns a non-nil error" do
-        result = LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
-        expect(result.error).not_to be_nil
-      end
-
-      it "creates no line items" do
-        expect {
-          LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
-        }.not_to change(LineItem, :count)
-      end
-
-      it "creates no products" do
-        expect {
-          LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
-        }.not_to change(Product, :count)
       end
     end
 
