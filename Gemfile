@@ -26,6 +26,9 @@ gem "tailwindcss-rails"
 # Ordered list management for ActiveRecord models [https://github.com/brendanwhitfield/acts_as_list]
 gem "acts_as_list"
 
+# CSV parsing (extracted from stdlib in Ruby 3.4+)
+gem "csv"
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 

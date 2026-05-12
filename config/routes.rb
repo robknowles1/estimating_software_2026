@@ -11,6 +11,9 @@ Rails.application.routes.draw do
   end
   resources :estimates do
     resources :line_items, only: [ :new, :create, :edit, :update, :destroy ] do
+      collection do
+        post :import
+      end
       member do
         patch :move
       end

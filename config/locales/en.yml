@@ -225,6 +225,9 @@ en:
       notice: "Line item was successfully updated."
     destroy:
       notice: "Line item was successfully removed."
+    import:
+      notice: "Imported %{count} line items."
+      import: "Import CSV"
     form:
       select_product: "Select Product (optional)"
       freeform_option: "— freeform / no product —"
