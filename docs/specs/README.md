@@ -13,7 +13,8 @@
 | SPEC-018 | [Other Material Slot](./SPEC-018-other-material-slot.md) | done | medium | 2026-04-25 |
 | SPEC-019 | [Tom Select on Line Item Form — Product Selector + All Material Slots + Inline Find-or-Create](./SPEC-019-line-item-form-tom-select.md) | done | medium | 2026-04-27 |
 | SPEC-020 | [Exterior-to-Back Qty Autofill on Line Item Form](./SPEC-020-exterior-back-qty-autofill.md) | ready | low | 2026-05-06 |
-| SPEC-021 | [CSV Import for Estimate Line Items](./SPEC-021-csv-import-line-items.md) | ready | high | 2026-05-12 |
+| SPEC-021 | [CSV Import for Estimate Line Items](./SPEC-021-csv-import-line-items.md) | done | high | 2026-05-12 |
+| SPEC-022 | [Material Short Code and Auto-Population on CSV Import](./SPEC-022-material-alias-auto-population.md) | ready | high | 2026-05-22 |
 
 ---
 
