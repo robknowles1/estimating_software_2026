@@ -38,7 +38,10 @@ class ClientsController < ApplicationController
     if @client.destroy
       redirect_to clients_path, notice: t(".notice")
     else
-      redirect_to @client, alert: t(".blocked")
+      respond_to do |format|
+        format.turbo_stream
+        format.html { redirect_to @client, alert: t(".blocked") }
+      end
     end
   end
 

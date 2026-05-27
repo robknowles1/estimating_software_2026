@@ -184,13 +184,36 @@
   <div class="col-span-2">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-sm font-semibold text-slate-700"><%= t(".line_items_heading") %></h2>
-      <%= link_to new_estimate_line_item_path(@estimate),
-          class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors" do %>
-        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-        </svg>
-        <%= t(".add_product") %>
-      <% end %>
+      <div class="flex items-center gap-2">
+        <%= link_to new_estimate_line_item_path(@estimate),
+            class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors" do %>
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+          <%= t(".add_product") %>
+        <% end %>
+        <details class="relative">
+          <summary class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer list-none">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            <%= t("line_items.import.import") %>
+          </summary>
+          <div class="absolute right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg p-4 z-10 min-w-64">
+            <%= form_with url: import_estimate_line_items_path(@estimate), method: :post, multipart: true, data: { turbo: false } do |f| %>
+              <div class="mb-3">
+                <label class="block text-xs font-medium text-slate-700 mb-1.5"><%= t("line_items.import.import") %></label>
+                <%= f.file_field :csv_file, accept: ".csv,text/csv",
+                    class: "block w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer" %>
+              </div>
+              <div>
+                <%= f.submit t("line_items.import.import"),
+                    class: "w-full bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer" %>
+              </div>
+            <% end %>
+          </div>
+        </details>
+      </div>
     </div>
 
     <div id="line_items">

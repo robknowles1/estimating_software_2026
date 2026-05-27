@@ -45,6 +45,18 @@ class LineItemsController < ApplicationController
     redirect_to edit_estimate_path(@estimate), notice: t(".notice")
   end
 
+  def import
+    file   = params[:csv_file]
+    result = LineItemCsvImporter.new(@estimate, file).call
+
+    if result.error
+      redirect_to edit_estimate_path(@estimate), alert: result.error
+    else
+      redirect_to edit_estimate_path(@estimate),
+        notice: t(".notice", count: result.line_items_created)
+    end
+  end
+
   def move
     @line_item = @estimate.line_items.find(params[:id])
     direction  = params[:direction]

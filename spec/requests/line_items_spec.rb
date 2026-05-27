@@ -275,6 +275,65 @@ RSpec.describe "LineItems", type: :request do
     end
   end
 
+  describe "POST /estimates/:estimate_id/line_items/import" do
+    let(:valid_csv_path) { Rails.root.join("spec/fixtures/files/sample_import.csv") }
+
+    context "with a valid CSV file" do
+      it "redirects to the estimate edit page" do
+        post import_estimate_line_items_path(estimate),
+          params: { csv_file: Rack::Test::UploadedFile.new(valid_csv_path, "text/csv") }
+        expect(response).to redirect_to(edit_estimate_path(estimate))
+      end
+
+      it "increases LineItem.count by the number of unique products" do
+        expect {
+          post import_estimate_line_items_path(estimate),
+            params: { csv_file: Rack::Test::UploadedFile.new(valid_csv_path, "text/csv") }
+        }.to change(LineItem, :count).by(2)
+      end
+
+      it "shows a flash notice containing the count" do
+        post import_estimate_line_items_path(estimate),
+          params: { csv_file: Rack::Test::UploadedFile.new(valid_csv_path, "text/csv") }
+        follow_redirect!
+        expect(response.body).to include("2")
+      end
+    end
+
+    context "with an invalid/empty file" do
+      let(:bad_csv) { Rack::Test::UploadedFile.new(StringIO.new("Base Cabinets,short"), "text/csv", original_filename: "bad.csv") }
+
+      it "redirects with an alert" do
+        post import_estimate_line_items_path(estimate), params: { csv_file: bad_csv }
+        expect(response).to redirect_to(edit_estimate_path(estimate))
+        expect(flash[:alert]).to be_present
+      end
+
+      it "does not change LineItem.count" do
+        expect {
+          post import_estimate_line_items_path(estimate), params: { csv_file: bad_csv }
+        }.not_to change(LineItem, :count)
+      end
+    end
+
+    context "unauthenticated" do
+      it "redirects to the login page" do
+        delete session_path
+        post import_estimate_line_items_path(estimate),
+          params: { csv_file: Rack::Test::UploadedFile.new(valid_csv_path, "text/csv") }
+        expect(response).to redirect_to(new_session_path)
+      end
+
+      it "creates no line items" do
+        delete session_path
+        expect {
+          post import_estimate_line_items_path(estimate),
+            params: { csv_file: Rack::Test::UploadedFile.new(valid_csv_path, "text/csv") }
+        }.not_to change(LineItem, :count)
+      end
+    end
+  end
+
   describe "DELETE /estimates/:estimate_id/line_items/:id" do
     let!(:line_item) { create(:line_item, estimate: estimate) }
 

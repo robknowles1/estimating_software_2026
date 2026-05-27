@@ -450,4 +450,66 @@ RSpec.describe "Line Items", type: :system do
       expect(Material.where(name: "Cedar Ply")).to be_empty
     end
   end
+
+  describe "qty-mirror autofill (SPEC-020)" do
+    let!(:line_item) do
+      create(:line_item, estimate: estimate, description: "Mirror Test Cabinet", quantity: 1)
+    end
+
+    def blur_field(field_name)
+      execute_script("document.querySelector('[name=\"#{field_name}\"]').blur()")
+    end
+
+    before { login }
+
+    it "Scenario A — copies exterior_qty into back_qty when back_qty is empty" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      wait_for_js
+
+      fill_in "line_item[exterior_qty]", with: "4"
+      blur_field("line_item[exterior_qty]")
+
+      expect(page).to have_field("line_item[back_qty]", with: "4", wait: 3)
+    end
+
+    it "Scenario B — does not overwrite back_qty when it already has a value" do
+      line_item.update!(back_qty: BigDecimal("2"))
+
+      visit edit_estimate_line_item_path(estimate, line_item)
+      wait_for_js
+
+      fill_in "line_item[exterior_qty]", with: "6"
+      blur_field("line_item[exterior_qty]")
+
+      back_value = find_field("line_item[back_qty]").value
+      expect(back_value).to eq("2").or eq("2.0")
+      expect(back_value).not_to eq("6")
+    end
+
+    it "Scenario C — does not copy when exterior_qty is empty" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      wait_for_js
+
+      exterior_field = find_field("line_item[exterior_qty]")
+      exterior_field.click
+      blur_field("line_item[exterior_qty]")
+
+      expect(page).to have_field("line_item[back_qty]", with: "", wait: 3)
+    end
+
+    it "Scenario D — second blur does not overwrite back_qty after autofill has fired once" do
+      visit edit_estimate_line_item_path(estimate, line_item)
+      wait_for_js
+
+      fill_in "line_item[exterior_qty]", with: "3"
+      blur_field("line_item[exterior_qty]")
+      expect(page).to have_field("line_item[back_qty]", with: "3", wait: 3)
+
+      fill_in "line_item[exterior_qty]", with: ""
+      fill_in "line_item[exterior_qty]", with: "5"
+      blur_field("line_item[exterior_qty]")
+
+      expect(page).to have_field("line_item[back_qty]", with: "3", wait: 3)
+    end
+  end
 end

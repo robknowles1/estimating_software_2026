@@ -9,6 +9,11 @@
 | SPEC-014 | [Materials Rework — Global Library, Per-Estimate Pricing, Product Catalog as Template Only](./SPEC-014-materials-rework.md) | done | high | 2026-04-13 |
 | SPEC-015 | [Searchable Material Combobox — Add Material to Price Book](./SPEC-015-searchable-material-dropdown.md) | done | medium | 2026-04-17 |
 | SPEC-016 | [Excel-Style Formula Input on Line Item Qty Fields](./SPEC-016-formula-input-qty-field.md) | done | medium | 2026-04-23 |
+| SPEC-017 | [Estimate Totals UX](./SPEC-017-estimate-totals-ux.md) | done | medium | 2026-04-24 |
+| SPEC-018 | [Other Material Slot](./SPEC-018-other-material-slot.md) | done | medium | 2026-04-25 |
+| SPEC-019 | [Tom Select on Line Item Form — Product Selector + All Material Slots + Inline Find-or-Create](./SPEC-019-line-item-form-tom-select.md) | done | medium | 2026-04-27 |
+| SPEC-020 | [Exterior-to-Back Qty Autofill on Line Item Form](./SPEC-020-exterior-back-qty-autofill.md) | ready | low | 2026-05-06 |
+| SPEC-021 | [CSV Import for Estimate Line Items](./SPEC-021-csv-import-line-items.md) | ready | high | 2026-05-12 |
 
 ---
 
