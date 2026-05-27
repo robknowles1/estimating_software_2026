@@ -38,9 +38,10 @@ class ClientsController < ApplicationController
     if @client.destroy
       redirect_to clients_path, notice: t(".notice")
     else
-      flash.now[:alert] = t(".blocked")
-      @contacts = @client.contacts.alphabetical
-      render :show, status: :unprocessable_entity
+      respond_to do |format|
+        format.turbo_stream
+        format.html { redirect_to @client, alert: t(".blocked") }
+      end
     end
   end
 

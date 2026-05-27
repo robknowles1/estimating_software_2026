@@ -26,7 +26,7 @@
       <%= render "layouts/sidebar" %>
 
       <div class="flex-1 flex flex-col overflow-hidden">
-        <%= render "layouts/flashes" %>
+        <div id="flash"><%= render "layouts/flashes" %></div>
 
         <main class="flex-1 overflow-y-auto p-8">
           <%= yield %>
