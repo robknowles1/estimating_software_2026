@@ -13,6 +13,7 @@ Rails.application.routes.draw do
     resources :line_items, only: [ :new, :create, :edit, :update, :destroy ] do
       collection do
         post :import
+        post :apply_aliases
       end
       member do
         patch :move

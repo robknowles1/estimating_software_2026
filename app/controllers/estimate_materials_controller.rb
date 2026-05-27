@@ -124,7 +124,7 @@ class EstimateMaterialsController < ApplicationController
   end
 
   def estimate_material_params
-    p = params.require(:estimate_material).permit(:quote_price, :role)
+    p = params.require(:estimate_material).permit(:quote_price, :role, :short_code)
     p[:role] = p[:role].presence_in(EstimateMaterial::ROLES)
     p
   end

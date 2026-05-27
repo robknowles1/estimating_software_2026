@@ -227,7 +227,17 @@ en:
       notice: "Line item was successfully removed."
     import:
       notice: "Imported %{count} line items."
+      notice_all_matched: "Imported %{imported} line items. All materials auto-assigned."
+      notice_with_unmatched: "Imported %{imported} line items. %{unmatched} need review — no short code match found."
+      notice_with_ambiguity: "Imported %{imported} line items. %{ambiguous} had ambiguous short code matches — longest match was used."
       import: "Import CSV"
+    apply_aliases:
+      notice: "Applied short codes: %{matched} matched, %{unmatched} unmatched."
+      notice_all_matched: "Applied short codes to %{total} line items. All materials auto-assigned."
+      notice_with_unmatched: "Applied short codes to %{total} line items. %{unmatched} need review."
+      notice_with_ambiguity: "Applied short codes to %{total} line items. %{ambiguous} had ambiguous matches."
+    card:
+      needs_review: "Needs review"
     form:
       select_product: "Select Product (optional)"
       freeform_option: "— freeform / no product —"
@@ -413,6 +423,7 @@ en:
       subtitle: "Materials and job-specific prices for this estimate."
       add_button: "Add Material"
       apply_set_button: "Apply Set"
+      apply_short_codes_button: "Apply short codes to all line items"
       empty_title: "No materials yet"
       empty_description: "Add materials to set up the price book for this estimate."
       col_name: "Material"
@@ -421,6 +432,7 @@ en:
       col_quote_price: "Quote Price"
       col_cost_with_tax: "Cost (with tax)"
       col_role: "Role"
+      col_short_code: "Short Code"
       col_actions: "Actions"
       locks_role_badge: "Locks"
       back_to_estimate: "← Back to estimate"
@@ -447,6 +459,8 @@ en:
       role_label: "Role"
       role_blank: "— none —"
       role_locks: "Locks"
+      short_code_label: "Short Code"
+      short_code_placeholder: "e.g. PL1"
       cancel: "Cancel"
       errors:
         one: "1 error prohibited this from being saved:"

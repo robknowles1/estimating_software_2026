@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_05_043406) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_054916) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -46,6 +46,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_05_043406) do
     t.bigint "material_id", null: false
     t.decimal "quote_price", precision: 12, scale: 4, default: "0.0", null: false
     t.string "role"
+    t.string "short_code"
     t.datetime "updated_at", null: false
     t.index ["estimate_id", "material_id"], name: "index_estimate_materials_on_estimate_id_and_material_id", unique: true
     t.index ["estimate_id"], name: "index_estimate_materials_on_estimate_id"

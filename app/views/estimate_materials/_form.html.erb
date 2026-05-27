@@ -30,6 +30,11 @@
           {},
           class: input_cls %>
     </div>
+    <div class="col-span-2">
+      <label class="<%= label_cls %>"><%= t("estimate_materials.form.short_code_label") %></label>
+      <%= f.text_field :short_code, class: input_cls,
+          placeholder: t("estimate_materials.form.short_code_placeholder") %>
+    </div>
   </div>
 </div>
 
