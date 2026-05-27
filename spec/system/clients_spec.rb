@@ -24,7 +24,12 @@ RSpec.describe "Client and Contact Management", type: :system do
   # (blocked vs. successful deletion), not the dialog itself, so bypassing
   # the native dialog is an acceptable trade-off.
   def confirm_and_click(button_text)
-    page.execute_script("window.confirm = () => true")
+    page.execute_script(<<~JS)
+      window.confirm = () => true;
+      if (window.Turbo?.config) {
+        Turbo.config.confirmMethod = (_msg, _el, _submitter) => true;
+      }
+    JS
     click_button button_text
   end
 
