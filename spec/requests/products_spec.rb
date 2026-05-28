@@ -101,6 +101,16 @@ RSpec.describe "Products", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
+    it "includes the Material Slot Codes section heading" do
+      get edit_product_path(product)
+      expect(response.body).to include("Material Slot Codes")
+    end
+
+    it "includes a slot code input for exterior_slot_code" do
+      get edit_product_path(product)
+      expect(response.body).to include("product[exterior_slot_code]")
+    end
+
     it "redirects to login when unauthenticated" do
       delete session_path
       get edit_product_path(product)
@@ -123,6 +133,25 @@ RSpec.describe "Products", type: :request do
       it "returns unprocessable entity" do
         patch product_path(product), params: { product: { name: "", unit: product.unit } }
         expect(response).to have_http_status(:unprocessable_content)
+      end
+    end
+
+    # SPEC-029: slot code params are permitted and persisted
+    context "SPEC-029: updating exterior_slot_code" do
+      it "persists exterior_slot_code and redirects" do
+        patch product_path(product), params: {
+          product: { name: product.name, unit: product.unit, exterior_slot_code: "PL1" }
+        }
+        expect(response).to redirect_to(products_path)
+        expect(product.reload.exterior_slot_code).to eq("PL1")
+      end
+
+      it "stores nil when exterior_slot_code is blank" do
+        product.update!(exterior_slot_code: "PL1")
+        patch product_path(product), params: {
+          product: { name: product.name, unit: product.unit, exterior_slot_code: "" }
+        }
+        expect(product.reload.exterior_slot_code).to be_nil.or eq("")
       end
     end
 

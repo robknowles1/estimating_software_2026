@@ -226,6 +226,96 @@ RSpec.describe "LineItems", type: :request do
       end
     end
 
+    # SPEC-029: ProductSlotResolver integration
+    context "SPEC-029: with product_id and matching price book short codes" do
+      it "assigns pulls_material_id from the resolver when product has pulls_slot_code matching price book" do
+        # Arrange
+        user = create(:user)
+        estimate = create(:estimate, created_by: user)
+        sign_in(user)
+        material = create(:material)
+        em = create(:estimate_material, estimate: estimate, material: material, short_code: "PULL1")
+        product = create(:product, name: "Cabinet", unit: "EA", pulls_slot_code: "PULL1")
+
+        # Act
+        post estimate_line_items_path(estimate), params: {
+          line_item: { product_id: product.id, description: "Cabinet", quantity: "1", unit: "EA" }
+        }
+
+        # Assert
+        expect(LineItem.last.pulls_material_id).to eq(em.id)
+      end
+
+      it "creates the line item and redirects even when price book has no short codes" do
+        # Arrange
+        user = create(:user)
+        estimate = create(:estimate, created_by: user)
+        sign_in(user)
+        material = create(:material)
+        create(:estimate_material, estimate: estimate, material: material, short_code: nil)
+        product = create(:product, name: "Cabinet", unit: "EA", pulls_slot_code: "PULL1",
+                                   hinges_slot_code: "HINGE1")
+
+        # Act
+        post estimate_line_items_path(estimate), params: {
+          line_item: { product_id: product.id, description: "Cabinet", quantity: "1", unit: "EA" }
+        }
+
+        # Assert
+        li = LineItem.last
+        expect(response).to redirect_to(edit_estimate_path(estimate))
+        expect(li.pulls_material_id).to be_nil
+        expect(li.hinges_material_id).to be_nil
+      end
+
+      it "uses estimator-submitted pulls_material_id over resolver assignment" do
+        # Arrange
+        user = create(:user)
+        estimate = create(:estimate, created_by: user)
+        sign_in(user)
+        material1 = create(:material)
+        material2 = create(:material)
+        em_resolver = create(:estimate_material, estimate: estimate, material: material1, short_code: "PULL1")
+        em_override = create(:estimate_material, estimate: estimate, material: material2)
+        product = create(:product, name: "Cabinet", unit: "EA", pulls_slot_code: "PULL1")
+
+        # Act
+        post estimate_line_items_path(estimate), params: {
+          line_item: {
+            product_id: product.id,
+            description: "Cabinet",
+            quantity: "1",
+            unit: "EA",
+            pulls_material_id: em_override.id.to_s
+          }
+        }
+
+        # Assert
+        li = LineItem.last
+        expect(li.pulls_material_id).to eq(em_override.id)
+        expect(li.pulls_material_id).not_to eq(em_resolver.id)
+      end
+
+      it "leaves all material_ids nil for a freeform line item (no product_id)" do
+        # Arrange
+        user = create(:user)
+        estimate = create(:estimate, created_by: user)
+        sign_in(user)
+        material = create(:material)
+        create(:estimate_material, estimate: estimate, material: material, short_code: "PULL1")
+
+        # Act
+        post estimate_line_items_path(estimate), params: {
+          line_item: { description: "Freeform shelf", quantity: "1", unit: "EA" }
+        }
+
+        # Assert
+        li = LineItem.last
+        expect(li.pulls_material_id).to be_nil
+        expect(li.exterior_material_id).to be_nil
+      end
+    end
+
     context "with invalid params" do
       it "returns unprocessable entity when description is blank" do
         # Arrange

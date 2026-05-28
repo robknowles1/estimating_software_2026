@@ -519,5 +519,58 @@ RSpec.describe LineItemCsvImporter, type: :service do
         end
       end
     end
+
+    # SPEC-029: ProductSlotResolver integration in CSV import
+    context "SPEC-029: ProductSlotResolver runs during import" do
+      it "assigns pulls_material_id when the product has pulls_slot_code matching a price book entry" do
+        # Arrange
+        estimate = create(:estimate)
+        material = create(:material)
+        em = create(:estimate_material, estimate: estimate, material: material, short_code: "PULL1")
+        create(:product, name: "base 2-door", unit: "EA", pulls_slot_code: "PULL1")
+        csv = build_row(product_number: "BC-001", name: "Base 2-Door", qty: "2")
+
+        # Act
+        LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+
+        # Assert
+        li = estimate.line_items.reload.last
+        expect(li.pulls_material_id).to eq(em.id)
+      end
+
+      it "leaves material slots nil when the price book has no short codes" do
+        # Arrange
+        estimate = create(:estimate)
+        create(:product, name: "base 2-door", unit: "EA", pulls_slot_code: "PULL1")
+        csv = build_row(product_number: "BC-001", name: "Base 2-Door", qty: "2")
+
+        # Act
+        LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+
+        # Assert
+        li = estimate.line_items.reload.last
+        expect(li.pulls_material_id).to be_nil
+      end
+
+      it "assigns multiple slots when multiple product slot codes match price book entries" do
+        # Arrange
+        estimate = create(:estimate)
+        mat1 = create(:material)
+        mat2 = create(:material)
+        em_pull  = create(:estimate_material, estimate: estimate, material: mat1, short_code: "PULL1")
+        em_hinge = create(:estimate_material, estimate: estimate, material: mat2, short_code: "HINGE1")
+        create(:product, name: "base 2-door", unit: "EA",
+               pulls_slot_code: "PULL1", hinges_slot_code: "HINGE1")
+        csv = build_row(product_number: "BC-001", name: "Base 2-Door", qty: "2")
+
+        # Act
+        LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+
+        # Assert
+        li = estimate.line_items.reload.last
+        expect(li.pulls_material_id).to eq(em_pull.id)
+        expect(li.hinges_material_id).to eq(em_hinge.id)
+      end
+    end
   end
 end

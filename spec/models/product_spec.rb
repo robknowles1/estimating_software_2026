@@ -124,4 +124,28 @@ RSpec.describe Product, type: :model do
       expect(li.product_id).to be_nil
     end
   end
+
+  describe "SLOT_CODE_COLUMNS constant" do
+    it "lists all ten slot code attribute symbols" do
+      expected = %i[
+        exterior_slot_code interior_slot_code interior2_slot_code back_slot_code
+        banding_slot_code drawers_slot_code pulls_slot_code hinges_slot_code
+        slides_slot_code locks_slot_code
+      ]
+      expect(Product::SLOT_CODE_COLUMNS).to eq(expected)
+    end
+  end
+
+  describe "slot code attributes" do
+    it "is valid with all slot_code columns nil" do
+      product = build(:product)
+      Product::SLOT_CODE_COLUMNS.each { |col| product.public_send(:"#{col}=", nil) }
+      expect(product).to be_valid
+    end
+
+    it "is valid and persists pulls_slot_code value" do
+      product = create(:product, pulls_slot_code: "PULL1")
+      expect(product.reload.pulls_slot_code).to eq("PULL1")
+    end
+  end
 end

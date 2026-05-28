@@ -3,6 +3,11 @@ class Product < ApplicationRecord
 
   MATERIAL_SLOTS   = %i[exterior interior interior2 back banding drawers pulls hinges slides locks].freeze
   LABOR_CATEGORIES = %i[detail mill assembly customs finish install].freeze
+  SLOT_CODE_COLUMNS = %i[
+    exterior_slot_code interior_slot_code interior2_slot_code back_slot_code
+    banding_slot_code drawers_slot_code pulls_slot_code hinges_slot_code
+    slides_slot_code locks_slot_code
+  ].freeze
 
   validates :name, presence: true
   validates :unit, presence: true
