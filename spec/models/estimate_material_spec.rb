@@ -55,17 +55,23 @@ RSpec.describe EstimateMaterial, type: :model do
       end
     end
 
-    describe "before_validation short_code strip" do
-      it "strips leading/trailing whitespace from short_code" do
+    describe "before_validation short_code normalisation" do
+      it "strips leading/trailing whitespace and downcases short_code" do
         em = build(:estimate_material, short_code: "  PL1  ")
         em.valid?
-        expect(em.short_code).to eq("PL1")
+        expect(em.short_code).to eq("pl1")
       end
 
       it "converts a blank (spaces-only) short_code to nil" do
         em = build(:estimate_material, short_code: "   ")
         em.valid?
         expect(em.short_code).to be_nil
+      end
+
+      it "downcases an uppercase short_code" do
+        em = build(:estimate_material, short_code: "SS5")
+        em.valid?
+        expect(em.short_code).to eq("ss5")
       end
     end
 

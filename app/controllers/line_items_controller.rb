@@ -52,16 +52,16 @@ class LineItemsController < ApplicationController
     if result.error
       redirect_to edit_estimate_path(@estimate), alert: result.error
     else
-      notice = import_flash_notice(result)
-      redirect_to edit_estimate_path(@estimate), notice: notice
+      redirect_to edit_estimate_path(@estimate),
+        notice: result.flash_notice("line_items.import")
     end
   end
 
   def apply_aliases
     service = LineItemAliasMatcherService.new(@estimate)
     result  = service.apply_to_all_line_items
-    notice  = apply_aliases_flash_notice(result)
-    redirect_to edit_estimate_path(@estimate), notice: notice
+    redirect_to edit_estimate_path(@estimate),
+      notice: result.flash_notice("line_items.apply_aliases")
   rescue => e
     redirect_to edit_estimate_path(@estimate), alert: e.message
   end
@@ -100,38 +100,6 @@ class LineItemsController < ApplicationController
 
   def set_estimate
     @estimate = Estimate.includes(line_items: :product, estimate_materials: :material).find(params[:estimate_id])
-  end
-
-  def import_flash_notice(result)
-    n = result.line_items_created
-    if result.ambiguous_count > 0 && result.unmatched_count > 0
-      t(".notice_with_unmatched", imported: n, unmatched: result.unmatched_count) + " " +
-        t(".notice_with_ambiguity", imported: n, ambiguous: result.ambiguous_count)
-    elsif result.ambiguous_count > 0
-      t(".notice_with_ambiguity", imported: n, ambiguous: result.ambiguous_count)
-    elsif result.unmatched_count > 0
-      t(".notice_with_unmatched", imported: n, unmatched: result.unmatched_count)
-    elsif result.matched_count > 0
-      t(".notice_all_matched", imported: n)
-    else
-      t(".notice", count: n)
-    end
-  end
-
-  def apply_aliases_flash_notice(result)
-    n = result.matched + result.unmatched
-    if result.ambiguous > 0 && result.unmatched > 0
-      t("line_items.apply_aliases.notice_with_unmatched", total: n, unmatched: result.unmatched) + " " +
-        t("line_items.apply_aliases.notice_with_ambiguity", total: n, ambiguous: result.ambiguous)
-    elsif result.ambiguous > 0
-      t("line_items.apply_aliases.notice_with_ambiguity", total: n, ambiguous: result.ambiguous)
-    elsif result.unmatched > 0
-      t("line_items.apply_aliases.notice_with_unmatched", total: n, unmatched: result.unmatched)
-    elsif result.matched > 0
-      t("line_items.apply_aliases.notice_all_matched", total: n)
-    else
-      t("line_items.apply_aliases.notice", matched: result.matched, unmatched: result.unmatched)
-    end
   end
 
   def line_item_params

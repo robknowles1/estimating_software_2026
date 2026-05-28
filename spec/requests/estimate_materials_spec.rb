@@ -232,8 +232,8 @@ RSpec.describe "EstimateMaterials", type: :request do
           estimate_material: { quote_price: em.quote_price.to_s, short_code: "PL1" }
         }
 
-        # Assert
-        expect(em.reload.short_code).to eq("PL1")
+        # Assert — short_code is downcased by before_validation
+        expect(em.reload.short_code).to eq("pl1")
         expect(response).to redirect_to(estimate_estimate_materials_path(estimate))
       end
 

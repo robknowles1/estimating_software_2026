@@ -9,7 +9,7 @@ class EstimateMaterial < ApplicationRecord
   validates :role,         inclusion: { in: ROLES }, allow_nil: true
   validates :short_code,   uniqueness: { scope: :estimate_id, case_sensitive: false }, allow_blank: true
 
-  before_validation { self.short_code = short_code.to_s.strip.presence }
+  before_validation { self.short_code = short_code.to_s.strip.downcase.presence }
   before_save :compute_cost_with_tax
 
   private

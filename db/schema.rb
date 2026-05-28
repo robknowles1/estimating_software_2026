@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_054916) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_043441) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -49,6 +49,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_054916) do
     t.string "short_code"
     t.datetime "updated_at", null: false
     t.index [ "estimate_id", "material_id" ], name: "index_estimate_materials_on_estimate_id_and_material_id", unique: true
+    t.index [ "estimate_id", "short_code" ], name: "index_estimate_materials_on_estimate_id_and_short_code_unique", unique: true, where: "(short_code IS NOT NULL)"
     t.index [ "estimate_id" ], name: "index_estimate_materials_on_estimate_id"
   end
 
@@ -171,25 +172,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_054916) do
   create_table "products", force: :cascade do |t|
     t.decimal "assembly_hrs", precision: 8, scale: 4
     t.decimal "back_qty", precision: 10, scale: 4
+    t.string "back_slot_code"
+    t.string "banding_slot_code"
     t.string "category"
     t.datetime "created_at", null: false
     t.decimal "customs_hrs", precision: 8, scale: 4
     t.decimal "detail_hrs", precision: 8, scale: 4
     t.decimal "drawers_qty", precision: 10, scale: 4
+    t.string "drawers_slot_code"
     t.decimal "equipment_hrs", precision: 8, scale: 4
     t.decimal "equipment_rate", precision: 10, scale: 2
     t.decimal "exterior_qty", precision: 10, scale: 4
+    t.string "exterior_slot_code"
     t.decimal "finish_hrs", precision: 8, scale: 4
     t.decimal "hinges_qty", precision: 10, scale: 4
+    t.string "hinges_slot_code"
     t.decimal "install_hrs", precision: 8, scale: 4
     t.decimal "interior2_qty", precision: 10, scale: 4
+    t.string "interior2_slot_code"
     t.decimal "interior_qty", precision: 10, scale: 4
+    t.string "interior_slot_code"
     t.decimal "locks_qty", precision: 10, scale: 4
+    t.string "locks_slot_code"
     t.decimal "mill_hrs", precision: 8, scale: 4
     t.string "name", null: false
     t.decimal "other_material_cost", precision: 12, scale: 2
     t.decimal "pulls_qty", precision: 10, scale: 4
+    t.string "pulls_slot_code"
     t.decimal "slides_qty", precision: 10, scale: 4
+    t.string "slides_slot_code"
     t.string "unit", default: "EA", null: false
     t.datetime "updated_at", null: false
     t.index [ "category" ], name: "index_products_on_category"

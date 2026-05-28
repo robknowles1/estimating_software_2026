@@ -230,12 +230,14 @@ en:
       notice_all_matched: "Imported %{imported} line items. All materials auto-assigned."
       notice_with_unmatched: "Imported %{imported} line items. %{unmatched} need review — no short code match found."
       notice_with_ambiguity: "Imported %{imported} line items. %{ambiguous} had ambiguous short code matches — longest match was used."
+      notice_with_unmatched_and_ambiguous: "Imported %{imported} line items. %{unmatched} need review — no short code match found. %{ambiguous} had ambiguous matches — longest match was used."
       import: "Import CSV"
     apply_aliases:
       notice: "Applied short codes: %{matched} matched, %{unmatched} unmatched."
       notice_all_matched: "Applied short codes to %{total} line items. All materials auto-assigned."
       notice_with_unmatched: "Applied short codes to %{total} line items. %{unmatched} need review."
       notice_with_ambiguity: "Applied short codes to %{total} line items. %{ambiguous} had ambiguous matches."
+      notice_with_unmatched_and_ambiguous: "Applied short codes to %{total} line items. %{unmatched} need review and %{ambiguous} had ambiguous matches — longest match was used."
     card:
       needs_review: "Needs review"
     form:

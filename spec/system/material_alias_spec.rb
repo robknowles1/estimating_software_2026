@@ -59,9 +59,9 @@ RSpec.describe "Material alias auto-population", type: :system do
       submit_btn = find("input[type='submit']")
       page.execute_script("arguments[0].click()", submit_btn.native)
 
-      # Assert
+      # Assert — short_code is downcased by before_validation, so the badge shows lowercase
       expect(page).to have_current_path(estimate_estimate_materials_path(estimate), wait: 5)
-      expect(page).to have_text("PL1", wait: 3)
+      expect(page).to have_text("pl1", wait: 3)
     end
   end
 

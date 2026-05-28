@@ -1,5 +1,23 @@
 class LineItemAliasMatcherService
-  Result = Data.define(:matched, :unmatched, :ambiguous)
+  Result = Data.define(:matched, :unmatched, :ambiguous) do
+    # Returns the appropriate i18n flash string.
+    # +scope+ should be the i18n scope string, e.g. "line_items.apply_aliases"
+    def flash_notice(scope)
+      total = matched + unmatched
+      if ambiguous > 0 && unmatched > 0
+        I18n.t("#{scope}.notice_with_unmatched_and_ambiguous",
+               total: total, unmatched: unmatched, ambiguous: ambiguous)
+      elsif ambiguous > 0
+        I18n.t("#{scope}.notice_with_ambiguity", total: total, ambiguous: ambiguous)
+      elsif unmatched > 0
+        I18n.t("#{scope}.notice_with_unmatched", total: total, unmatched: unmatched)
+      elsif matched > 0
+        I18n.t("#{scope}.notice_all_matched", total: total)
+      else
+        I18n.t("#{scope}.notice", matched: matched, unmatched: unmatched)
+      end
+    end
+  end
 
   PRIMARY_SLOTS = %i[exterior_material_id interior_material_id interior2_material_id back_material_id].freeze
 
