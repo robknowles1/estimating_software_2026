@@ -1,4 +1,5 @@
 require "rails_helper"
+require "cgi"
 
 RSpec.describe "Clients", type: :request do
   let(:user) { create(:user) }
@@ -35,7 +36,7 @@ RSpec.describe "Clients", type: :request do
       client = create(:client)
       get client_path(client)
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include(client.company_name)
+      expect(CGI.unescape_html(response.body)).to include(client.company_name)
     end
   end
 
