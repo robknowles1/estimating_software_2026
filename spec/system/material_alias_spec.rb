@@ -46,8 +46,18 @@ RSpec.describe "Material alias auto-population", type: :system do
       expect(page).to have_field("estimate_material[short_code]")
       fill_in "estimate_material[quote_price]", with: "68.00"
       fill_in "estimate_material[short_code]", with: "PL1"
-      # Use JS-driven click to avoid headless Chrome swallowing the submit click
-      page.execute_script("document.querySelector('input[type=\"submit\"]').click()")
+      # Ensure the short_code value is committed into the DOM before Turbo serialises
+      # the form. Capybara fill_in sets the native value, but the programmatic JS
+      # assignment + event dispatch guarantees FormData picks it up in headless Chrome.
+      page.execute_script(<<~JS)
+        var field = document.querySelector("input[name='estimate_material[short_code]']");
+        var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+        nativeInputValueSetter.call(field, "PL1");
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+        field.dispatchEvent(new Event("change", { bubbles: true }));
+      JS
+      submit_btn = find("input[type='submit']")
+      page.execute_script("arguments[0].click()", submit_btn.native)
 
       # Assert
       expect(page).to have_current_path(estimate_estimate_materials_path(estimate), wait: 5)
