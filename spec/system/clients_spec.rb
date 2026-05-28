@@ -27,7 +27,7 @@ RSpec.describe "Client and Contact Management", type: :system do
     page.execute_script(<<~JS)
       window.confirm = () => true;
       if (window.Turbo?.config) {
-        Turbo.config.confirmMethod = (_msg, _el, _submitter) => true;
+        Turbo.config.forms.confirm = (_msg, _el, _submitter) => Promise.resolve(true);
       }
     JS
     click_button button_text
@@ -62,6 +62,7 @@ RSpec.describe "Client and Contact Management", type: :system do
       confirm_and_click "Delete"
 
       expect(page).to have_current_path(client_path(client), wait: 5)
+      expect(page).to have_css("[role='alert']", wait: 10)
       expect(page).to have_text("Cannot delete", wait: 10)
       expect(Client.find_by(id: client.id)).to be_present
     end
