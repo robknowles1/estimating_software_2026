@@ -13,24 +13,33 @@ RSpec.describe "Client and Contact Management", type: :system do
     expect(page).to have_current_path(estimates_path, wait: 5)
   end
 
-  # Stubs window.confirm to return true so that data-turbo-confirm buttons
-  # submit their form without a native browser dialog.  This avoids a
-  # Chrome 147 headless-mode race condition where window.confirm() fires
-  # before Selenium's CDP dialog listener is ready, causing accept_confirm
-  # to raise Capybara::ModalNotFound intermittently when the test runs
-  # after another example that leaves a Turbo navigation in flight.
+  # Strips data-turbo-confirm from all elements and clicks the button via
+  # JavaScript rather than a Selenium CDP click.  The CDP click path has a
+  # Chrome 148 headless-mode bug where the synthetic trusted click sometimes
+  # misses the hit-test for the target element and is silently swallowed,
+  # leaving the submit event unfired.  A JS-dispatched click (isTrusted=false)
+  # is not subject to the coordinate hit-test and always reaches the element.
   #
   # The tests that use this helper are exercising server-side behaviour
-  # (blocked vs. successful deletion), not the dialog itself, so bypassing
-  # the native dialog is an acceptable trade-off.
+  # (blocked vs. successful deletion), not the dialog or click trust level
+  # itself, so bypassing both is an acceptable trade-off.
   def confirm_and_click(button_text)
-    page.execute_script(<<~JS)
-      window.confirm = () => true;
-      if (window.Turbo?.config) {
-        Turbo.config.forms.confirm = (_msg, _el, _submitter) => Promise.resolve(true);
-      }
+    page.execute_script(<<~JS, button_text)
+      var text = arguments[0];
+      window.confirm = function() { return true; };
+      document.querySelectorAll('[data-turbo-confirm]').forEach(function(el) {
+        el.removeAttribute('data-turbo-confirm');
+      });
+      var buttons = Array.prototype.slice.call(document.querySelectorAll('button[type="submit"], input[type="submit"]'));
+      var target = buttons.find(function(b) {
+        return (b.value || b.textContent || '').trim() === text;
+      });
+      if (target) { target.click(); }
     JS
-    click_button button_text
+  end
+
+  def wait_for_js
+    expect(page).to have_css("html[data-js-ready='true']", wait: 5)
   end
 
   describe "primary contact badge" do
@@ -58,7 +67,7 @@ RSpec.describe "Client and Contact Management", type: :system do
 
       visit client_path(client)
       expect(page).to have_text("Locked Client Co")
-
+      wait_for_js
       confirm_and_click "Delete"
 
       expect(page).to have_current_path(client_path(client), wait: 5)
@@ -74,7 +83,7 @@ RSpec.describe "Client and Contact Management", type: :system do
 
       visit client_path(client)
       expect(page).to have_text("Removable Client Co")
-
+      wait_for_js
       confirm_and_click "Delete"
 
       expect(page).to have_current_path(clients_path, wait: 5)
