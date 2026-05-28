@@ -14,7 +14,7 @@ class LineItemsController < ApplicationController
       product.apply_to(@line_item)
       ProductSlotResolver.new(product, @estimate).call(@line_item)
     end
-    @line_item.assign_attributes(line_item_params_for_create)
+    @line_item.assign_attributes(line_item_params)
     @line_item.description = product.name if product && @line_item.description.blank?
     @line_item.product_id = product&.id
 
@@ -105,29 +105,8 @@ class LineItemsController < ApplicationController
     @estimate = Estimate.includes(line_items: :product, estimate_materials: :material).find(params[:estimate_id])
   end
 
-  MATERIAL_ID_PARAMS = %i[
-    exterior_material_id interior_material_id interior2_material_id
-    back_material_id banding_material_id drawers_material_id
-    pulls_material_id hinges_material_id slides_material_id
-    other_material_id
-  ].freeze
-
   def line_item_params
     params.require(:line_item).permit(:product_id, *SHARED_LINE_ITEM_PARAMS)
-  end
-
-  # On create, when a product is present, blank material IDs from the form should
-  # not overwrite the resolver's pre-assigned values. Only non-blank (explicit)
-  # estimator selections win. For non-product line items the blank → nil conversion
-  # is correct and expected (no resolver ran, slots should remain nil).
-  def line_item_params_for_create
-    raw = line_item_params
-    product_selected = raw[:product_id].present?
-    return raw unless product_selected
-
-    raw.reject do |key, value|
-      MATERIAL_ID_PARAMS.include?(key.to_sym) && value.blank?
-    end
   end
 
   def update_line_item_params

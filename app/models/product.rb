@@ -12,6 +12,8 @@ class Product < ApplicationRecord
   validates :name, presence: true
   validates :unit, presence: true
 
+  before_save { SLOT_CODE_COLUMNS.each { |col| self[col] = self[col].presence } }
+
   scope :alphabetical, -> { order(:name) }
   scope :by_category,  -> { order(:category, :name) }
 

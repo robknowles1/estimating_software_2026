@@ -65,9 +65,11 @@
 </div>
 
 <%# ── Materials ── %>
+<% show_material_slots = local_assigns.fetch(:show_material_slots, true) %>
 <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
   <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t("line_items.form.materials_heading") %></h2>
 
+  <% if show_material_slots %>
   <% estimate_material_options = estimate.estimate_materials.includes(:material).to_a %>
   <% material_slot_data = {
     controller: "material-slot",
@@ -208,6 +210,9 @@
           data: { controller: "formula-input", action: "blur->formula-input#evaluate" } %>
     </div>
   </div>
+  <% else %>
+  <p class="text-sm text-slate-500 italic"><%= t("line_items.form.material_slots_after_save") %></p>
+  <% end %>
 </div>
 
 <%# ── Labor ── %>

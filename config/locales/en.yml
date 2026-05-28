@@ -295,6 +295,7 @@ en:
       inline_create_error_heading: "Could not create material:"
       inline_create_unexpected_error: "An unexpected error occurred."
       inline_create_network_error: "A network error occurred."
+      material_slots_after_save: "Material slots are assigned automatically from product presets. Edit this line item after saving to adjust individual slots."
       errors:
         one: "1 error prohibited this line item from being saved:"
         other: "%{count} errors prohibited this line item from being saved:"
