@@ -51,6 +51,12 @@
       <% else %>
         <%= link_to t(".no_sets_link"), new_material_set_path, class: "text-sm text-slate-500 hover:text-slate-700 underline underline-offset-2" %>
       <% end %>
+      <% if @estimate_materials.any? { |em| em.short_code.present? } %>
+        <%= button_to t(".apply_short_codes_button"),
+            apply_aliases_estimate_line_items_path(@estimate),
+            method: :post,
+            class: "inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors" %>
+      <% end %>
       <%= link_to t(".add_button"), new_estimate_estimate_material_path(@estimate),
           class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors" %>
     </div>
@@ -67,6 +73,7 @@
             <th class="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_quote_price") %></th>
             <th class="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_cost_with_tax") %></th>
             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_role") %></th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_short_code") %></th>
             <th class="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_actions") %></th>
           </tr>
         </thead>
@@ -83,6 +90,15 @@
                   <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
                     <%= t(".locks_role_badge") %>
                   </span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3">
+                <% if em.short_code.present? %>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-medium bg-slate-100 text-slate-700">
+                    <%= em.short_code %>
+                  </span>
+                <% else %>
+                  <span class="text-slate-400 text-xs"><%= t("common.not_provided") %></span>
                 <% end %>
               </td>
               <td class="px-4 py-3 text-right">

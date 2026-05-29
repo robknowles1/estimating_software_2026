@@ -1,9 +1,16 @@
+<% short_codes = estimate.estimate_materials.filter_map { |em| em.short_code.presence&.downcase } %>
+<% needs_review = short_codes.any? && short_codes.none? { |code| line_item.description.to_s.downcase.include?(code) } %>
 <div id="<%= dom_id(line_item) %>" class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-3">
   <div class="flex items-start justify-between gap-4">
     <div class="flex-1 min-w-0">
       <div class="flex items-center gap-2 mb-1">
         <span class="text-sm font-semibold text-slate-900"><%= line_item.description %></span>
         <span class="text-xs text-slate-400 font-mono"><%= line_item.quantity %> <%= line_item.unit %></span>
+        <% if needs_review %>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+            <%= t("line_items.card.needs_review") %>
+          </span>
+        <% end %>
       </div>
       <% if line_item.product.present? %>
         <p class="text-xs text-slate-400 italic"><%= t("line_items.line_item.based_on", product: line_item.product.name) %></p>

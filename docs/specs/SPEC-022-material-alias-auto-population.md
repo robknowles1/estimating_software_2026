@@ -1,7 +1,7 @@
 # Spec: Material Alias and Auto-Population on CSV Import
 
 **ID:** SPEC-022
-**Status:** ready
+**Status:** done
 **Priority:** high
 **Created:** 2026-05-22
 **Author:** pm-agent

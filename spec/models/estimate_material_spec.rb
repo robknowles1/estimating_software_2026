@@ -9,6 +9,72 @@ RSpec.describe EstimateMaterial, type: :model do
   describe "validations" do
     it { is_expected.to validate_numericality_of(:quote_price).is_greater_than_or_equal_to(0) }
 
+    describe "short_code uniqueness" do
+      it "is valid when short_code is blank" do
+        em = build(:estimate_material, short_code: nil)
+        expect(em).to be_valid
+      end
+
+      it "is valid when short_code is unique within the estimate" do
+        estimate = create(:estimate)
+        material1 = create(:material)
+        material2 = create(:material)
+        create(:estimate_material, estimate: estimate, material: material1, short_code: "PL1")
+        em2 = build(:estimate_material, estimate: estimate, material: material2, short_code: "PL2")
+        expect(em2).to be_valid
+      end
+
+      it "is invalid when two records on the same estimate share the same short_code (case-insensitive)" do
+        estimate = create(:estimate)
+        material1 = create(:material)
+        material2 = create(:material)
+        create(:estimate_material, estimate: estimate, material: material1, short_code: "PL1")
+        em2 = build(:estimate_material, estimate: estimate, material: material2, short_code: "pl1")
+        expect(em2).not_to be_valid
+        expect(em2.errors[:short_code]).to be_present
+      end
+
+      it "allows two blank short_codes on the same estimate" do
+        estimate = create(:estimate)
+        material1 = create(:material)
+        material2 = create(:material)
+        em1 = create(:estimate_material, estimate: estimate, material: material1, short_code: nil)
+        em2 = build(:estimate_material, estimate: estimate, material: material2, short_code: nil)
+        expect(em1).to be_valid
+        expect(em2).to be_valid
+      end
+
+      it "allows the same short_code on different estimates" do
+        estimate1 = create(:estimate)
+        estimate2 = create(:estimate)
+        material1 = create(:material)
+        material2 = create(:material)
+        create(:estimate_material, estimate: estimate1, material: material1, short_code: "PL1")
+        em2 = build(:estimate_material, estimate: estimate2, material: material2, short_code: "PL1")
+        expect(em2).to be_valid
+      end
+    end
+
+    describe "before_validation short_code normalisation" do
+      it "strips leading/trailing whitespace and downcases short_code" do
+        em = build(:estimate_material, short_code: "  PL1  ")
+        em.valid?
+        expect(em.short_code).to eq("pl1")
+      end
+
+      it "converts a blank (spaces-only) short_code to nil" do
+        em = build(:estimate_material, short_code: "   ")
+        em.valid?
+        expect(em.short_code).to be_nil
+      end
+
+      it "downcases an uppercase short_code" do
+        em = build(:estimate_material, short_code: "SS5")
+        em.valid?
+        expect(em.short_code).to eq("ss5")
+      end
+    end
+
     describe ":role inclusion" do
       it "is valid when role is nil" do
         em = build(:estimate_material, role: nil)

@@ -53,8 +53,17 @@ class LineItemsController < ApplicationController
       redirect_to edit_estimate_path(@estimate), alert: result.error
     else
       redirect_to edit_estimate_path(@estimate),
-        notice: t(".notice", count: result.line_items_created)
+        notice: result.flash_notice("line_items.import")
     end
+  end
+
+  def apply_aliases
+    service = LineItemAliasMatcherService.new(@estimate)
+    result  = service.apply_to_all_line_items
+    redirect_to edit_estimate_path(@estimate),
+      notice: result.flash_notice("line_items.apply_aliases")
+  rescue => e
+    redirect_to edit_estimate_path(@estimate), alert: e.message
   end
 
   def move

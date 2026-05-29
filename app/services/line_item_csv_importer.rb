@@ -1,7 +1,25 @@
 require "csv"
 
 class LineItemCsvImporter
-  Result = Data.define(:line_items_created, :error)
+  Result = Data.define(:line_items_created, :matched_count, :unmatched_count, :ambiguous_count, :error) do
+    # Returns the appropriate i18n key and interpolation variables for a flash notice.
+    # +scope+ should be the i18n scope string, e.g. "line_items.import"
+    def flash_notice(scope)
+      imported = line_items_created
+      if ambiguous_count > 0 && unmatched_count > 0
+        I18n.t("#{scope}.notice_with_unmatched_and_ambiguous",
+               imported: imported, unmatched: unmatched_count, ambiguous: ambiguous_count)
+      elsif ambiguous_count > 0
+        I18n.t("#{scope}.notice_with_ambiguity", imported: imported, ambiguous: ambiguous_count)
+      elsif unmatched_count > 0
+        I18n.t("#{scope}.notice_with_unmatched", imported: imported, unmatched: unmatched_count)
+      elsif matched_count > 0
+        I18n.t("#{scope}.notice_all_matched", imported: imported)
+      else
+        I18n.t("#{scope}.notice", count: imported)
+      end
+    end
+  end
 
   def initialize(estimate, file)
     @estimate = estimate
@@ -12,9 +30,9 @@ class LineItemCsvImporter
     groups = parse_csv
     persist(groups)
   rescue CSV::MalformedCSVError, ArgumentError => e
-    Result.new(line_items_created: 0, error: e.message)
+    Result.new(line_items_created: 0, matched_count: 0, unmatched_count: 0, ambiguous_count: 0, error: e.message)
   rescue ActiveRecord::RecordInvalid => e
-    Result.new(line_items_created: 0, error: e.message)
+    Result.new(line_items_created: 0, matched_count: 0, unmatched_count: 0, ambiguous_count: 0, error: e.message)
   end
 
   private
@@ -85,7 +103,12 @@ class LineItemCsvImporter
   end
 
   def persist(groups)
-    created_count = 0
+    created_count   = 0
+    matched_count   = 0
+    unmatched_count = 0
+    ambiguous_count = 0
+
+    matcher = LineItemAliasMatcherService.new(@estimate)
 
     ActiveRecord::Base.transaction do
       groups.each do |group|
@@ -105,13 +128,27 @@ class LineItemCsvImporter
         line_item.description = product.name
         line_item.quantity    = group[:qty]
         line_item.product_id  = product.id
-        line_item.save!
 
+        matched_em = matcher.match(line_item)
+        if matched_em
+          ambiguous_count += 1 if matcher.ambiguous?(line_item, matched_em)
+          matched_count += 1
+        else
+          unmatched_count += 1
+        end
+
+        line_item.save!
         created_count += 1
       end
     end
 
-    Result.new(line_items_created: created_count, error: nil)
+    Result.new(
+      line_items_created: created_count,
+      matched_count:      matched_count,
+      unmatched_count:    unmatched_count,
+      ambiguous_count:    ambiguous_count,
+      error:              nil
+    )
   rescue ActiveRecord::RecordInvalid => e
     raise e
   end

@@ -75,6 +75,9 @@ class EstimateMaterialsController < ApplicationController
     else
       render :edit, status: :unprocessable_content
     end
+  rescue ActiveRecord::RecordNotUnique
+    @estimate_material.errors.add(:short_code, :taken)
+    render :edit, status: :unprocessable_content
   end
 
   def destroy
@@ -124,9 +127,9 @@ class EstimateMaterialsController < ApplicationController
   end
 
   def estimate_material_params
-    p = params.require(:estimate_material).permit(:quote_price, :role)
-    p[:role] = p[:role].presence_in(EstimateMaterial::ROLES)
-    p
+    permitted_params = params.require(:estimate_material).permit(:quote_price, :role, :short_code)
+    permitted_params[:role] = permitted_params[:role].presence_in(EstimateMaterial::ROLES)
+    permitted_params
   end
 
   def new_material_params
