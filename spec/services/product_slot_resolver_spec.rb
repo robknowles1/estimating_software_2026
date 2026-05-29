@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe ProductSlotResolver, type: :service do
   describe "#call" do
-    context "matching a single slot code" do
+    context "when a single slot code matches a price book entry" do
       it "assigns pulls_material_id when product pulls_slot_code matches a price book entry" do
         # Arrange
         estimate = create(:estimate)
@@ -36,7 +36,7 @@ RSpec.describe ProductSlotResolver, type: :service do
       end
     end
 
-    context "case-insensitive matching" do
+    context "with case-insensitive slot code matching" do
       it "matches when product slot_code is lowercase and price book short_code is uppercase" do
         # Arrange
         estimate = create(:estimate)
@@ -70,7 +70,7 @@ RSpec.describe ProductSlotResolver, type: :service do
       end
     end
 
-    context "blank slot codes are skipped" do
+    context "when slot codes are blank or nil" do
       it "does not raise and leaves slot nil when exterior_slot_code is nil" do
         # Arrange
         estimate = create(:estimate)
@@ -100,7 +100,7 @@ RSpec.describe ProductSlotResolver, type: :service do
       end
     end
 
-    context "empty price book" do
+    context "when the price book is empty" do
       it "returns the line item immediately without assigning any slot when price book has no short codes" do
         # Arrange
         estimate = create(:estimate)
@@ -132,7 +132,7 @@ RSpec.describe ProductSlotResolver, type: :service do
       end
     end
 
-    context "multiple slot codes all matching" do
+    context "when multiple slot codes all match price book entries" do
       it "assigns all matching material_id columns when product has multiple slot codes" do
         # Arrange
         estimate  = create(:estimate)
@@ -160,7 +160,7 @@ RSpec.describe ProductSlotResolver, type: :service do
       end
     end
 
-    context "partial match — some slot codes match, some do not" do
+    context "when only some slot codes match price book entries" do
       it "assigns matched slots and leaves unmatched slots nil" do
         # Arrange
         estimate = create(:estimate)
@@ -181,7 +181,7 @@ RSpec.describe ProductSlotResolver, type: :service do
       end
     end
 
-    context "locks_slot_code is not processed" do
+    context "when locks_slot_code is set" do
       it "does not raise and does not attempt a locks_material_id assignment even when locks_slot_code matches a price book entry" do
         # Arrange
         estimate = create(:estimate)
@@ -197,7 +197,7 @@ RSpec.describe ProductSlotResolver, type: :service do
       end
     end
 
-    context "does not save or modify non-material attributes" do
+    context "with non-material attributes on the line item" do
       it "returns the unsaved line item" do
         # Arrange
         estimate = create(:estimate)
@@ -231,7 +231,7 @@ RSpec.describe ProductSlotResolver, type: :service do
       end
     end
 
-    context "all nine resolvable slots are assigned when all match" do
+    context "when all nine resolvable slot codes match price book entries" do
       it "assigns all nine material_id columns" do
         # Arrange
         estimate  = create(:estimate)

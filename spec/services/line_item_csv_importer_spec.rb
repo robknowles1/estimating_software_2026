@@ -390,28 +390,37 @@ RSpec.describe LineItemCsvImporter, type: :service do
     # SPEC-029: ProductSlotResolver integration in CSV import
     context "SPEC-029: ProductSlotResolver runs during import" do
       it "assigns pulls_material_id when the product has pulls_slot_code matching a price book entry" do
+        # Arrange
         estimate = create(:estimate)
         material = create(:material)
         em = create(:estimate_material, estimate: estimate, material: material, short_code: "PULL1")
         create(:product, name: "base 2-door", unit: "EA", pulls_slot_code: "PULL1")
         csv = build_row(product_number: "BC-001", name: "Base 2-Door", qty: "2")
+
+        # Act
         LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
 
+        # Assert
         li = estimate.line_items.reload.last
         expect(li.pulls_material_id).to eq(em.id)
       end
 
       it "leaves material slots nil when the price book has no short codes" do
+        # Arrange
         estimate = create(:estimate)
         create(:product, name: "base 2-door", unit: "EA", pulls_slot_code: "PULL1")
         csv = build_row(product_number: "BC-001", name: "Base 2-Door", qty: "2")
+
+        # Act
         LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
 
+        # Assert
         li = estimate.line_items.reload.last
         expect(li.pulls_material_id).to be_nil
       end
 
       it "assigns multiple slots when multiple product slot codes match price book entries" do
+        # Arrange
         estimate = create(:estimate)
         mat1 = create(:material)
         mat2 = create(:material)
@@ -420,11 +429,37 @@ RSpec.describe LineItemCsvImporter, type: :service do
         create(:product, name: "base 2-door", unit: "EA",
                pulls_slot_code: "PULL1", hinges_slot_code: "HINGE1")
         csv = build_row(product_number: "BC-001", name: "Base 2-Door", qty: "2")
+
+        # Act
         LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
 
+        # Assert
         li = estimate.line_items.reload.last
         expect(li.pulls_material_id).to eq(em_pull.id)
         expect(li.hinges_material_id).to eq(em_hinge.id)
+      end
+
+      context "when both resolver and alias matcher match the same primary slot" do
+        it "alias matcher result wins: exterior_material_id comes from description short code, not product slot code" do
+          # Arrange
+          estimate      = create(:estimate)
+          mat_slot      = create(:material)
+          mat_alias     = create(:material)
+          # The product has exterior_slot_code pointing to mat_slot via "EXT1"
+          em_slot  = create(:estimate_material, estimate: estimate, material: mat_slot,  short_code: "EXT1")
+          # The description contains "PL1" which matches mat_alias via alias matching
+          em_alias = create(:estimate_material, estimate: estimate, material: mat_alias, short_code: "PL1")
+          create(:product, name: "base 2-door", unit: "EA", exterior_slot_code: "EXT1")
+          # Row description includes "PL1" — alias matcher will match em_alias on exterior slot
+          csv = build_row(product_number: "BC-001", name: "PL1 Base 2-Door", qty: "2")
+
+          # Act
+          LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+
+          # Assert — alias matcher ran second and overwrote resolver's exterior assignment
+          li = estimate.line_items.reload.last
+          expect(li.exterior_material_id).to eq(em_alias.id)
+        end
       end
     end
   end

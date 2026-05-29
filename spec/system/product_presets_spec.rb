@@ -40,8 +40,7 @@ RSpec.describe "Product Presets Auto-Population", type: :system do
     click_tom_select_option(option)
   end
 
-  # Scenario 1: Slot code entry and persistence
-  describe "Scenario 1: Slot code entry and persistence" do
+  describe "when saving slot codes on a product" do
     it "shows the Material Slot Codes section, saves a slot code, and displays it on the index" do
       # Arrange
       user    = create(:user)
@@ -60,8 +59,7 @@ RSpec.describe "Product Presets Auto-Population", type: :system do
     end
   end
 
-  # Scenario 2: Auto-population on line item create
-  describe "Scenario 2: Auto-population on line item create" do
+  describe "when creating a line item with a product that has matching slot codes" do
     it "assigns pulls_material_id from the price book when product slot code matches" do
       # Arrange
       user     = create(:user)
@@ -100,8 +98,7 @@ RSpec.describe "Product Presets Auto-Population", type: :system do
     end
   end
 
-  # Scenario 3: Graceful degradation — no price book match
-  describe "Scenario 3: Graceful degradation — no price book match" do
+  describe "when creating a line item with a product that has slot codes but no matching price book entries" do
     it "creates line item without error when the price book has no short codes" do
       # Arrange
       user     = create(:user)

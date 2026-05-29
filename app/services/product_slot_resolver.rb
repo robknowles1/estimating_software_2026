@@ -21,11 +21,19 @@ class ProductSlotResolver
     slides:    :slides_slot_code
   }.freeze
 
-  def initialize(product, estimate)
+  # +estimate_or_index+ may be an Estimate (code index built from DB) or a
+  # pre-built Hash<String, EstimateMaterial> passed in to avoid an extra DB
+  # query when the same estimate is used across many rows (e.g. CSV import).
+  def initialize(product, estimate_or_index)
     @product = product
-    @code_index = estimate.estimate_materials
-                          .where.not(short_code: [ nil, "" ])
-                          .index_by { |em| em.short_code.downcase }
+    @code_index =
+      if estimate_or_index.is_a?(Hash)
+        estimate_or_index
+      else
+        estimate_or_index.estimate_materials
+                         .where.not(short_code: [ nil, "" ])
+                         .index_by { |em| em.short_code.downcase }
+      end
   end
 
   def call(line_item)
