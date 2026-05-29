@@ -79,12 +79,18 @@ RSpec.describe "Product Presets Auto-Population", type: :system do
       visit new_estimate_line_item_path(estimate)
       wait_for_js
 
+      # Wait for Tom Select to be fully initialized on the product select before
+      # attempting to set its value — avoids silent no-op when JS runs too early.
+      expect(page).to have_css("select[name='line_item[product_id]'] + .ts-wrapper", visible: :all, wait: 5)
+
       # Select product by directly setting the Tom Select value — avoids typing-then-click
       # race conditions that can occur when multiple Tom Select instances are initializing.
+      # Fail fast if Tom Select still isn't attached so flakiness surfaces here, not later.
       page.execute_script(<<~JS, product.id.to_s)
         var sel = document.querySelector("select[name='line_item[product_id]']");
-        var ts = sel.tomselect;
-        if (ts) { ts.setValue(arguments[0]); }
+        var ts = sel && sel.tomselect;
+        if (!ts) { throw new Error('Tom Select not initialized on product select'); }
+        ts.setValue(arguments[0]);
       JS
       # Wait for the product-selector JS to auto-fill the description
       expect(page).to have_field("line_item[description]", with: "Base 1-Door", wait: 3)
@@ -113,10 +119,15 @@ RSpec.describe "Product Presets Auto-Population", type: :system do
       visit new_estimate_line_item_path(estimate)
       wait_for_js
 
+      # Wait for Tom Select to be fully initialized on the product select before
+      # attempting to set its value — avoids silent no-op when JS runs too early.
+      expect(page).to have_css("select[name='line_item[product_id]'] + .ts-wrapper", visible: :all, wait: 5)
+
       page.execute_script(<<~JS, product.id.to_s)
         var sel = document.querySelector("select[name='line_item[product_id]']");
-        var ts = sel.tomselect;
-        if (ts) { ts.setValue(arguments[0]); }
+        var ts = sel && sel.tomselect;
+        if (!ts) { throw new Error('Tom Select not initialized on product select'); }
+        ts.setValue(arguments[0]);
       JS
       expect(page).to have_field("line_item[description]", with: "Base 2-Door", wait: 3)
       find_field("line_item[quantity]").set("2")
