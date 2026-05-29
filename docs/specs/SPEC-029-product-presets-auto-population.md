@@ -1,7 +1,7 @@
 # Spec: Product Presets Auto-Population
 
 **ID:** SPEC-029
-**Status:** done
+**Status:** in-progress
 **Priority:** high
 **Created:** 2026-05-27
 **Author:** spec-agent

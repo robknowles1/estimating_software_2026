@@ -176,5 +176,20 @@ RSpec.describe Product, type: :model do
       product.update!(exterior_slot_code: "")
       expect(product.reload.exterior_slot_code).to be_nil
     end
+
+    it "strips trailing whitespace before persisting a slot code" do
+      product = create(:product, pulls_slot_code: "PL1 ")
+      expect(product.reload.pulls_slot_code).to eq("PL1")
+    end
+
+    it "strips leading whitespace before persisting a slot code" do
+      product = create(:product, pulls_slot_code: " PL1")
+      expect(product.reload.pulls_slot_code).to eq("PL1")
+    end
+
+    it "stores nil when only whitespace is submitted for a slot code" do
+      product = create(:product, exterior_slot_code: "   ")
+      expect(product.reload.exterior_slot_code).to be_nil
+    end
   end
 end

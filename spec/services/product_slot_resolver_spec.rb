@@ -34,6 +34,29 @@ RSpec.describe ProductSlotResolver, type: :service do
         # Assert
         expect(line_item.pulls_material_id).to be_nil
       end
+
+      it "preserves an already-populated pulls_material_id when product slot code does not match any price book entry" do
+        # Arrange
+        estimate = create(:estimate)
+        material_existing = create(:material)
+        material_other    = create(:material)
+        em_existing = create(:estimate_material, estimate: estimate, material: material_existing, short_code: "EXISTING")
+        create(:estimate_material, estimate: estimate, material: material_other, short_code: "PULL2")
+        product = create(:product, pulls_slot_code: "PULL1")
+        line_item = estimate.line_items.new(
+          description: "Test",
+          quantity: 1,
+          unit: "EA",
+          pulls_material_id: em_existing.id
+        )
+        resolver = described_class.new(product, estimate)
+
+        # Act
+        resolver.call(line_item)
+
+        # Assert
+        expect(line_item.pulls_material_id).to eq(em_existing.id)
+      end
     end
 
     context "with case-insensitive slot code matching" do

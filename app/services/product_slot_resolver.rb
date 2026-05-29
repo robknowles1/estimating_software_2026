@@ -44,7 +44,9 @@ class ProductSlotResolver
       next if hint.blank?
 
       matched = @code_index[hint]
-      line_item.public_send(:"#{slot}_material_id=", matched&.id)
+      next unless matched
+
+      line_item.public_send(:"#{slot}_material_id=", matched.id)
     end
 
     line_item
