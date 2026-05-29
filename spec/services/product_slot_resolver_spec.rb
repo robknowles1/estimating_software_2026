@@ -254,6 +254,52 @@ RSpec.describe ProductSlotResolver, type: :service do
       end
     end
 
+    context "when estimate_materials is already eager-loaded" do
+      it "does not fire a new query during construction when the association is loaded" do
+        # Arrange
+        estimate = create(:estimate)
+        material = create(:material)
+        create(:estimate_material, estimate: estimate, material: material, short_code: "PULL1")
+        # Force association to load.
+        estimate.estimate_materials.load
+        expect(estimate.estimate_materials.loaded?).to be(true)
+        product = create(:product, pulls_slot_code: "PULL1")
+        line_item = estimate.line_items.new(description: "Test", quantity: 1, unit: "EA")
+
+        # Act — count queries issued while building the resolver.
+        queries = []
+        callback = ->(_name, _start, _finish, _id, payload) do
+          queries << payload[:sql] unless payload[:name] == "SCHEMA" || payload[:sql].start_with?("BEGIN", "COMMIT", "SAVEPOINT", "RELEASE")
+        end
+        ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+          described_class.new(product, estimate).call(line_item)
+        end
+
+        # Assert — no SELECT against estimate_materials was issued.
+        em_selects = queries.select { |sql| sql =~ /SELECT.+FROM\s+"?estimate_materials"?/i }
+        expect(em_selects).to be_empty
+        expect(line_item.pulls_material_id).not_to be_nil
+      end
+
+      it "filters blank short_codes in Ruby when the association is loaded" do
+        # Arrange
+        estimate = create(:estimate)
+        material_a = create(:material)
+        material_b = create(:material)
+        em_real = create(:estimate_material, estimate: estimate, material: material_a, short_code: "EXT1")
+        create(:estimate_material, estimate: estimate, material: material_b, short_code: nil)
+        estimate.estimate_materials.load
+        product = create(:product, exterior_slot_code: "EXT1")
+        line_item = estimate.line_items.new(description: "Test", quantity: 1, unit: "EA")
+
+        # Act
+        described_class.new(product, estimate).call(line_item)
+
+        # Assert
+        expect(line_item.exterior_material_id).to eq(em_real.id)
+      end
+    end
+
     context "when all nine resolvable slot codes match price book entries" do
       it "assigns all nine material_id columns" do
         # Arrange

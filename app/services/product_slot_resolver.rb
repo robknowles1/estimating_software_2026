@@ -30,9 +30,7 @@ class ProductSlotResolver
       if estimate_or_index.is_a?(Hash)
         estimate_or_index
       else
-        estimate_or_index.estimate_materials
-                         .where.not(short_code: [ nil, "" ])
-                         .index_by { |em| em.short_code.downcase }
+        build_code_index_from_estimate(estimate_or_index)
       end
   end
 
@@ -50,5 +48,24 @@ class ProductSlotResolver
     end
 
     line_item
+  end
+
+  private
+
+  # When the estimate_materials association is already loaded (e.g. via
+  # LineItemsController#set_estimate's includes(estimate_materials: :material)),
+  # filter in Ruby to avoid a redundant SQL query. Falls back to a SQL filter
+  # when the association is not loaded.
+  def build_code_index_from_estimate(estimate)
+    scope = estimate.estimate_materials
+
+    records =
+      if scope.loaded?
+        scope.reject { |em| em.short_code.to_s.strip.empty? }
+      else
+        scope.where.not(short_code: [ nil, "" ])
+      end
+
+    records.index_by { |em| em.short_code.downcase }
   end
 end
