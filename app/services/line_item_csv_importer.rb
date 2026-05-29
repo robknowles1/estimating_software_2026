@@ -125,6 +125,9 @@ class LineItemCsvImporter
 
         line_item = @estimate.line_items.new
         product.apply_to(line_item)
+        line_item.description = product.name
+        line_item.quantity    = group[:qty]
+        line_item.product_id  = product.id
 
         # Step 1: alias matching (SPEC-022) — match short codes in the description
         matched_em = matcher.match(line_item)
@@ -137,10 +140,6 @@ class LineItemCsvImporter
 
         # Step 2: product slot resolver (SPEC-029) — slot codes may override alias matches
         ProductSlotResolver.new(product, @estimate).call(line_item)
-
-        line_item.description = product.name
-        line_item.quantity    = group[:qty]
-        line_item.product_id  = product.id
 
         line_item.save!
         created_count += 1
