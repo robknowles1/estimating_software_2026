@@ -112,9 +112,10 @@ class LineItemCsvImporter
 
     # Build the price book code index once so ProductSlotResolver does not
     # fire a separate DB query for every row in the import (N+1 prevention).
-    code_index = @estimate.estimate_materials
-                          .where.not(short_code: [ nil, "" ])
-                          .index_by { |em| em.short_code.downcase }
+    # Delegating to ProductSlotResolver.build_code_index keeps the loaded?/SQL
+    # branching consistent — when the controller has already eager-loaded
+    # estimate_materials we filter in Ruby instead of issuing a fresh query.
+    code_index = ProductSlotResolver.build_code_index(@estimate)
 
     # Cache resolvers by product_id — each unique product only needs one resolver
     # instance, even if the same product appears on multiple CSV rows.

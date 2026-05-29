@@ -300,6 +300,71 @@ RSpec.describe ProductSlotResolver, type: :service do
       end
     end
 
+    context "with the .build_code_index class method (shared with LineItemCsvImporter)" do
+      it "reuses an already-loaded estimate_materials association and does not fire a SELECT" do
+        # Arrange
+        estimate = create(:estimate)
+        material = create(:material)
+        em = create(:estimate_material, estimate: estimate, material: material, short_code: "PULL1")
+        estimate.estimate_materials.load
+        expect(estimate.estimate_materials.loaded?).to be(true)
+
+        # Act — count queries issued while building the index.
+        queries = []
+        callback = ->(_name, _start, _finish, _id, payload) do
+          sql = payload[:sql]
+          next if payload[:name] == "SCHEMA"
+          next if sql.start_with?("BEGIN", "COMMIT", "SAVEPOINT", "RELEASE")
+          queries << sql
+        end
+        index = nil
+        ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+          index = described_class.build_code_index(estimate)
+        end
+
+        # Assert — no SELECT against estimate_materials was issued.
+        em_selects = queries.select { |sql| sql =~ /SELECT.+FROM\s+"?estimate_materials"?/i }
+        expect(em_selects).to be_empty
+        expect(index["pull1"]).to eq(em)
+      end
+
+      it "falls back to SQL when the association is not loaded" do
+        # Arrange
+        estimate = create(:estimate)
+        material = create(:material)
+        em = create(:estimate_material, estimate: estimate, material: material, short_code: "PULL1")
+        # Reload to ensure the association is unloaded.
+        estimate = Estimate.find(estimate.id)
+        expect(estimate.estimate_materials.loaded?).to be(false)
+
+        # Act
+        index = described_class.build_code_index(estimate)
+
+        # Assert
+        expect(index.keys).to contain_exactly("pull1")
+        expect(index["pull1"].id).to eq(em.id)
+      end
+
+      it "excludes records with blank or nil short_code when association is loaded" do
+        # Arrange
+        estimate   = create(:estimate)
+        material_a = create(:material)
+        material_b = create(:material)
+        material_c = create(:material)
+        em_real    = create(:estimate_material, estimate: estimate, material: material_a, short_code: "EXT1")
+        create(:estimate_material, estimate: estimate, material: material_b, short_code: nil)
+        create(:estimate_material, estimate: estimate, material: material_c, short_code: "")
+        estimate.estimate_materials.load
+
+        # Act
+        index = described_class.build_code_index(estimate)
+
+        # Assert — only the real short_code is indexed.
+        expect(index.keys).to contain_exactly("ext1")
+        expect(index["ext1"].id).to eq(em_real.id)
+      end
+    end
+
     context "when all nine resolvable slot codes match price book entries" do
       it "assigns all nine material_id columns" do
         # Arrange
