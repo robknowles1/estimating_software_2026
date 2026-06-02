@@ -92,10 +92,14 @@ class LineItemCsvImporter
   end
 
   def skip_row?(row)
-    return false if row[7].to_s.strip == "Total"
-
     category_cell = row[0].to_s.strip
-    product_num   = row[4].to_s.strip
+
+    if row[7].to_s.strip == "Total"
+      return true if category_cell == "Finished Schedule"
+      return false
+    end
+
+    product_num = row[4].to_s.strip
 
     return true if category_cell == "Finished Schedule"
     return true if category_cell.start_with?("z")

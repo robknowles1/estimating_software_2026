@@ -479,6 +479,24 @@ RSpec.describe LineItemCsvImporter, type: :service do
           expect(rooms).to all(eq("Room A"))
         end
       end
+
+      context "'Finished Schedule' group with its own Total row followed by a normal product group" do
+        it "does not corrupt the normal group's quantity with the Finished Schedule Total qty" do
+          estimate = create(:estimate)
+          # Real CSV pattern: FS group rows, then a Total row whose col 0 is "Finished Schedule",
+          # then a normal product group. The FS Total row must be skipped entirely so the
+          # normal group keeps its own qty (3), not the FS group's total (99).
+          csv = [
+            "Finished Schedule,Room A,Kitchen,,FS-001,Schedule Item,desc,,1,EA,extra",
+            "Finished Schedule,,,,,,,Total,99,EA,extra",
+            build_row(product_number: "BC-001", name: "Base 2-Door", qty: "3")
+          ].join("\n")
+          LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+
+          li = estimate.line_items.reload.find { |item| item.description == "Base 2-Door" }
+          expect(li.quantity.to_i).to eq(3)
+        end
+      end
     end
 
     # SPEC-029: ProductSlotResolver integration in CSV import
