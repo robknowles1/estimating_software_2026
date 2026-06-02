@@ -1,7 +1,7 @@
 # Spec: Materials Library Search and Pagination
 
 **ID:** SPEC-024
-**Status:** ready
+**Status:** done
 **Priority:** medium
 **Created:** 2026-05-27
 **Author:** spec-agent

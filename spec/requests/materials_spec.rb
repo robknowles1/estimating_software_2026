@@ -10,6 +10,20 @@ RSpec.describe "Materials", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
+    it "shows active materials ordered by name" do
+      create(:material, name: "Zebra Wood")
+      create(:material, name: "Alder Sheet")
+      get materials_path
+      expect(response.body.index("Alder Sheet")).to be < response.body.index("Zebra Wood")
+    end
+
+    it "does not render pagination when material count is 20 or fewer" do
+      create_list(:material, 5)
+      get materials_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include('class="pagy nav"')
+    end
+
     it "shows active materials" do
       material = create(:material, name: "Maple Plywood")
       get materials_path
@@ -26,6 +40,56 @@ RSpec.describe "Materials", type: :request do
       delete session_path
       get materials_path
       expect(response).to redirect_to(new_session_path)
+    end
+  end
+
+  describe "GET /materials?q=maple" do
+    before do
+      create(:material, name: "Maple Plywood", description: "Top grade")
+      create(:material, name: "Oak Veneer",    description: "Hardwood oak")
+    end
+
+    it "returns 200" do
+      get materials_path, params: { q: "maple" }
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "shows matching materials" do
+      get materials_path, params: { q: "maple" }
+      expect(response.body).to include("Maple Plywood")
+    end
+
+    it "excludes non-matching materials" do
+      get materials_path, params: { q: "maple" }
+      expect(response.body).not_to include("Oak Veneer")
+    end
+  end
+
+  describe "GET /materials?q=nomatch" do
+    it "returns 200 and shows the empty search state message" do
+      get materials_path, params: { q: "nomatch_zzzz" }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("No materials matched your search.")
+    end
+  end
+
+  describe "GET /materials?q=maple&page=2" do
+    before do
+      25.times { |i| create(:material, name: "Maple Board #{i.to_s.rjust(2, '0')}") }
+    end
+
+    it "returns 200 for page 2 of a filtered result set" do
+      get materials_path, params: { q: "maple", page: 2 }
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "GET /materials?page=9999" do
+    before { create(:material) }
+
+    it "redirects to the last valid page" do
+      get materials_path, params: { page: 9999 }
+      expect(response).to redirect_to(materials_path(page: 1))
     end
   end
 
