@@ -88,7 +88,7 @@ class EstimatesController < ApplicationController
 
   def estimate_params
     params.require(:estimate).permit(
-      :client_id, :title, :status, :job_start_date, :job_end_date, :notes, :client_notes,
+      :client_id, :title, :status, :bid_due_date, :job_start_date, :notes, :client_notes,
       :miles_to_jobsite, :installer_crew_size, :delivery_crew_size, :on_site_time_hrs,
       :profit_overhead_percent, :pm_supervision_percent, :tax_rate, :tax_exempt,
       :install_travel_qty, :delivery_qty, :delivery_rate,
