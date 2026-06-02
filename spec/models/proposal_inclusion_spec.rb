@@ -18,6 +18,11 @@ RSpec.describe ProposalInclusion, type: :model do
   describe "photo attachment validations" do
     let(:proposal) { create(:proposal) }
 
+    # Marcel (via ActiveStorage identify:true) overrides the declared content_type using
+    # magic-byte detection, falling back to filename extension when bytes are unrecognisable.
+    # Tests rely on filename extensions (.jpg, .pdf, .jpg) to drive the stored content_type —
+    # the declared content_type: argument is intentionally ignored by Marcel in all three cases.
+
     it "is valid with a JPEG photo under 8 MB" do
       record = build(:proposal_inclusion, proposal: proposal)
       record.photo.attach(
