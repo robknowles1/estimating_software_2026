@@ -2,7 +2,7 @@
 # Spec: Room Tracking on CSV Import
 
 **ID:** SPEC-025
-**Status:** ready
+**Status:** done
 **Priority:** high
 **Created:** 2026-05-27
 **Author:** spec-agent

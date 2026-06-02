@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_02_054454) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_02_164238) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -132,6 +132,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_054454) do
     t.bigint "pulls_material_id"
     t.decimal "pulls_qty", precision: 10, scale: 4
     t.decimal "quantity", precision: 10, scale: 4, default: "1.0", null: false
+    t.string "room"
     t.bigint "slides_material_id"
     t.decimal "slides_qty", precision: 10, scale: 4
     t.string "unit", default: "EA"

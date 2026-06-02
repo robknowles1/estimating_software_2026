@@ -68,7 +68,8 @@ class LineItemCsvImporter
             name:           name,
             category:       category,
             unit:           unit,
-            qty:            qty_raw.to_d
+            qty:            qty_raw.to_d,
+            room:           row[1].to_s.strip.presence
           }
         end
       end
@@ -91,15 +92,23 @@ class LineItemCsvImporter
   end
 
   def skip_row?(row)
-    return false if row[7].to_s.strip == "Total"
-
     category_cell = row[0].to_s.strip
-    product_num   = row[4].to_s.strip
 
-    return true if category_cell.start_with?("z")
+    if row[7].to_s.strip == "Total"
+      return true if skip_category?(category_cell)
+      return false
+    end
+
+    product_num = row[4].to_s.strip
+
+    return true if skip_category?(category_cell)
     return true if product_num.blank? || product_num == "0"
 
     false
+  end
+
+  def skip_category?(category_cell)
+    category_cell == "Finished Schedule" || category_cell.start_with?("z")
   end
 
   def persist(groups)
@@ -139,6 +148,7 @@ class LineItemCsvImporter
         line_item.description = product.name
         line_item.quantity    = group[:qty]
         line_item.product_id  = product.id
+        line_item.room        = group[:room]
 
         # Step 1 (SPEC-029): resolve product slot codes against the price book.
         # Fills all 9 slot columns (exterior, interior, interior2, back, banding,

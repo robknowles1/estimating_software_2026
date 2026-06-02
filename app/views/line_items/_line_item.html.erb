@@ -15,6 +15,9 @@
       <% if line_item.product.present? %>
         <p class="text-xs text-slate-400 italic"><%= t("line_items.line_item.based_on", product: line_item.product.name) %></p>
       <% end %>
+      <% if line_item.room.present? %>
+        <p class="text-xs text-slate-400"><%= t("line_items.card.room_label") %>: <%= line_item.room %></p>
+      <% end %>
     </div>
     <div class="flex items-center gap-2 flex-shrink-0">
       <% if local_assigns[:totals] %>
