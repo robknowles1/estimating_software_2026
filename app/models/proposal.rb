@@ -11,7 +11,7 @@ class Proposal < ApplicationRecord
   has_many :proposal_specifications, dependent: :destroy
 
   enum :mode,   { commercial: "commercial", residential: "residential" }
-  enum :status, { draft: "draft", complete: "complete" }
+  enum :status, { draft: "draft", sent: "sent" }
 
   validates :estimate_id,  uniqueness: true
   validates :mode,         presence: true

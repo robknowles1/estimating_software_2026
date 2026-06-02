@@ -42,3 +42,4 @@ Estimating Template - 3.21.26.xltx
 
 # Ignore local Claude Code settings (machine-specific permissions).
 /.claude/settings.local.json
+docs/reference/

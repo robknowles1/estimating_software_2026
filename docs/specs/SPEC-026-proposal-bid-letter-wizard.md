@@ -97,15 +97,21 @@ Estimators currently hand-type a Word document for every bid. This spec replaces
 
 R1: Each estimate may have at most one proposal record. A second attempt to create a proposal for the same estimate redirects to the existing proposal's current step instead of creating a duplicate.
 
-R2: The proposal mode (`commercial` / `residential`) is selected on the opening step and can be updated on any subsequent visit to step 1, provided the proposal is not yet in `complete` status. Once marked complete, mode is locked.
+R2: The proposal mode (`commercial` / `residential`) is selected on the opening step and may be changed on any subsequent visit to step 1 at any time. Mode is never locked — the estimator may switch modes and re-download the PDF as many times as needed.
 
 R3: Wizard progress is persisted after each step save. Navigating away and returning resumes from the earliest incomplete step.
 
-R4: The wizard defines "complete" as all required fields on every step having been filled. Steps with no required fields (e.g., specifications if toggled off) are considered complete when saved.
+R4: The wizard tracks per-step progress via `current_step`. A step is considered saved once the estimator submits it. Steps with no required fields (e.g., specifications if toggled off) are considered saved when submitted. The proposal `status` field (`draft` / `sent`) is separate from per-step progress and is never used to gate editing.
 
 R5: The "opening" step must capture: client contact (select from the estimate's client's contacts, defaulting to the primary contact), job name (defaults to `estimate.title`), plan date, addendum list (free text), total amount (auto-populated from the estimate's calculated total; editable), and mode selection (commercial or residential).
 
-R6: The total amount displayed and used in the PDF is pulled from `EstimateTotalsCalculator.new(estimate).call.burdened_total` (the client-facing sell price after markup, PM supervision, and job-level costs) at proposal creation time and stored on the proposal record as `total_amount`. It is editable by the estimator to allow manual overrides (e.g., rounding, negotiated price). Changes to the estimate after the proposal is created do not automatically update the stored amount — the estimator must re-enter the amount or use a "Refresh from estimate" control. Note: `burdened_total` is distinct from `grand_non_burdened_total` (which excludes the profit/overhead multiplier and job-level costs).
+R6: The total amount displayed and used in the PDF is pulled from `EstimateTotalsCalculator.new(estimate).call.burdened_total` (the client-facing sell price after markup, PM supervision, and job-level costs) at proposal creation time and stored on the proposal record as `total_amount`. It is editable by the estimator to allow manual overrides (e.g., rounding, negotiated price). Changes to the estimate after the proposal is created do not automatically update the stored amount. Note: `burdened_total` is distinct from `grand_non_burdened_total` (which excludes the profit/overhead multiplier and job-level costs).
+
+Three "Refresh from estimate" controls are available to re-sync proposal data with the current estimate state:
+
+- **Refresh total amount** (opening step): recalculates `total_amount` from `EstimateTotalsCalculator.new(estimate).call.burdened_total` and replaces the stored value. No destructive side-effects.
+- **Sync rooms from estimate** (inclusions step): destroys all existing `ProposalInclusion` records and recreates them from `estimate.line_items.where.not(room: nil).pluck(:room).uniq`. Bullet points and photos attached to existing inclusions are permanently lost. Requires a confirmation prompt before executing: "This will replace all room inclusions and remove any bullet points and photos. Continue?"
+- **Re-detect alternates** (alternates step): destroys all existing `ProposalAlternate` records and recreates them by re-running `AlternateDetectorService` against current line items. Any cost overrides the estimator entered are lost. Requires a confirmation prompt: "This will replace all alternates and reset any cost overrides. Continue?"
 
 R7: The specifications step is conditional on mode. In commercial mode: a toggle ("Include specifications section") controls whether the section appears in the PDF; when toggled on, the estimator enters one or more specification numbers and titles (e.g., `064023 - Interior Architectural Woodwork`). In residential mode: this step is skipped entirely.
 
@@ -138,7 +144,7 @@ R14: Standard exclusions pre-populated on proposal creation:
 - Protection of completed work
 - Traffic control for deliveries
 
-R15: Step 7 (review) renders a read-only preview of the assembled proposal text and provides two actions: "Download PDF" and "Send Email." The email action requires a recipient address; the proposal contact's email is pre-filled if present.
+R15: Step 7 (review) renders a read-only preview of the assembled proposal text and provides three actions: "Download PDF," "Send Email," and "Mark as Sent." The email action requires a recipient address; the proposal contact's email is pre-filled if present. Sending an email automatically sets `proposal.status` to `sent`. "Mark as Sent" allows the estimator to record that the proposal has been delivered by other means (e.g., handed over in person) without sending an email. Downloading a PDF does not change the status. All three actions are available regardless of current status — a `sent` proposal remains fully editable.
 
 R16: The PDF is generated on demand (not cached). Each download regenerates the PDF from current proposal data. PDF generation uses the `prawn` gem (new dependency; no binary runtime required).
 
@@ -168,7 +174,7 @@ R23: Deleting an estimate cascades to delete its proposal (and all child records
 
 R24: The wizard step navigation renders a step indicator (e.g., numbered breadcrumbs) showing which steps are complete, the current step, and upcoming steps. Completed steps are clickable for back-navigation. Future steps are not directly reachable until prior steps are saved. In residential mode, the Specifications step is hidden from the step indicator entirely — it is not shown as greyed-out or disabled. The remaining steps are numbered 1–6.
 
-R25: When the estimator clicks "Finalise" or "Download PDF" from the review step, `proposal.status` transitions from `draft` to `complete`. Once `complete`, mode is locked (see R2) and the proposal is read-only except for re-downloading the PDF or sending the email.
+R25: `proposal.status` has two values: `draft` (initial state) and `sent` (informational — proposal has been delivered to the client). Status transitions to `sent` automatically when the estimator sends an email via the review step, or manually when they click "Mark as Sent." Status never gates editing — all wizard steps remain fully editable regardless of status. Downloading a PDF does not change status.
 
 ---
 
@@ -250,7 +256,7 @@ AC-25: Given the review step, when the estimator clicks "Send Email," enters a r
 
 AC-26: Given the "Send Email" form is submitted without a recipient address, when the form is processed, then a validation error is shown and no email is sent. `Covers: E9`
 
-AC-27: Given a completed proposal, when the estimator re-downloads the PDF, then the PDF is regenerated from current proposal data (not a cached copy). `Covers: R16`
+AC-27: Given any proposal (draft or sent), when the estimator downloads the PDF, then the PDF is regenerated from current proposal data (not a cached copy). `Covers: R16`
 
 AC-28: Given the wizard step indicator, when the estimator is on step 3, then steps 1 and 2 (if complete) appear as clickable links, step 3 is highlighted as current, and steps 4-7 are non-interactive. `Covers: R24`
 
@@ -262,7 +268,15 @@ AC-31: Given an unauthenticated request to any proposal route, when the request 
 
 AC-32: Given an estimate is deleted, when the deletion cascades, then the proposal and all child records (inclusions, clarifications, exclusions, alternates, ActiveStorage attachments) are also deleted. `Covers: R23`
 
-AC-34: Given a `draft` proposal on the review step, when the estimator clicks "Finalise" or "Download PDF," then `proposal.status` transitions to `complete`, mode is locked (subsequent visits to the opening step do not allow mode change), and the proposal becomes read-only except for PDF re-download and email send. `Covers: R2, R25`
+AC-34: Given the review step, when the estimator clicks "Send Email" and the email is delivered, then `proposal.status` transitions to `sent`. Given the review step, when the estimator clicks "Mark as Sent," then `proposal.status` transitions to `sent`. In both cases the proposal remains fully editable — all wizard steps are accessible and mode may still be changed. `Covers: R25`
+
+AC-35: Given a `sent` proposal, when the estimator navigates to any wizard step and edits content, then the changes are saved and a fresh PDF download reflects the updated content. `Covers: R2, R25`
+
+AC-36: Given the inclusions step, when the estimator clicks "Sync rooms from estimate" and confirms the prompt, then all existing `ProposalInclusion` records are replaced with inclusions seeded from the current estimate line item rooms. `Covers: R6`
+
+AC-37: Given the alternates step, when the estimator clicks "Re-detect alternates" and confirms the prompt, then all existing `ProposalAlternate` records are replaced with alternates detected from current line items. `Covers: R6`
+
+AC-38: Given the opening step, when the estimator clicks "Refresh total from estimate," then `proposal.total_amount` is updated to the current `EstimateTotalsCalculator` burdened total. `Covers: R6`
 
 ---
 
@@ -277,7 +291,7 @@ AC-34: Given a `draft` proposal on the review step, when the estimator clicks "F
 | id | bigint | PK |
 | estimate_id | bigint | FK → estimates, not null, unique (one proposal per estimate) |
 | mode | string | `commercial` or `residential`, not null, default `commercial` |
-| status | string | `draft` or `complete`, not null, default `draft` |
+| status | string | `draft` or `sent`, not null, default `draft` |
 | contact_id | bigint | FK → contacts, nullable (selected on opening step) |
 | job_name | string | nullable; defaults to estimate.title at creation |
 | plan_date | date | nullable |
@@ -303,7 +317,7 @@ Add FK `proposals.contact_id → contacts` with `on_delete: :nullify`.
 - `has_many :proposal_alternates, dependent: :destroy`
 - `has_many :proposal_specifications, dependent: :destroy`
 - `enum :mode, { commercial: "commercial", residential: "residential" }`
-- `enum :status, { draft: "draft", complete: "complete" }`
+- `enum :status, { draft: "draft", sent: "sent" }`
 - `validates :estimate_id, uniqueness: true`
 - `validates :mode, presence: true`
 - `ALTERNATE_PREFIXES = /\A(alt\.?|alternate)\b/i` — constant used by the alternate detection service.
@@ -861,3 +875,4 @@ Covers: R21, AC-31
 | 2026-05-27 | R18: `humanize` gem named and usage specified | R18 | Concrete gem required to implement `amount_in_words` helper |
 | 2026-05-27 | R24: residential mode hides Specifications step from step indicator (steps numbered 1–6) | R24 | Step indicator behaviour for skipped steps must be explicit |
 | 2026-05-27 | `EmailDeliveryService`: added email header injection validation (`URI::MailTo::EMAIL_REGEXP`, reject `\n`, `\r`, `;`) | EmailDeliveryService | Security hardening — prevent header injection via recipient field |
+| 2026-06-02 | Status renamed `complete` → `sent`; locking removed; R2, R4, R6, R15, R25, AC-34–38 revised; three "Refresh from estimate" controls added (total amount, rooms sync, alternates sync) | R2, R4, R6, R15, R25, AC-34–38, Data/Models | Brainstorm session: proposal must remain editable after delivery so estimator can adjust for client feedback (e.g., remove a room, recalculate total) without re-entering all wizard content |

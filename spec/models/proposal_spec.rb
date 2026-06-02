@@ -57,10 +57,10 @@ RSpec.describe Proposal, type: :model do
       expect(proposal.draft?).to be true
     end
 
-    it "accepts complete" do
-      proposal.status = "complete"
+    it "accepts sent" do
+      proposal.status = "sent"
       expect(proposal).to be_valid
-      expect(proposal.complete?).to be true
+      expect(proposal.sent?).to be true
     end
   end
 
