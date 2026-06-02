@@ -95,17 +95,20 @@ class LineItemCsvImporter
     category_cell = row[0].to_s.strip
 
     if row[7].to_s.strip == "Total"
-      return true if category_cell == "Finished Schedule"
+      return true if skip_category?(category_cell)
       return false
     end
 
     product_num = row[4].to_s.strip
 
-    return true if category_cell == "Finished Schedule"
-    return true if category_cell.start_with?("z")
+    return true if skip_category?(category_cell)
     return true if product_num.blank? || product_num == "0"
 
     false
+  end
+
+  def skip_category?(category_cell)
+    category_cell == "Finished Schedule" || category_cell.start_with?("z")
   end
 
   def persist(groups)

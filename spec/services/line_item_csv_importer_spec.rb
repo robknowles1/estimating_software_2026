@@ -497,6 +497,24 @@ RSpec.describe LineItemCsvImporter, type: :service do
           expect(li.quantity.to_i).to eq(3)
         end
       end
+
+      context "z-prefix category group with its own Total row followed by a normal product group" do
+        it "does not corrupt the normal group's quantity with the z-category Total qty" do
+          estimate = create(:estimate)
+          # Same failure mode as the Finished Schedule case: z-prefix detail rows are skipped,
+          # but their Total row (col 7 = "Total") must also be skipped to avoid overwriting
+          # the preceding normal group's accumulated quantity.
+          csv = [
+            "zInternal,Room A,Kitchen,,Z-001,Internal Item,desc,,1,EA,extra",
+            "zInternal,,,,,,,Total,88,EA,extra",
+            build_row(product_number: "BC-001", name: "Base 2-Door", qty: "5")
+          ].join("\n")
+          LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+
+          li = estimate.line_items.reload.find { |item| item.description == "Base 2-Door" }
+          expect(li.quantity.to_i).to eq(5)
+        end
+      end
     end
 
     # SPEC-029: ProductSlotResolver integration in CSV import
