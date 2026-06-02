@@ -4,6 +4,7 @@ class Estimate < ApplicationRecord
   has_many :line_items,         -> { order(:position) }, dependent: :destroy
   has_many :estimate_materials, dependent: :destroy
   has_many :materials,          through: :estimate_materials
+  has_one  :proposal,           dependent: :destroy
 
   enum :status, { draft: "draft", sent: "sent", approved: "approved", lost: "lost", archived: "archived" }, default: "draft"
 

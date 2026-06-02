@@ -13,6 +13,8 @@ class ProposalInclusion < ApplicationRecord
 
   private
 
+  # content_type is set by Marcel (image_processing) via magic-byte detection server-side,
+  # not from the client-supplied Content-Type header — do not replace this with a client value.
   def photo_content_type_allowed
     return if ALLOWED_PHOTO_TYPES.include?(photo.content_type)
 
