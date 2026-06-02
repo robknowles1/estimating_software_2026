@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_28_043441) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_02_054454) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -21,7 +21,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_043441) do
     t.text "notes"
     t.boolean "tax_exempt", default: false, null: false
     t.datetime "updated_at", null: false
-    t.index [ "company_name" ], name: "index_clients_on_company_name"
+    t.index ["company_name"], name: "index_clients_on_company_name"
   end
 
   create_table "contacts", force: :cascade do |t|
@@ -35,8 +35,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_043441) do
     t.string "phone"
     t.string "title"
     t.datetime "updated_at", null: false
-    t.index [ "client_id" ], name: "index_contacts_on_client_id"
-    t.index [ "client_id" ], name: "index_contacts_on_client_id_primary", unique: true, where: "(is_primary = true)"
+    t.index ["client_id"], name: "index_contacts_on_client_id"
+    t.index ["client_id"], name: "index_contacts_on_client_id_primary", unique: true, where: "(is_primary = true)"
   end
 
   create_table "estimate_materials", force: :cascade do |t|
@@ -48,13 +48,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_043441) do
     t.string "role"
     t.string "short_code"
     t.datetime "updated_at", null: false
-    t.index [ "estimate_id", "material_id" ], name: "index_estimate_materials_on_estimate_id_and_material_id", unique: true
-    t.index [ "estimate_id", "short_code" ], name: "index_estimate_materials_on_estimate_id_and_short_code_unique", unique: true, where: "(short_code IS NOT NULL)"
-    t.index [ "estimate_id" ], name: "index_estimate_materials_on_estimate_id"
+    t.index ["estimate_id", "material_id"], name: "index_estimate_materials_on_estimate_id_and_material_id", unique: true
+    t.index ["estimate_id", "short_code"], name: "index_estimate_materials_on_estimate_id_and_short_code_unique", unique: true, where: "(short_code IS NOT NULL)"
+    t.index ["estimate_id"], name: "index_estimate_materials_on_estimate_id"
   end
 
   create_table "estimates", force: :cascade do |t|
     t.decimal "airfare_qty", precision: 10, scale: 2, default: "0.0"
+    t.date "bid_due_date"
     t.bigint "client_id", null: false
     t.text "client_notes"
     t.decimal "countertop_quote", precision: 10, scale: 2, default: "0.0"
@@ -68,7 +69,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_043441) do
     t.decimal "hotel_qty", precision: 10, scale: 2, default: "0.0"
     t.decimal "install_travel_qty", precision: 10, scale: 2, default: "0.0"
     t.integer "installer_crew_size", default: 2, null: false
-    t.date "job_end_date"
     t.date "job_start_date"
     t.decimal "miles_to_jobsite", precision: 8, scale: 2
     t.text "notes"
@@ -82,11 +82,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_043441) do
     t.decimal "tax_rate", precision: 5, scale: 4, default: "0.08", null: false
     t.string "title", default: "", null: false
     t.datetime "updated_at", null: false
-    t.index [ "client_id" ], name: "index_estimates_on_client_id"
-    t.index [ "created_by_user_id" ], name: "index_estimates_on_created_by_user_id"
-    t.index [ "estimate_number" ], name: "index_estimates_on_estimate_number", unique: true
-    t.index [ "status" ], name: "index_estimates_on_status"
-    t.index [ "updated_at" ], name: "index_estimates_on_updated_at"
+    t.index ["client_id"], name: "index_estimates_on_client_id"
+    t.index ["created_by_user_id"], name: "index_estimates_on_created_by_user_id"
+    t.index ["estimate_number"], name: "index_estimates_on_estimate_number", unique: true
+    t.index ["status"], name: "index_estimates_on_status"
+    t.index ["updated_at"], name: "index_estimates_on_updated_at"
   end
 
   create_table "labor_rates", force: :cascade do |t|
@@ -95,7 +95,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_043441) do
     t.decimal "hourly_rate", precision: 10, scale: 4, default: "0.0", null: false
     t.string "labor_category", null: false
     t.datetime "updated_at", null: false
-    t.index [ "labor_category" ], name: "index_labor_rates_on_labor_category", unique: true
+    t.index ["labor_category"], name: "index_labor_rates_on_labor_category", unique: true
   end
 
   create_table "line_items", force: :cascade do |t|
@@ -136,10 +136,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_043441) do
     t.decimal "slides_qty", precision: 10, scale: 4
     t.string "unit", default: "EA"
     t.datetime "updated_at", null: false
-    t.index [ "estimate_id", "position" ], name: "index_line_items_on_estimate_id_and_position"
-    t.index [ "estimate_id" ], name: "index_line_items_on_estimate_id"
-    t.index [ "other_material_id" ], name: "index_line_items_on_other_material_id"
-    t.index [ "product_id" ], name: "index_line_items_on_product_id"
+    t.index ["estimate_id", "position"], name: "index_line_items_on_estimate_id_and_position"
+    t.index ["estimate_id"], name: "index_line_items_on_estimate_id"
+    t.index ["other_material_id"], name: "index_line_items_on_other_material_id"
+    t.index ["product_id"], name: "index_line_items_on_product_id"
   end
 
   create_table "material_set_items", force: :cascade do |t|
@@ -147,8 +147,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_043441) do
     t.bigint "material_id", null: false
     t.bigint "material_set_id", null: false
     t.datetime "updated_at", null: false
-    t.index [ "material_set_id", "material_id" ], name: "index_material_set_items_on_material_set_id_and_material_id", unique: true
-    t.index [ "material_set_id" ], name: "index_material_set_items_on_material_set_id"
+    t.index ["material_set_id", "material_id"], name: "index_material_set_items_on_material_set_id_and_material_id", unique: true
+    t.index ["material_set_id"], name: "index_material_set_items_on_material_set_id"
   end
 
   create_table "material_sets", force: :cascade do |t|
@@ -166,7 +166,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_043441) do
     t.string "name", null: false
     t.string "unit"
     t.datetime "updated_at", null: false
-    t.index [ "name" ], name: "index_materials_on_name"
+    t.index ["name"], name: "index_materials_on_name"
   end
 
   create_table "products", force: :cascade do |t|
@@ -203,8 +203,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_043441) do
     t.string "slides_slot_code"
     t.string "unit", default: "EA", null: false
     t.datetime "updated_at", null: false
-    t.index [ "category" ], name: "index_products_on_category"
-    t.index [ "name" ], name: "index_products_on_name"
+    t.index ["category"], name: "index_products_on_category"
+    t.index ["name"], name: "index_products_on_name"
   end
 
   create_table "users", force: :cascade do |t|
@@ -213,7 +213,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_043441) do
     t.string "name", null: false
     t.string "password_digest", null: false
     t.datetime "updated_at", null: false
-    t.index [ "email" ], name: "index_users_on_email", unique: true
+    t.index ["email"], name: "index_users_on_email", unique: true
   end
 
   add_foreign_key "contacts", "clients"

@@ -1,7 +1,7 @@
 # Spec: Estimate Date Fields
 
 **ID:** SPEC-023
-**Status:** ready
+**Status:** done
 **Priority:** low
 **Created:** 2026-05-27
 **Author:** spec-agent

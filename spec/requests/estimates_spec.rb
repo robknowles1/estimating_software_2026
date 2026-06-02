@@ -285,6 +285,107 @@ RSpec.describe "Estimates", type: :request do
     end
   end
 
+  describe "date fields — bid_due_date and job_start_date (SPEC-023)" do
+    let(:estimate) { create(:estimate, client: client) }
+
+    describe "POST /estimates with date params" do
+      it "saves bid_due_date from params" do
+        post estimates_path, params: {
+          estimate: { client_id: client.id, title: "Date Test", bid_due_date: "2026-07-01" }
+        }
+        expect(Estimate.last.bid_due_date).to eq(Date.new(2026, 7, 1))
+      end
+
+      it "saves job_start_date from params" do
+        post estimates_path, params: {
+          estimate: { client_id: client.id, title: "Date Test", job_start_date: "2026-09-01" }
+        }
+        expect(Estimate.last.job_start_date).to eq(Date.new(2026, 9, 1))
+      end
+
+      it "saves both date fields together" do
+        post estimates_path, params: {
+          estimate: {
+            client_id: client.id,
+            title: "Both Dates",
+            bid_due_date: "2026-07-01",
+            job_start_date: "2026-09-01"
+          }
+        }
+        created = Estimate.last
+        expect(created.bid_due_date).to eq(Date.new(2026, 7, 1))
+        expect(created.job_start_date).to eq(Date.new(2026, 9, 1))
+      end
+
+      it "saves nil for both date fields when blank" do
+        post estimates_path, params: {
+          estimate: {
+            client_id: client.id,
+            title: "Nil Dates",
+            bid_due_date: "",
+            job_start_date: ""
+          }
+        }
+        created = Estimate.last
+        expect(created.bid_due_date).to be_nil
+        expect(created.job_start_date).to be_nil
+      end
+    end
+
+    describe "PATCH /estimates/:id with date params" do
+      it "updates bid_due_date" do
+        patch estimate_path(estimate), params: {
+          estimate: { client_id: estimate.client_id, title: estimate.title, bid_due_date: "2026-07-15" }
+        }
+        expect(estimate.reload.bid_due_date).to eq(Date.new(2026, 7, 15))
+      end
+
+      it "updates job_start_date" do
+        patch estimate_path(estimate), params: {
+          estimate: { client_id: estimate.client_id, title: estimate.title, job_start_date: "2026-09-15" }
+        }
+        expect(estimate.reload.job_start_date).to eq(Date.new(2026, 9, 15))
+      end
+
+      it "clears both date fields when blank is submitted" do
+        estimate.update!(bid_due_date: "2026-07-01", job_start_date: "2026-09-01")
+        patch estimate_path(estimate), params: {
+          estimate: {
+            client_id: estimate.client_id,
+            title: estimate.title,
+            bid_due_date: "",
+            job_start_date: ""
+          }
+        }
+        estimate.reload
+        expect(estimate.bid_due_date).to be_nil
+        expect(estimate.job_start_date).to be_nil
+      end
+
+      it "does not persist an unpermitted param (strong params silently drops unknown keys)" do
+        original_number = estimate.estimate_number
+        patch estimate_path(estimate), params: {
+          estimate: { client_id: estimate.client_id, title: estimate.title, estimate_number: "EST-FAKE-9999" }
+        }
+        expect(response).to redirect_to(edit_estimate_path(estimate))
+        expect(estimate.reload.estimate_number).to eq(original_number)
+      end
+    end
+
+    describe "unauthenticated access" do
+      it "redirects to login and does not modify the estimate" do
+        delete session_path
+        patch estimate_path(estimate), params: {
+          estimate: { bid_due_date: "2026-07-01", job_start_date: "2026-09-01" }
+        }
+        expect(response).to redirect_to(new_session_path)
+        estimate.reload
+        expect(estimate.bid_due_date).to be_nil
+        expect(estimate.job_start_date).to be_nil
+      end
+    end
+  end
+
   describe "DELETE /estimates/:id" do
     let!(:estimate) { create(:estimate, client: client) }
 
