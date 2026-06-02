@@ -110,6 +110,17 @@ class LineItemCsvImporter
 
     matcher = LineItemAliasMatcherService.new(@estimate)
 
+    # Build the price book code index once so ProductSlotResolver does not
+    # fire a separate DB query for every row in the import (N+1 prevention).
+    # Delegating to ProductSlotResolver.build_code_index keeps the loaded?/SQL
+    # branching consistent — when the controller has already eager-loaded
+    # estimate_materials we filter in Ruby instead of issuing a fresh query.
+    code_index = ProductSlotResolver.build_code_index(@estimate)
+
+    # Cache resolvers by product_id — each unique product only needs one resolver
+    # instance, even if the same product appears on multiple CSV rows.
+    resolver_cache = {}
+
     ActiveRecord::Base.transaction do
       groups.each do |group|
         product = Product
@@ -129,6 +140,15 @@ class LineItemCsvImporter
         line_item.quantity    = group[:qty]
         line_item.product_id  = product.id
 
+        # Step 1 (SPEC-029): resolve product slot codes against the price book.
+        # Fills all 9 slot columns (exterior, interior, interior2, back, banding,
+        # drawers, pulls, hinges, slides) based on product slot code hints.
+        resolver = resolver_cache[product.id] ||= ProductSlotResolver.new(product, code_index)
+        resolver.call(line_item)
+
+        # Step 2 (SPEC-022): match short codes found in the line item description.
+        # Overwrites primary slots (exterior/interior/interior2/back) when a short
+        # code is found — alias matcher WINS over resolver on those four columns.
         matched_em = matcher.match(line_item)
         if matched_em
           ambiguous_count += 1 if matcher.ambiguous?(line_item, matched_em)

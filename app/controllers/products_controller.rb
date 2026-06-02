@@ -50,7 +50,8 @@ class ProductsController < ApplicationController
       :drawers_qty, :pulls_qty, :hinges_qty, :slides_qty, :locks_qty,
       :other_material_cost,
       :detail_hrs, :mill_hrs, :assembly_hrs, :customs_hrs, :finish_hrs, :install_hrs,
-      :equipment_hrs, :equipment_rate
+      :equipment_hrs, :equipment_rate,
+      *Product::SLOT_CODE_COLUMNS
     )
   end
 end

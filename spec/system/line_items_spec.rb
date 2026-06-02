@@ -148,6 +148,9 @@ RSpec.describe "Line Items", type: :system do
 
   describe "applying a product sets _qty fields but leaves _material_id nil" do
     it "sets exterior_qty via apply_to and exterior_material_id stays nil" do
+      # Material slots are not shown on the new form (show_material_slots: false);
+      # apply_to sets exterior_qty in the controller before assign_attributes,
+      # and since exterior_qty is not submitted, the apply_to value persists.
       product = create(:product, name: "MDF Base 2-door", category: "Base Cabinets", unit: "EA",
                        exterior_qty: BigDecimal("2.0"))
       login
@@ -157,8 +160,6 @@ RSpec.describe "Line Items", type: :system do
       pick_product("MDF Base 2-door")
       fill_in "line_item[description]", with: "Test Cabinet"
       fill_in "line_item[quantity]", with: "1"
-
-      expect(page).to have_field("line_item[exterior_qty]", with: "2.0", wait: 3)
 
       find("input[type='submit']").click
 

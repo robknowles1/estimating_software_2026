@@ -20,6 +20,7 @@
           <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_name") %></th>
           <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_category") %></th>
           <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_unit") %></th>
+          <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_slot_codes") %></th>
           <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><%= t(".col_updated") %></th>
           <th class="px-6 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider"></th>
         </tr>
@@ -32,6 +33,18 @@
               <%= product.category.presence || t("common.not_provided") %>
             </td>
             <td class="px-6 py-4 text-sm text-slate-500"><%= product.unit %></td>
+            <td class="px-6 py-4 text-sm text-slate-500">
+              <% slot_codes = Product::SLOT_CODE_COLUMNS.filter_map { |col| product.public_send(col).presence } %>
+              <% if slot_codes.any? %>
+                <div class="flex flex-wrap gap-1">
+                  <% slot_codes.each do |code| %>
+                    <span class="inline-block font-mono text-xs bg-slate-100 text-slate-700 rounded px-1.5 py-0.5"><%= code %></span>
+                  <% end %>
+                </div>
+              <% else %>
+                <span class="text-slate-300"><%= t("common.not_provided") %></span>
+              <% end %>
+            </td>
             <td class="px-6 py-4 text-sm text-slate-400"><%= product.updated_at.strftime("%b %-d, %Y") %></td>
             <td class="px-6 py-4 text-right">
               <div class="flex items-center justify-end gap-3">

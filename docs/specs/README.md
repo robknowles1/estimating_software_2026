@@ -14,7 +14,14 @@
 | SPEC-019 | [Tom Select on Line Item Form — Product Selector + All Material Slots + Inline Find-or-Create](./SPEC-019-line-item-form-tom-select.md) | done | medium | 2026-04-27 |
 | SPEC-020 | [Exterior-to-Back Qty Autofill on Line Item Form](./SPEC-020-exterior-back-qty-autofill.md) | ready | low | 2026-05-06 |
 | SPEC-021 | [CSV Import for Estimate Line Items](./SPEC-021-csv-import-line-items.md) | done | high | 2026-05-12 |
-| SPEC-022 | [Material Short Code and Auto-Population on CSV Import](./SPEC-022-material-alias-auto-population.md) | ready | high | 2026-05-22 |
+| SPEC-022 | [Material Short Code and Auto-Population on CSV Import](./SPEC-022-material-alias-auto-population.md) | done | high | 2026-05-22 |
+| SPEC-023 | [Estimate Date Fields](./SPEC-023-estimate-date-fields.md) | ready | low | 2026-05-27 |
+| SPEC-024 | [Materials Library Search and Pagination](./SPEC-024-materials-library-search-pagination.md) | ready | medium | 2026-05-27 |
+| SPEC-025 | [Room Tracking on CSV Import](./SPEC-025-room-tracking-csv-import.md) | ready | high | 2026-05-27 |
+| SPEC-026 | [Proposal / Bid Letter Wizard](./SPEC-026-proposal-bid-letter-wizard.md) | ready | high | 2026-05-27 |
+| SPEC-027 | [CRM Expansion on Clients](./SPEC-027-crm-expansion-clients.md) | ready | medium | 2026-05-27 |
+| SPEC-028 | [Asana Material Price Sync](./SPEC-028-asana-material-price-sync.md) | draft | medium | 2026-05-27 |
+| SPEC-029 | [Product Presets Auto-Population](./SPEC-029-product-presets-auto-population.md) | in-progress | high | 2026-05-27 |
 
 ---
 

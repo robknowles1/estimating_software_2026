@@ -181,4 +181,23 @@ Spec files live in `docs/specs/`. Architecture Decision Records live in `docs/ar
 | SPEC-019 | Line Item Form Tom Select | ✅ done |
 | SPEC-020 | Exterior Back Qty Autofill | ✅ done |
 | SPEC-021 | CSV Import Line Items | ✅ done |
-| SPEC-022 | Material Alias Auto-Population | 🔄 in progress |
+| SPEC-022 | Material Alias Auto-Population | ✅ done |
+| SPEC-023 | Estimate Date Fields | 📋 ready |
+| SPEC-024 | Materials Library Search & Pagination | 📋 ready |
+| SPEC-025 | Room Tracking on CSV Import | 📋 ready |
+| SPEC-026 | Proposal / Bid Letter Wizard | 📋 ready |
+| SPEC-027 | CRM Expansion on Clients | 📋 ready |
+| SPEC-028 | Asana Material Price Sync | 📋 draft |
+| SPEC-029 | Product Presets Auto-Population | 🔄 in progress |
+
+---
+
+## First-Time Setup
+
+```bash
+bundle install
+bin/rails db:create db:migrate db:seed   # prints generated admin password to stdout
+bin/dev                                   # starts Rails + Tailwind watcher
+```
+
+Test suite: `bundle exec rspec`

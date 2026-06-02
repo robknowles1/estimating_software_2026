@@ -10,7 +10,10 @@ class LineItemsController < ApplicationController
     product = Product.find_by(id: params.dig(:line_item, :product_id))
 
     @line_item = @estimate.line_items.new
-    product.apply_to(@line_item) if product
+    if product
+      product.apply_to(@line_item)
+      ProductSlotResolver.new(product, @estimate).call(@line_item)
+    end
     @line_item.assign_attributes(line_item_params)
     @line_item.description = product.name if product && @line_item.description.blank?
     @line_item.product_id = product&.id
