@@ -387,6 +387,100 @@ RSpec.describe LineItemCsvImporter, type: :service do
       end
     end
 
+    # SPEC-025: room tracking and "Finished Schedule" skip
+    context "SPEC-025: room tracking" do
+      context "non-blank column 1 value" do
+        it "sets room on the created line item (whitespace-stripped)" do
+          estimate = create(:estimate)
+          csv = "Base Cabinets,  Room A  ,Kitchen,,BC-001,Base 2-Door,desc,,2,EA,extra"
+          LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+
+          expect(estimate.line_items.reload.last.room).to eq("Room A")
+        end
+      end
+
+      context "blank column 1 value" do
+        it "sets room to nil and raises no error" do
+          estimate = create(:estimate)
+          csv = "Base Cabinets,,Kitchen,,BC-001,Base 2-Door,desc,,2,EA,extra"
+          result = LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+
+          expect(result.error).to be_nil
+          expect(estimate.line_items.reload.last.room).to be_nil
+        end
+      end
+
+      context "'Finished Schedule' category row" do
+        it "skips the row and creates no line item for it" do
+          estimate = create(:estimate)
+          csv = [
+            "Finished Schedule,Room A,Kitchen,,FS-001,Schedule Item,desc,,1,EA,extra",
+            build_row(product_number: "BC-001", name: "Base 2-Door", qty: "2")
+          ].join("\n")
+          expect {
+            LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+          }.to change(LineItem, :count).by(1)
+        end
+
+        it "does not create a product for the skipped Finished Schedule row" do
+          estimate = create(:estimate)
+          csv = [
+            "Finished Schedule,Room A,Kitchen,,FS-001,Schedule Item,desc,,1,EA,extra",
+            build_row(product_number: "BC-001", name: "Base 2-Door", qty: "2")
+          ].join("\n")
+          LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+
+          expect(Product.where(name: "Schedule Item")).not_to exist
+        end
+      end
+
+      context "all rows are 'Finished Schedule'" do
+        it "returns a non-nil error" do
+          estimate = create(:estimate)
+          csv = "Finished Schedule,Room A,Kitchen,,FS-001,Schedule Item,desc,,1,EA,extra"
+          result = LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+
+          expect(result.error).not_to be_nil
+        end
+
+        it "creates zero line items" do
+          estimate = create(:estimate)
+          csv = "Finished Schedule,Room A,Kitchen,,FS-001,Schedule Item,desc,,1,EA,extra"
+          expect {
+            LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+          }.not_to change(LineItem, :count)
+        end
+      end
+
+      context "mix of 'Finished Schedule' and normal rows" do
+        it "only creates line items for normal rows" do
+          estimate = create(:estimate)
+          csv = [
+            "Finished Schedule,Room A,Kitchen,,FS-001,Schedule Item,desc,,1,EA,extra",
+            build_row(product_number: "BC-001", name: "Base 2-Door", qty: "2"),
+            "Finished Schedule,Room B,Living,,FS-002,Another Schedule,desc,,1,EA,extra",
+            build_row(product_number: "BC-002", name: "Wall Cabinet", qty: "3")
+          ].join("\n")
+          expect {
+            LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+          }.to change(LineItem, :count).by(2)
+        end
+
+        it "sets room correctly on the normal rows" do
+          estimate = create(:estimate)
+          csv = [
+            "Finished Schedule,Room A,Kitchen,,FS-001,Schedule Item,desc,,1,EA,extra",
+            build_row(product_number: "BC-001", name: "Base 2-Door", qty: "2"),
+            build_row(product_number: "BC-002", name: "Wall Cabinet", qty: "3")
+          ].join("\n")
+          LineItemCsvImporter.new(estimate, uploaded_file(csv)).call
+
+          rooms = estimate.line_items.reload.map(&:room)
+          expect(rooms).to all(eq("Room A"))
+        end
+      end
+    end
+
     # SPEC-029: ProductSlotResolver integration in CSV import
     context "SPEC-029: ProductSlotResolver runs during import" do
       it "assigns pulls_material_id when the product has pulls_slot_code matching a price book entry" do

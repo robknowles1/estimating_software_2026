@@ -461,6 +461,60 @@ RSpec.describe "LineItems", type: :request do
     end
   end
 
+  # SPEC-025: room tracking and "Finished Schedule" skip on import
+  describe "POST /estimates/:estimate_id/line_items/import — SPEC-025 room tracking" do
+    def room_csv(room_value)
+      "Base Cabinets,#{room_value},Kitchen,,BC-001,Base 2-Door,desc,,2,EA,extra"
+    end
+
+    def finished_schedule_csv
+      [
+        "Finished Schedule,Room A,Kitchen,,FS-001,Schedule Item,desc,,1,EA,extra",
+        "Base Cabinets,Room B,Living,,BC-001,Base 2-Door,desc,,3,EA,extra"
+      ].join("\n")
+    end
+
+    context "CSV with a room value in column 1" do
+      it "sets room on the created line item" do
+        user = create(:user)
+        estimate = create(:estimate, created_by: user)
+        sign_in(user)
+        csv_io = StringIO.new(room_csv("Kitchen"))
+        post import_estimate_line_items_path(estimate),
+          params: { csv_file: Rack::Test::UploadedFile.new(csv_io, "text/csv", original_filename: "import.csv") }
+
+        expect(estimate.line_items.reload.last.room).to eq("Kitchen")
+      end
+    end
+
+    context "CSV with 'Finished Schedule' rows mixed with normal rows" do
+      it "only creates line items for non-schedule rows" do
+        user = create(:user)
+        estimate = create(:estimate, created_by: user)
+        sign_in(user)
+        csv_io = StringIO.new(finished_schedule_csv)
+        expect {
+          post import_estimate_line_items_path(estimate),
+            params: { csv_file: Rack::Test::UploadedFile.new(csv_io, "text/csv", original_filename: "import.csv") }
+        }.to change(LineItem, :count).by(1)
+      end
+    end
+
+    context "unauthenticated POST to import" do
+      it "redirects to login and creates no line items" do
+        user = create(:user)
+        estimate = create(:estimate, created_by: user)
+        csv_io = StringIO.new(room_csv("Room A"))
+        expect {
+          post import_estimate_line_items_path(estimate),
+            params: { csv_file: Rack::Test::UploadedFile.new(csv_io, "text/csv", original_filename: "import.csv") }
+        }.not_to change(LineItem, :count)
+
+        expect(response).to redirect_to(new_session_path)
+      end
+    end
+  end
+
   # SPEC-022: apply_aliases action
   describe "POST /estimates/:estimate_id/line_items/apply_aliases" do
     context "with a matching short code and line item" do

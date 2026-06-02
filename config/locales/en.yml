@@ -254,6 +254,7 @@ en:
       notice_with_unmatched_and_ambiguous: "Applied short codes to %{total} line items. %{unmatched} need review and %{ambiguous} had ambiguous matches — longest match was used."
     card:
       needs_review: "Needs review"
+      room_label: "Room"
     form:
       select_product: "Select Product (optional)"
       freeform_option: "— freeform / no product —"
