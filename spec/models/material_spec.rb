@@ -71,6 +71,32 @@ RSpec.describe Material, type: :model do
       maple.update!(discarded_at: Time.current)
       expect(Material.search("maple")).not_to include(maple)
     end
+
+    it "excludes non-matching materials" do
+      results = Material.search("maple")
+      expect(results).not_to include(other)
+    end
+
+    it "excludes archived materials even when the name matches" do
+      maple.update!(discarded_at: Time.current)
+      expect(Material.search("maple")).not_to include(maple)
+    end
+
+    it "returns none for a blank string" do
+      expect(Material.search("").to_a).to be_empty
+    end
+
+    it "returns none for nil" do
+      expect(Material.search(nil).to_a).to be_empty
+    end
+
+    it "escapes the % wildcard so it only matches rows literally containing %" do
+      pct_material = create(:material, name: "50% Board", description: "Half-strength")
+      normal       = create(:material, name: "Full Board",  description: "Full-strength")
+      results = Material.search("%")
+      expect(results).to include(pct_material)
+      expect(results).not_to include(normal)
+    end
   end
 
   describe "#discard!" do

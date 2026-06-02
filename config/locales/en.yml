@@ -412,6 +412,11 @@ en:
       col_actions: "Actions"
       archive_button: "Archive"
       confirm_archive: "Archive %{name}? It will no longer appear in the active library."
+      search_placeholder: "Search by name or description…"
+      search_label: "Search materials"
+      clear_search: "Clear"
+      empty_search_title: "No materials matched your search."
+      empty_search_description: "Try a different term or clear the search to see all materials."
     new:
       title: "New Material"
       subtitle: "Add a material to the global library."

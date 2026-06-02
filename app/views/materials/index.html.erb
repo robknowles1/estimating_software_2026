@@ -8,6 +8,20 @@
         class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors" %>
   </div>
 
+  <%= form_with url: materials_path, method: :get, data: { turbo: false } do |f| %>
+    <div class="flex items-center gap-2 mb-4">
+      <%= f.label :q, t(".search_label"), class: "sr-only" %>
+      <%= f.text_field :q, value: @query, placeholder: t(".search_placeholder"),
+          class: "flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" %>
+      <%= f.submit t(".search_label"),
+          class: "inline-flex items-center bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>
+      <% if @query.present? %>
+        <%= link_to t(".clear_search"), materials_path,
+            class: "inline-flex items-center text-sm text-slate-600 hover:text-slate-900 font-medium px-2 py-2" %>
+      <% end %>
+    </div>
+  <% end %>
+
   <% if @materials.any? %>
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <table class="w-full text-sm">
@@ -41,6 +55,18 @@
           <% end %>
         </tbody>
       </table>
+    </div>
+
+    <% if @pagy.pages > 1 %>
+      <div class="mt-4 flex justify-center">
+        <%== pagy_nav(@pagy) %>
+      </div>
+    <% end %>
+
+  <% elsif @query.present? %>
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+      <p class="text-slate-700 font-medium"><%= t(".empty_search_title") %></p>
+      <p class="text-slate-500 text-sm mt-1"><%= t(".empty_search_description") %></p>
     </div>
   <% else %>
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">

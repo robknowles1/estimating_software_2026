@@ -7,7 +7,11 @@ class Material < ApplicationRecord
   validates :default_price, numericality: { greater_than_or_equal_to: 0 }
 
   scope :active, -> { where(discarded_at: nil) }
-  scope :search, ->(term) { active.where("name ILIKE :q OR description ILIKE :q", q: "%#{term}%") }
+  scope :search, ->(term) {
+    return none if term.blank?
+    escaped = term.gsub(/[%_\\]/) { |c| "\\#{c}" }
+    active.where("name ILIKE :q OR description ILIKE :q", q: "%#{escaped}%")
+  }
 
   # Soft-deletes the material. Returns false (with a base error) if any
   # estimate_materials rows reference it — those prices must remain intact.
