@@ -89,7 +89,7 @@ RSpec.describe "Materials", type: :request do
 
     it "redirects to the last valid page" do
       get materials_path, params: { page: 9999 }
-      expect(response).to redirect_to(materials_path(q: "", page: 1))
+      expect(response).to redirect_to(materials_path(page: 1))
     end
   end
 

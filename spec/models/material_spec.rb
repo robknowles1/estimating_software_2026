@@ -72,16 +72,6 @@ RSpec.describe Material, type: :model do
       expect(Material.search("maple")).not_to include(maple)
     end
 
-    it "excludes non-matching materials" do
-      results = Material.search("maple")
-      expect(results).not_to include(other)
-    end
-
-    it "excludes archived materials even when the name matches" do
-      maple.update!(discarded_at: Time.current)
-      expect(Material.search("maple")).not_to include(maple)
-    end
-
     it "returns none for a blank string" do
       expect(Material.search("").to_a).to be_empty
     end

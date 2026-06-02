@@ -5,9 +5,9 @@ class MaterialsController < ApplicationController
     @query = params[:q].to_s
     scope = @query.present? ? Material.search(@query) : Material.active
     @pagy, @materials = pagy(scope.order(:name), limit: 20)
-    @pagy.vars[:params] = { q: @query }
+    @pagy.vars[:params] = { q: @query } if @query.present?
   rescue Pagy::OverflowError => e
-    redirect_to materials_path(q: @query, page: e.pagy.last)
+    redirect_to materials_path(q: @query.presence, page: e.pagy.last)
   end
 
   def new
