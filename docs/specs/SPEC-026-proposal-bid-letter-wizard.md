@@ -1,7 +1,7 @@
 # Spec: Proposal / Bid Letter Wizard
 
 **ID:** SPEC-026
-**Status:** ready
+**Status:** in-progress
 **Priority:** high
 **Created:** 2026-05-27
 **Author:** spec-agent
