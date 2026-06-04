@@ -29,6 +29,13 @@ gem "acts_as_list"
 # CSV parsing (extracted from stdlib in Ruby 3.4+)
 gem "csv"
 
+# PDF generation (pure Ruby, no binary runtime required)
+gem "prawn"
+gem "prawn-table"
+
+# Convert numbers to English words for proposal amounts
+gem "humanize", "~> 2.0"
+
 # Pagination
 gem "pagy", "~> 9.0"
 
