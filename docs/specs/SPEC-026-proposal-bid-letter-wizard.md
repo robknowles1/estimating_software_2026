@@ -20,7 +20,7 @@ Estimators currently hand-type a Word document for every bid. This spec replaces
 - As an estimator, I want the wizard to remember my progress between sessions, so that I can pause and resume without losing work.
 - As an estimator, I want standard design clarifications and exclusions pre-populated so that I only need to add or remove items rather than type them from scratch.
 - As an estimator, I want room inclusions pulled from the CSV import (SPEC-025) so that I do not have to re-enter room names.
-- As an estimator, I want to attach a photo to each room inclusion, so that the proposal can show the client what is planned for each space.
+- As an estimator, I want to attach one or more photos to each room inclusion, so that the proposal can show the client what is planned for each space.
 - As an estimator, I want to download the finished proposal as a PDF, so that I can send it to the client in a professional format.
 - As an estimator, I want to email the proposal PDF directly from the app, so that I do not have to save and attach it manually.
 - As an estimator, I want alternates auto-detected from the estimate, so that I do not have to re-enter pricing that is already in the system.
@@ -35,7 +35,7 @@ Estimators currently hand-type a Word document for every bid. This spec replaces
 | Wizard step | One of the seven sequential screens that collect proposal content |
 | Commercial mode | Full seven-step proposal structure targeting commercial/institutional clients |
 | Residential mode | Simplified proposal: materials/labour description, room-by-room pricing summary, payment terms, alternates, ideas section |
-| Room inclusion | A section of the proposal describing work in one named room, optionally with bullet points and a photo |
+| Room inclusion | A section of the proposal describing work in one named room, optionally with bullet points and one or more photos |
 | Design clarification | A standard or custom statement explaining how work is bid (e.g., door style, drawer construction) |
 | Exclusion | A standard or custom item explicitly not included in the bid |
 | Alternate | A priced option outside the base bid total, typically identified by a prefix code or label in the estimate |
@@ -115,9 +115,9 @@ Three "Refresh from estimate" controls are available to re-sync proposal data wi
 
 R7: The specifications step is conditional on mode. In commercial mode: a toggle ("Include specifications section") controls whether the section appears in the PDF; when toggled on, the estimator enters one or more specification numbers and titles (e.g., `064023 - Interior Architectural Woodwork`). In residential mode: this step is skipped entirely.
 
-R8: Room inclusions (step 3) are pre-populated from distinct room name strings on the estimate's line items. `BuildService` queries `estimate.line_items.where.not(room: nil).pluck(:room).uniq` to get the list of room name strings and creates one `ProposalInclusion` per unique name. There is no separate `rooms` table — SPEC-025 stores room as a plain string column on `line_items`. The estimator may add bullet points to each room and optionally attach one photo per room. New rooms may be added manually. Rooms may be removed from the proposal without affecting the underlying line item records.
+R8: Room inclusions (step 3) are pre-populated from distinct room name strings on the estimate's line items. `BuildService` queries `estimate.line_items.where.not(room: nil).pluck(:room).uniq` to get the list of room name strings and creates one `ProposalInclusion` per unique name. There is no separate `rooms` table — SPEC-025 stores room as a plain string column on `line_items`. The estimator may add bullet points to each room and optionally attach one or more photos per room. New rooms may be added manually. Rooms may be removed from the proposal without affecting the underlying line item records.
 
-R9: Each room inclusion's photo is stored via ActiveStorage. Photo upload is optional; rooms without photos render in the PDF without an image block.
+R9: Each room inclusion's photos are stored via ActiveStorage (`has_many_attached :photos`). Photo upload is optional, and a room may have multiple photos. Rooms with photos render each photo (or a photo gallery) in the PDF; rooms without photos render no image block. Allowed types are JPEG and PNG only (rationale: Prawn embeds JPEG/PNG only; WebP would pass a generic image check but fail at PDF render). There is no byte-size limit on uploads — instead a resized variant (longest edge ~2000px) is generated and used for PDF embedding so large originals cannot break or slow PDF generation. The upload UI (delivered in PR 3) must surface the accepted formats to the estimator via the file input's `accept="image/jpeg,image/png"` attribute and a visible "JPEG or PNG" hint.
 
 R10: Design clarifications (step 4) are pre-populated with the standard list on first creation (see Definitions — standard clarifications). The estimator may add custom clarifications and remove any pre-populated or custom item. Order is preserved as entered.
 
@@ -188,9 +188,9 @@ E3: No rooms exist from SPEC-025 — the inclusions step opens with an empty lis
 
 E4: The estimate has no alternate line items — the alternates step displays a message ("No alternates detected in this estimate") and may be saved immediately. No alternates section appears in the PDF.
 
-E5: A room inclusion photo upload exceeds the maximum allowed file size (8 MB) — the upload is rejected with a validation error on the inclusion record and the step cannot be saved until the file is removed or replaced.
+E5: A room inclusion photo is uploaded in an unsupported format (e.g., WebP or GIF) — the upload is rejected with a validation error on the inclusion record and the step cannot be saved until the file is removed or replaced. There is no byte-size limit; large originals are accepted and downscaled via a resized variant for PDF embedding.
 
-E6: A room inclusion photo is not an image MIME type — rejected with a validation error naming the allowed types (JPEG, PNG, WebP).
+E6: A room inclusion photo is not a JPEG or PNG image — rejected with a validation error naming the allowed types (JPEG, PNG). WebP is explicitly rejected because Prawn cannot embed it.
 
 E7: The estimator navigates directly to a future step URL — they are redirected to the earliest incomplete step with a flash notice explaining that earlier steps must be completed first.
 
@@ -220,13 +220,13 @@ AC-7: Given commercial mode and the specifications toggle is off, when the step 
 
 AC-8: Given residential mode, when the wizard advances past the opening step, then the specifications step is skipped and the estimator goes directly to step 3 (inclusions). `Covers: R7`
 
-AC-9: Given rooms exist from SPEC-025, when the inclusions step is first loaded, then each room is pre-populated as a room inclusion row with the room name displayed and bullet-point and photo fields empty. `Covers: R8`
+AC-9: Given rooms exist from SPEC-025, when the inclusions step is first loaded, then each room is pre-populated as a room inclusion row with the room name displayed and bullet-point and photo fields empty. The photo input advertises the accepted formats via `accept="image/jpeg,image/png"` and a visible "JPEG or PNG" hint. `Covers: R8, R9`
 
 AC-10: Given the inclusions step, when the estimator adds bullet points to a room inclusion and saves, then the bullet points are persisted on the `proposal_inclusions` record. `Covers: R8`
 
-AC-11: Given the inclusions step, when the estimator uploads a valid image file (JPEG, PNG, or WebP, under 8 MB) to a room inclusion and saves, then the photo is stored via ActiveStorage and attached to the `proposal_inclusion` record. `Covers: R9`
+AC-11: Given the inclusions step, when the estimator uploads one or more valid image files (JPEG or PNG, any size) to a room inclusion and saves, then each photo is stored via ActiveStorage and attached to the `proposal_inclusion` record (`has_many_attached :photos`), and a resized variant (~2000px longest edge) is available for PDF embedding. `Covers: R9`
 
-AC-12: Given the estimator uploads a file that is not an image or exceeds 8 MB, when the form is submitted, then a validation error is shown, the file is not stored, and the step is not advanced. `Covers: E5, E6`
+AC-12: Given the estimator uploads a file that is not a JPEG or PNG image (e.g., WebP, GIF, or a PDF), when the form is submitted, then a validation error is shown, the file is not stored, and the step is not advanced. There is no byte-size limit. `Covers: E5, E6`
 
 AC-13: Given the clarifications step is first loaded on a new proposal, when the page renders, then the two standard design clarifications are pre-populated as editable rows. `Covers: R10, R11`
 
@@ -338,11 +338,13 @@ Migration: Add FK `proposal_inclusions.proposal_id → proposals` with `on_delet
 
 **`ProposalInclusion` model:**
 - `belongs_to :proposal`
-- `has_one_attached :photo` (ActiveStorage)
+- `has_many_attached :photos` (ActiveStorage) — multiple photos per room.
+- A named variant `:pdf` (`resize_to_limit: [2000, 2000]`) is defined on the attachment; PR 4's Prawn PDF embeds this resized variant rather than the original blob. The original blob is kept as-is (bounding stored size is deferred — see pre-production tech debt).
 - `validates :room_name, presence: true`
-- Photo content type validation: allow only `image/jpeg`, `image/png`, `image/webp`.
-- Photo size validation: max 8 MB.
+- Photo content type validation: allow only `image/jpeg` and `image/png` (Prawn embeds JPEG/PNG only; WebP/GIF rejected). Validation iterates over every attached photo, guarded by `if: -> { photos.attached? }`.
+- No byte-size validation — large originals are accepted and downscaled via the `:pdf` variant.
 - `acts_as_list scope: :proposal` (consistent with `LineItem` ordering pattern).
+- The upload UI (PR 3) must expose accepted formats via `accept="image/jpeg,image/png"` and a visible "JPEG or PNG" hint.
 
 #### New table: `proposal_clarifications`
 
@@ -429,7 +431,7 @@ Add `gem "humanize", "~> 2.0"` to the `Gemfile` for the `amount_in_words` helper
 
 #### ActiveStorage install — required migration task (PR 1 / data layer)
 
-The `active_storage_blobs`, `active_storage_attachments`, and `active_storage_variant_records` tables do not yet exist in `schema.rb`. Before implementing photo upload on `ProposalInclusion`, the developer **must** run `bin/rails active_storage:install` and commit the three generated migrations (`active_storage_blobs`, `active_storage_attachments`, `active_storage_variant_records`) in the feature branch. This is a required first task in the data layer PR — do not implement `has_one_attached :photo` without it.
+The `active_storage_blobs`, `active_storage_attachments`, and `active_storage_variant_records` tables do not yet exist in `schema.rb`. Before implementing photo upload on `ProposalInclusion`, the developer **must** run `bin/rails active_storage:install` and commit the three generated migrations (`active_storage_blobs`, `active_storage_attachments`, `active_storage_variant_records`) in the feature branch. This is a required first task in the data layer PR — do not implement `has_many_attached :photos` without it. The `active_storage_variant_records` table is also required to support the `:pdf` resized variant.
 
 AC-33: Before implementing photo upload, `bin/rails active_storage:install` has been run, the three generated migrations have been committed to the feature branch, and `db:migrate` succeeds without error. `Covers: R9`
 
@@ -461,7 +463,7 @@ Constructor: `initialize(proposal:)`
 `.call` — builds and returns a `Prawn::Document` binary string:
 1. Loads proposal with all associations preloaded.
 2. Branches on `proposal.mode` to select the commercial or residential layout.
-3. Commercial layout: letterhead block, date, salutation, opening paragraph (R17), specifications section (if `include_specifications`), inclusions (room by room with photo if present), clarifications list, alternates table, exclusions list.
+3. Commercial layout: letterhead block, date, salutation, opening paragraph (R17), specifications section (if `include_specifications`), inclusions (room by room, embedding each room's photos — via the `:pdf` resized variant — when present), clarifications list, alternates table, exclusions list.
 4. Residential layout: description block, room-by-room pricing table, alternates table, payment terms.
 5. Uses `ProposalHelper#amount_in_words` to convert `total_amount` to English words (R18).
 6. Returns the PDF binary string to the caller; does not write to disk.
@@ -552,7 +554,7 @@ Each step has a dedicated partial: `_opening.html.erb`, `_specifications.html.er
 
 Dynamic list rows (clarifications, exclusions, inclusions) use Stimulus controllers to support add/remove without a page reload. Use Turbo Frames for the add-row interaction.
 
-Photo upload: use a standard Rails `file_field` on the inclusion form. Stimulus controller previews the selected image before save.
+Photo upload: use a standard Rails `file_field` (multiple) on the inclusion form, with `accept="image/jpeg,image/png"` and a visible "JPEG or PNG" hint so the estimator sees the accepted formats at upload time. Stimulus controller previews the selected images before save.
 
 ### i18n
 
@@ -619,9 +621,13 @@ None in v1. PDF generation and email delivery are synchronous. At realistic prop
 - A proposal without an `estimate_id` is invalid.
 
 **`ProposalInclusion` model (`spec/models/proposal_inclusion_spec.rb`):**
-- A photo over 8 MB is invalid.
-- A non-image file attachment is invalid.
 - A valid JPEG attachment is valid.
+- A valid PNG attachment is valid.
+- Multiple photos can be attached to one inclusion.
+- A non-image file attachment (e.g., PDF) is invalid.
+- A WebP attachment is invalid (Prawn cannot embed WebP).
+- A GIF attachment is invalid.
+- When several photos are attached and any one is not JPEG/PNG, the record is invalid.
 - `room_name` is required.
 
 **`Proposals::BuildService` (`spec/services/proposals/build_service_spec.rb`):**
@@ -753,9 +759,9 @@ Covers: R8, AC-9
 
 AT8
 Given the inclusions step with a room inclusion row
-When the estimator attaches a file larger than 8 MB and submits
+When the estimator attaches a non-JPEG/PNG file (e.g., a WebP image) and submits
 Then a validation error is shown, no file is stored, and `current_step` is not advanced
-Covers: R9, E5, AC-12
+Covers: R9, E5, E6, AC-12
 
 AT9
 Given the clarifications step on a new proposal
@@ -876,3 +882,4 @@ Covers: R21, AC-31
 | 2026-05-27 | R24: residential mode hides Specifications step from step indicator (steps numbered 1–6) | R24 | Step indicator behaviour for skipped steps must be explicit |
 | 2026-05-27 | `EmailDeliveryService`: added email header injection validation (`URI::MailTo::EMAIL_REGEXP`, reject `\n`, `\r`, `;`) | EmailDeliveryService | Security hardening — prevent header injection via recipient field |
 | 2026-06-02 | Status renamed `complete` → `sent`; locking removed; R2, R4, R6, R15, R25, AC-34–38 revised; three "Refresh from estimate" controls added (total amount, rooms sync, alternates sync) | R2, R4, R6, R15, R25, AC-34–38, Data/Models | Brainstorm session: proposal must remain editable after delivery so estimator can adjust for client feedback (e.g., remove a room, recalculate total) without re-entering all wizard content |
+| 2026-06-04 | PR 49 review — photo validation: JPEG/PNG only (Prawn limitation), removed byte-size cap in favour of a resized `:pdf` variant (~2000px longest edge), multiple photos per room (`has_many_attached :photos`), upload UI must show accepted formats (`accept` + visible hint); R8, R9, E5, E6, AC-9, AC-11, AC-12, AT8, Test Requirements updated | R9, Data/Models, R8, E5, E6, AC-9, AC-11, AC-12, AT8 | Product-owner review on PR #49: Prawn only embeds JPEG/PNG so WebP must be rejected; hard 8 MB cap replaced with auto-resize for PDF embedding; rooms can have multiple photos |
