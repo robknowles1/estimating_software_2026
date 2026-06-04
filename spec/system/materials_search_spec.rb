@@ -82,6 +82,7 @@ RSpec.describe "Materials library search and pagination (SPEC-024)", type: :syst
       fill_in "q", with: "plywood"
       click_button "Search materials"
 
+      expect(page).to have_current_path(/q=plywood/, url: true, wait: 5)
       expect(page).to have_css("nav.pagy", wait: 3)
 
       # Navigate to page 2 via the pagination link
@@ -89,6 +90,7 @@ RSpec.describe "Materials library search and pagination (SPEC-024)", type: :syst
         click_link "2"
       end
 
+      expect(page).to have_current_path(/page=2/, url: true, wait: 5)
       expect(page).to have_field("q", with: "plywood", wait: 3)
       expect(current_url).to include("q=plywood")
       expect(current_url).to include("page=2")
@@ -104,6 +106,7 @@ RSpec.describe "Materials library search and pagination (SPEC-024)", type: :syst
       fill_in "q", with: "zzznotfound"
       click_button "Search materials"
 
+      expect(page).to have_current_path(/q=zzznotfound/, url: true, wait: 5)
       expect(page).to have_text("No materials matched your search.", wait: 3)
       expect(page).not_to have_css("table")
     end
@@ -135,6 +138,7 @@ RSpec.describe "Materials library search and pagination (SPEC-024)", type: :syst
       fill_in "q", with: "maple"
       click_button "Search materials"
 
+      expect(page).to have_current_path(/q=maple/, url: true, wait: 5)
       expect(page).to have_text("Maple Board", wait: 3)
       expect(current_url).to include("q=maple")
     end
