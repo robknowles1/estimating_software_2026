@@ -84,15 +84,20 @@ module Proposals
     # total multiplied by the estimate's burden multiplier, consistent with
     # total_amount using burdened_total. Job-level fixed costs are not
     # attributable to a single alternate line and are therefore excluded.
+    #
+    # Alternates come from estimate.line_items and line_item_results is keyed by
+    # those same line items, so a missing entry is an internal inconsistency. We
+    # fetch (raising KeyError) rather than defaulting to 0 — failing loud rolls
+    # back the transaction instead of silently persisting a $0 alternate on a
+    # client-facing bid.
     def alternate_display_cost(line_item, totals)
-      result = totals.line_item_results[line_item.id]
-      return BigDecimal("0") unless result
-
+      result = totals.line_item_results.fetch(line_item.id)
       (result[:non_burdened_total] * totals.burden_multiplier).round(2)
     end
 
     def seed_inclusions(proposal)
-      @estimate.line_items.where.not(room: [ nil, "" ]).pluck(:room).uniq.each do |room|
+      rooms = @estimate.line_items.pluck(:room).filter_map { |r| r&.strip.presence }.uniq
+      rooms.each do |room|
         proposal.proposal_inclusions.build(room_name: room, bullet_points: nil)
       end
     end

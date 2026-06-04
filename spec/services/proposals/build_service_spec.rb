@@ -102,6 +102,32 @@ RSpec.describe Proposals::BuildService do
       create(:line_item, estimate: estimate, description: "Base Cabinet")
       expect(service.call.proposal_alternates.count).to eq(0)
     end
+
+    it "raises and rolls back when an alternate is missing from line_item_results" do
+      create(:line_item, estimate: estimate, description: "Alternate upgrade",
+                         exterior_material_id: em.id, exterior_qty: BigDecimal("1"),
+                         quantity: BigDecimal("1"))
+
+      # Stub the calculator so its result omits the alternate from
+      # line_item_results, simulating an internal inconsistency. The Data shape
+      # mirrors EstimateTotalsCalculator::Result.
+      result = EstimateTotalsCalculator::Result.new(
+        line_item_results:        {},
+        grand_non_burdened_total: BigDecimal("0"),
+        burden_multiplier:        BigDecimal("1.21"),
+        job_level_costs:          {},
+        burdened_total:           BigDecimal("0"),
+        cogs_breakdown:           {},
+        labor_hours_summary:      {},
+        man_days_install:         BigDecimal("0")
+      )
+      calculator = instance_double(EstimateTotalsCalculator, call: result)
+      allow(EstimateTotalsCalculator).to receive(:new).and_return(calculator)
+
+      expect { service.call }.to raise_error(KeyError)
+      expect(Proposal.count).to eq(0)
+      expect(ProposalAlternate.count).to eq(0)
+    end
   end
 
   describe "inclusions (R8)" do
@@ -114,11 +140,20 @@ RSpec.describe Proposals::BuildService do
       expect(rooms).to match_array(%w[Kitchen Bathroom])
     end
 
-    it "ignores blank-string rooms" do
+    it "ignores blank-string and whitespace-only rooms" do
       create(:line_item, estimate: estimate, description: "A", room: "")
       create(:line_item, estimate: estimate, description: "B", room: nil)
+      create(:line_item, estimate: estimate, description: "C", room: "   ")
 
       expect(service.call.proposal_inclusions.count).to eq(0)
+    end
+
+    it "strips surrounding whitespace and dedupes on the stripped value" do
+      create(:line_item, estimate: estimate, description: "A", room: " Kitchen ")
+      create(:line_item, estimate: estimate, description: "B", room: "Kitchen")
+
+      rooms = service.call.proposal_inclusions.pluck(:room_name)
+      expect(rooms).to eq(%w[Kitchen])
     end
 
     it "creates no inclusions when no line items have rooms" do
