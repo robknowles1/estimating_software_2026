@@ -34,7 +34,7 @@ gem "prawn"
 gem "prawn-table"
 
 # Convert numbers to English words for proposal amounts
-gem "humanize", "~> 2.0"
+gem "humanize", "~> 3.1"
 
 # Pagination
 gem "pagy", "~> 9.0"
