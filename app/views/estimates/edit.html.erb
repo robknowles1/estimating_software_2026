@@ -41,6 +41,20 @@
       <% end %>
     </div>
 
+    <%# Proposal / bid letter entry point %>
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+      <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t(".proposal_heading") %></h2>
+      <% if @estimate.proposal.present? %>
+        <%= link_to t(".edit_proposal"), estimate_proposal_path(@estimate),
+            class: "w-full inline-block text-center bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors" %>
+      <% else %>
+        <%# GET link to the new action, which delegates to create (idempotent via
+            the one-per-estimate guard). A plain Turbo GET link navigates reliably. %>
+        <%= link_to t(".create_proposal"), new_estimate_proposal_path(@estimate),
+            class: "w-full inline-block text-center bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors" %>
+      <% end %>
+    </div>
+
     <%# Job costs form %>
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
       <h2 class="text-sm font-semibold text-slate-700 mb-4"><%= t(".job_costs_heading") %></h2>

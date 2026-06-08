@@ -1,0 +1,42 @@
+<%= form_with model: proposal, url: step_estimate_proposal_path(estimate, "inclusions"), method: :patch,
+    multipart: true, data: { turbo: false, controller: "nested-list" } do |f| %>
+
+  <% if proposal.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm" role="alert">
+      <p class="font-semibold mb-1"><%= t("proposals.form.errors", count: proposal.errors.count) %></p>
+      <ul class="list-disc list-inside space-y-0.5 text-red-600">
+        <% proposal.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% if proposal.proposal_inclusions.reject(&:new_record?).empty? %>
+    <p class="text-sm text-slate-500 mb-4"><%= t(".empty_notice") %></p>
+  <% end %>
+
+  <div data-nested-list-target="container" class="space-y-4">
+    <%= f.fields_for :proposal_inclusions do |rf| %>
+      <%= render "proposals/steps/inclusion_fields", f: rf %>
+    <% end %>
+  </div>
+
+  <template data-nested-list-target="template">
+    <%= f.fields_for :proposal_inclusions,
+        ProposalInclusion.new,
+        child_index: "NEW_RECORD" do |rf| %>
+      <%= render "proposals/steps/inclusion_fields", f: rf %>
+    <% end %>
+  </template>
+
+  <button type="button" data-action="nested-list#add"
+      class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 hover:text-amber-900">
+    + <%= t(".add_room") %>
+  </button>
+
+  <div class="flex items-center gap-3 mt-8 pt-6 border-t border-slate-200">
+    <%= f.submit t("proposals.form.save_continue"),
+        class: "bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>
+  </div>
+<% end %>

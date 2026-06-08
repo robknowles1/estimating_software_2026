@@ -24,6 +24,12 @@ Rails.application.routes.draw do
         post :inline_create
       end
     end
+    resource :proposal, only: [ :new, :create, :show ] do
+      scope module: :proposals do
+        get  "steps/:step", to: "steps#show",   as: :step
+        patch "steps/:step", to: "steps#update"
+      end
+    end
   end
   resources :clients do
     resources :contacts, only: [ :new, :create, :edit, :update, :destroy ]
