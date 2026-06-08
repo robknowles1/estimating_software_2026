@@ -164,6 +164,35 @@ RSpec.describe "Proposals::Steps", type: :request do
     end
   end
 
+  describe "PATCH .../steps/:step with no proposal param (empty submit)" do
+    # Regression for the wizard bug: a step that renders nested rows can be
+    # submitted with NO proposal[...] params at all — the alternates step when
+    # an estimate has no detected alternates (E4 / AT18), or any list step when
+    # the user removes every row client-side. params.require(:proposal) raised
+    # ParameterMissing; params.fetch(:proposal, {}) saves the step through.
+
+    it "saves alternates through and advances to exclusions when no proposal param is sent" do
+      # Top-level estimate has no alternate line items, so the alternates step
+      # renders only the 'no alternates detected' message and no proposal field.
+      proposal.update!(current_step: "alternates")
+
+      patch step_estimate_proposal_path(estimate, "alternates")
+
+      expect(response).to redirect_to(step_estimate_proposal_path(estimate, "exclusions"))
+      expect(proposal.reload.current_step).to eq("exclusions")
+    end
+
+    it "saves exclusions through and advances to review when no proposal param is sent" do
+      # Simulates the user removing every exclusion row client-side before submit.
+      proposal.update!(current_step: "exclusions")
+
+      patch step_estimate_proposal_path(estimate, "exclusions")
+
+      expect(response).to redirect_to(step_estimate_proposal_path(estimate, "review"))
+      expect(proposal.reload.current_step).to eq("review")
+    end
+  end
+
   describe "PATCH .../steps/inclusions with an invalid photo" do
     let(:bad_file) do
       Rack::Test::UploadedFile.new(

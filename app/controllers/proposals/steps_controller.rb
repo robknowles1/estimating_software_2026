@@ -169,33 +169,41 @@ module Proposals
       params.require(:proposal).permit(*permitted)
     end
 
+    # Steps below use params.fetch(:proposal, {}) rather than .require: each
+    # renders nested rows that can legitimately be submitted with NO proposal
+    # param at all — the alternates step when no alternates are detected (E4 /
+    # AT18), and the list-based steps when the user removes every row client-side.
+    # An absent :proposal yields empty permitted params, assign_attributes is a
+    # no-op, and the step saves through and advances. (opening still uses
+    # .require: it always submits scalar fields and its missing-contact case must
+    # surface as a 422 — AT4.)
     def specifications_params
-      params.require(:proposal).permit(
+      params.fetch(:proposal, {}).permit(
         :include_specifications,
         proposal_specifications_attributes: [ :id, :spec_number, :spec_title, :_destroy ]
       )
     end
 
     def inclusions_params
-      params.require(:proposal).permit(
+      params.fetch(:proposal, {}).permit(
         proposal_inclusions_attributes: [ :id, :room_name, :bullet_points, :_destroy, { photos: [] } ]
       )
     end
 
     def clarifications_params
-      params.require(:proposal).permit(
+      params.fetch(:proposal, {}).permit(
         proposal_clarifications_attributes: [ :id, :body, :_destroy ]
       )
     end
 
     def alternates_params
-      params.require(:proposal).permit(
+      params.fetch(:proposal, {}).permit(
         proposal_alternates_attributes: [ :id, :display_cost ]
       )
     end
 
     def exclusions_params
-      params.require(:proposal).permit(
+      params.fetch(:proposal, {}).permit(
         proposal_exclusions_attributes: [ :id, :body, :_destroy ]
       )
     end
