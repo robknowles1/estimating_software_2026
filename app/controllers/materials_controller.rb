@@ -4,9 +4,13 @@ class MaterialsController < ApplicationController
   def index
     @query = params[:q].to_s
     scope = @query.present? ? Material.search(@query) : Material.active
+    # Pagy 43.x: paginator defaults to :offset; the current request's query
+    # params (including q) are preserved automatically when pagy builds page
+    # URLs, so no manual params assignment is needed. Out-of-range pages raise
+    # Pagy::RangeError (the renamed Pagy::OverflowError) thanks to
+    # raise_range_error in config/initializers/pagy.rb.
     @pagy, @materials = pagy(scope.order(:name), limit: 20)
-    @pagy.vars[:params] = { q: @query } if @query.present?
-  rescue Pagy::OverflowError => e
+  rescue Pagy::RangeError => e
     redirect_to materials_path(q: @query.presence, page: e.pagy.last)
   end
 

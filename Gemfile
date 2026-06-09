@@ -34,10 +34,10 @@ gem "prawn"
 gem "prawn-table"
 
 # Convert numbers to English words for proposal amounts
-gem "humanize", "~> 2.0"
+gem "humanize", "~> 3.0"
 
 # Pagination
-gem "pagy", "~> 9.0"
+gem "pagy", "~> 43.5"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
