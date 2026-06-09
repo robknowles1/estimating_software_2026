@@ -292,7 +292,8 @@ en:
         download_pdf: "Download PDF"
         send_email: "Send Email"
         mark_as_sent: "Mark as Sent"
-        export_unavailable: "PDF export and email delivery are available in a later release."
+        pdf_error: "PDF generation failed. Please try again."
+        export_unavailable: "Email delivery and Mark as Sent are coming soon."
 
   activerecord:
     attributes:

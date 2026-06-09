@@ -29,6 +29,7 @@ Rails.application.routes.draw do
         get  "steps/:step", to: "steps#show",   as: :step
         patch "steps/:step", to: "steps#update"
       end
+      get :pdf, on: :member
     end
   end
   resources :clients do

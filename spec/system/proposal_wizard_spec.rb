@@ -107,12 +107,16 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
     expect(page).to have_current_path(step_estimate_proposal_path(estimate, "exclusions"), wait: 5)
     save_and_continue("exclusions")
 
-    # Review step — preview content + disabled export controls.
+    # Review step — preview content + an enabled Download PDF link. (Email and
+    # Mark as Sent remain disabled until PR 5.) A real headless-Chrome file
+    # download assertion is flaky, so we assert the link is present and points at
+    # the pdf route; the request spec covers the actual PDF bytes.
     expect(page).to have_current_path(step_estimate_proposal_path(estimate, "review"), wait: 5)
     expect(page).to have_text("Review and Export")
     expect(page).to have_text("Dana Reed")
-    expect(page).to have_button("Download PDF", disabled: true)
-    expect(page).to have_text("available in a later release")
+    expect(page).to have_link("Download PDF", href: pdf_estimate_proposal_path(estimate))
+    expect(page).to have_button("Send Email", disabled: true)
+    expect(page).to have_text("Email delivery and Mark as Sent")
   end
 
   # Test 2 — residential mode skips specifications.
