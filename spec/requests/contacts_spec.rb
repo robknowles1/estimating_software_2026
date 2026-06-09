@@ -53,7 +53,7 @@ RSpec.describe "Contacts", type: :request do
         }.to change(Contact, :count).by(1)
 
         expect(response).to have_http_status(:ok)
-        expect(response.media_type).to eq(Mime[:turbo_stream])
+        expect(response.media_type).to eq("text/vnd.turbo-stream.html")
 
         contact = Contact.order(:created_at).last
         expect(response.body).to include("proposal_contact_field")
@@ -88,7 +88,7 @@ RSpec.describe "Contacts", type: :request do
         }.not_to change(Contact, :count)
 
         expect(response).to have_http_status(:unprocessable_content)
-        expect(response.media_type).to eq(Mime[:turbo_stream])
+        expect(response.media_type).to eq("text/vnd.turbo-stream.html")
         expect(response.body).to include("add_contact_modal_frame")
         expect(response.body).to include("can&#39;t be blank").or include("can't be blank")
       end

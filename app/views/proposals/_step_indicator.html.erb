@@ -6,8 +6,7 @@
 %>
 <% steps = Proposal::STEPS
    steps = steps - %w[specifications] if @proposal.residential?
-   current_index = steps.index(@proposal.current_step) || 0
-   active_index  = steps.index(@step) || 0 %>
+   current_index = steps.index(@proposal.current_step) || 0 %>
 
 <nav aria-label="<%= t(".aria_label") %>" class="mb-8">
   <ol class="flex flex-wrap items-center gap-2 text-xs font-medium">
