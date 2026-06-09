@@ -174,6 +174,104 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
     expect(page).to have_text("complete earlier steps")
   end
 
+  # Inline add-contact modal (PR #56 follow-up) — a client with NO contacts can
+  # add one from the opening step without leaving the wizard.
+  context "when the estimate's client has no contacts" do
+    let(:bare_client)   { create(:client) }
+    let(:bare_estimate) { create(:estimate, client: bare_client, title: "No-Contact Job") }
+
+    def start_bare_wizard
+      visit new_estimate_proposal_path(bare_estimate)
+      expect(page).to have_current_path(step_estimate_proposal_path(bare_estimate, "opening"), wait: 5)
+    end
+
+    # Clicks "+ Add contact" until the modal is actually open (first field visible),
+    # absorbing the first-click-on-fresh-page Selenium/Stimulus timing quirk.
+    def open_add_contact_modal
+      2.times do
+        click_button "+ Add contact"
+        return if page.has_field?("contact[first_name]", wait: 2)
+      end
+      expect(page).to have_field("contact[first_name]", wait: 5)
+    end
+
+    it "adds a contact via the modal, auto-selects it, and continues the wizard" do
+      login
+      start_bare_wizard
+
+      # No contacts yet: the hint and the always-present Add contact button show.
+      expect(page).to have_text("This client has no contacts yet.")
+      expect(page).to have_button("+ Add contact")
+
+      # Open the modal. Selenium sometimes drops the very first synthetic click on
+      # a freshly loaded page before Stimulus has attached (the same known
+      # Chromedriver/Turbo timing quirk this file documents elsewhere); retry the
+      # click until the modal's first field becomes visible.
+      open_add_contact_modal
+
+      # Modal is open and the first field is focused.
+      expect(page).to have_field("contact[first_name]", wait: 5)
+      fill_in "contact[first_name]", with: "Pat"
+      fill_in "contact[last_name]",  with: "Quinn"
+      fill_in "contact[email]",      with: "pat@example.com"
+
+      expect {
+        click_button "Save contact"
+        # New contact is auto-selected in the rebuilt dropdown.
+        expect(page).to have_select("proposal[contact_id]", selected: "Pat Quinn", wait: 5)
+      }.to change(Contact, :count).by(1)
+
+      # Modal has closed (its form fields are no longer interactable on screen).
+      expect(page).to have_no_field("contact[first_name]", wait: 5)
+
+      # The estimator can save-and-continue past the opening step. (Inline submit
+      # rather than the shared helper since that helper targets the outer estimate.)
+      click_button "Save and continue"
+      unless page.has_no_current_path?(step_estimate_proposal_path(bare_estimate, "opening"), wait: 3)
+        page.execute_script(
+          "document.querySelector(\"form[action*='steps/opening']\").requestSubmit()"
+        )
+      end
+      expect(page).to have_current_path(
+        step_estimate_proposal_path(bare_estimate, "specifications"), wait: 5
+      )
+    end
+
+    it "keeps the modal open and shows errors when saved with the name fields blank" do
+      login
+      start_bare_wizard
+      expect(page).to have_button("+ Add contact")
+
+      open_add_contact_modal
+
+      # Submit with the required name fields blank. The fields carry the HTML5
+      # `required` attribute, which would block a real submit client-side; strip
+      # it via JS first so the request reaches the server and exercises the
+      # model-level validation-failure round-trip (the 422 Turbo Stream).
+      expect(page).to have_field("contact[first_name]", wait: 5)
+      expect {
+        page.execute_script(<<~JS)
+          var form = document.querySelector("#add_contact_modal form");
+          form.querySelectorAll("[required]").forEach(function (el) {
+            el.removeAttribute("required");
+          });
+          form.requestSubmit();
+        JS
+        # The 422 stream re-renders the frame with errors; the dialog stays open.
+        expect(page).to have_css("[role='alert']", wait: 5)
+      }.not_to change(Contact, :count)
+
+      # Dialog is still open (first field visible) and we never left the step.
+      expect(page).to have_field("contact[first_name]", wait: 5)
+      expect(page).to have_current_path(
+        step_estimate_proposal_path(bare_estimate, "opening"), wait: 5
+      )
+      # No contact was persisted for this client (the only contact in the DB is
+      # the outer `let!` belonging to a different client).
+      expect(bare_client.contacts.count).to eq(0)
+    end
+  end
+
   # Test 5 — duplicate proposal guard.
   it "does not create a duplicate proposal" do
     proposal = Proposals::BuildService.new(estimate: estimate).call

@@ -1,0 +1,10 @@
+<%# Inline add-contact validation failure (proposal wizard opening step).
+    Replace only the modal's inner Turbo Frame so the dialog stays open and shows
+    the field errors. We echo back the submitted estimate_id verbatim (nil if it
+    was bad/forged) rather than reconstructing an Estimate — so a valid id
+    round-trips intact and the corrected resubmit can rebuild the wizard field,
+    and a bad id never resurfaces as a dummy record with a nil id. %>
+<%= turbo_stream.replace "add_contact_modal_frame" do %>
+  <%= render "proposals/steps/add_contact_modal_frame",
+      client: @client, estimate_id: params[:estimate_id], contact: @contact %>
+<% end %>

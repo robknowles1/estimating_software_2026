@@ -1,7 +1,13 @@
 <% contacts = estimate.client.contacts.alphabetical %>
 
+<%# The modal controller spans both the step form (which holds the "+ Add contact"
+    button inside the contact field partial) and the add-contact modal dialog. %>
+<div data-controller="modal">
+
 <%# turbo: false — each wizard step is a full navigation; disabling Turbo on the
-    step forms avoids Turbo snapshot/stale-node races across steps. %>
+    step forms avoids Turbo snapshot/stale-node races across steps. The inline
+    add-contact modal form is a separate form rendered OUTSIDE this one and keeps
+    Turbo enabled so it can submit via Turbo Stream without leaving the step. %>
 <%= form_with model: proposal, url: step_estimate_proposal_path(estimate, "opening"), method: :patch,
     data: { turbo: false } do |f| %>
 
@@ -25,22 +31,8 @@
           class: "w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" %>
     </div>
 
-    <div>
-      <%= f.label :contact_id, t(".contact_label"), class: "block text-sm font-medium text-slate-700 mb-1.5" %>
-      <% if contacts.any? %>
-        <%= f.select :contact_id,
-            contacts.map { |c| [ "#{c.first_name} #{c.last_name}", c.id ] },
-            { selected: proposal.contact_id || contacts.find(&:is_primary)&.id, include_blank: t(".contact_blank") },
-            required: true,
-            class: "w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" %>
-      <% else %>
-        <p class="text-sm text-slate-500">
-          <%= t(".no_contacts") %>
-          <%= link_to t(".add_contact"), new_client_contact_path(estimate.client),
-              class: "text-amber-700 hover:text-amber-900 underline font-medium" %>
-        </p>
-      <% end %>
-    </div>
+    <%= render "proposals/steps/contact_field",
+        estimate: estimate, proposal: proposal, contacts: contacts %>
 
     <div>
       <%= f.label :job_name, t(".job_name_label"), class: "block text-sm font-medium text-slate-700 mb-1.5" %>
@@ -83,3 +75,9 @@
         class: "bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>
   </div>
 <% end %>
+
+<%= render "proposals/steps/add_contact_modal",
+    client: estimate.client, estimate_id: estimate.id, contact: estimate.client.contacts.new %>
+
+</div>
+
