@@ -1,0 +1,33 @@
+<%# Contact selector for the opening step. Wrapped in a stable dom id so the
+    contacts#create Turbo Stream can `replace` it after inline contact creation.
+    Locals: estimate, proposal, contacts. The "+ Add contact" button is always
+    shown (whether or not contacts exist) and opens the inline add-contact modal. %>
+<div id="proposal_contact_field">
+  <%= label_tag "proposal_contact_id", t("proposals.steps.opening.contact_label"),
+      class: "block text-sm font-medium text-slate-700 mb-1.5" %>
+
+  <div class="flex items-start gap-3">
+    <div class="flex-1">
+      <%= select_tag "proposal[contact_id]",
+          options_for_select(
+            contacts.map { |c| [ "#{c.first_name} #{c.last_name}", c.id ] },
+            proposal.contact_id || contacts.find(&:is_primary)&.id
+          ),
+          include_blank: t("proposals.steps.opening.contact_blank"),
+          required: true,
+          id: "proposal_contact_id",
+          class: "w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" %>
+
+      <% if contacts.none? %>
+        <p class="text-xs text-slate-400 mt-1.5"><%= t("proposals.steps.opening.no_contacts") %></p>
+      <% end %>
+    </div>
+
+    <button type="button"
+            data-action="modal#open"
+            class="shrink-0 inline-flex items-center gap-1 bg-white border border-amber-300 text-amber-700 hover:bg-amber-50 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap">
+      <span aria-hidden="true">+</span>
+      <%= t("proposals.steps.opening.add_contact") %>
+    </button>
+  </div>
+</div>

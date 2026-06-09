@@ -1,0 +1,83 @@
+<% contacts = estimate.client.contacts.alphabetical %>
+
+<%# The modal controller spans both the step form (which holds the "+ Add contact"
+    button inside the contact field partial) and the add-contact modal dialog. %>
+<div data-controller="modal">
+
+<%# turbo: false — each wizard step is a full navigation; disabling Turbo on the
+    step forms avoids Turbo snapshot/stale-node races across steps. The inline
+    add-contact modal form is a separate form rendered OUTSIDE this one and keeps
+    Turbo enabled so it can submit via Turbo Stream without leaving the step. %>
+<%= form_with model: proposal, url: step_estimate_proposal_path(estimate, "opening"), method: :patch,
+    data: { turbo: false } do |f| %>
+
+  <% if proposal.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm" role="alert">
+      <p class="font-semibold mb-1"><%= t("proposals.form.errors", count: proposal.errors.count) %></p>
+      <ul class="list-disc list-inside space-y-0.5 text-red-600">
+        <% proposal.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="space-y-5">
+    <div>
+      <%= f.label :mode, t(".mode_label"), class: "block text-sm font-medium text-slate-700 mb-1.5" %>
+      <%= f.select :mode,
+          Proposal.modes.keys.map { |m| [ t(".mode_#{m}"), m ] },
+          {},
+          class: "w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" %>
+    </div>
+
+    <%= render "proposals/steps/contact_field",
+        estimate: estimate, proposal: proposal, contacts: contacts %>
+
+    <div>
+      <%= f.label :job_name, t(".job_name_label"), class: "block text-sm font-medium text-slate-700 mb-1.5" %>
+      <%= f.text_field :job_name, value: proposal.job_name || estimate.title,
+          class: "w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" %>
+    </div>
+
+    <div class="grid grid-cols-2 gap-5">
+      <div>
+        <%= f.label :plan_date, t(".plan_date_label"), class: "block text-sm font-medium text-slate-700 mb-1.5" %>
+        <%= f.date_field :plan_date,
+            class: "w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" %>
+      </div>
+      <div>
+        <%= f.label :total_amount, t(".total_amount_label"), class: "block text-sm font-medium text-slate-700 mb-1.5" %>
+        <%= f.number_field :total_amount, step: "0.01",
+            class: "w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" %>
+      </div>
+    </div>
+
+    <div>
+      <%= f.label :addendum_list, t(".addendum_list_label"), class: "block text-sm font-medium text-slate-700 mb-1.5" %>
+      <%= f.text_area :addendum_list, rows: 2,
+          class: "w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" %>
+    </div>
+
+    <%# Payment terms apply to residential proposals (R19). The field is always
+        rendered (harmless and ignored for commercial mode) — a help note explains
+        when it is used. Rendering it unconditionally avoids a JS layout toggle. %>
+    <div>
+      <%= f.label :payment_terms, t(".payment_terms_label"), class: "block text-sm font-medium text-slate-700 mb-1.5" %>
+      <p class="text-xs text-slate-400 mb-1.5"><%= t(".payment_terms_hint") %></p>
+      <%= f.text_area :payment_terms, rows: 3,
+          class: "w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" %>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3 mt-8 pt-6 border-t border-slate-200">
+    <%= f.submit t("proposals.form.save_continue"),
+        class: "bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>
+  </div>
+<% end %>
+
+<%= render "proposals/steps/add_contact_modal",
+    client: estimate.client, estimate_id: estimate.id, contact: estimate.client.contacts.new %>
+
+</div>
+

@@ -1,0 +1,8 @@
+<div class="flex items-start gap-3" data-nested-list-target="row">
+  <%= f.text_area :body, rows: 2,
+      class: "flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" %>
+  <%= f.hidden_field :_destroy, data: { nested_list_target: "destroyFlag" } %>
+  <button type="button" data-action="nested-list#remove"
+      class="text-slate-400 hover:text-red-600 text-lg leading-none pt-2"
+      aria-label="<%= t("proposals.form.remove") %>">&times;</button>
+</div>

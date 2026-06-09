@@ -1,0 +1,15 @@
+<%# Inline "Add contact" modal for the opening step. The dialog is hidden by
+    default and toggled by the modal Stimulus controller (open/close, Escape,
+    backdrop click, focus trap, focus return). The inner form posts to
+    contacts#create via Turbo Stream; success replaces the contact field (with the
+    new contact auto-selected) and removes this modal frame, failure re-renders
+    the frame with field errors (422). Locals: client, estimate_id, contact. %>
+<div id="add_contact_modal"
+     data-modal-target="dialog"
+     data-action="click->modal#backdropClose"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="add_contact_modal_title">
+  <%= render "proposals/steps/add_contact_modal_frame", client: client, estimate_id: estimate_id, contact: contact %>
+</div>

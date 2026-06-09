@@ -1,0 +1,39 @@
+<%= form_with model: proposal, url: step_estimate_proposal_path(estimate, "alternates"), method: :patch,
+    data: { turbo: false } do |f| %>
+
+  <% if proposal.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm" role="alert">
+      <p class="font-semibold mb-1"><%= t("proposals.form.errors", count: proposal.errors.count) %></p>
+      <ul class="list-disc list-inside space-y-0.5 text-red-600">
+        <% proposal.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% if proposal.proposal_alternates.empty? %>
+    <p class="text-sm text-slate-500"><%= t(".no_alternates") %></p>
+  <% else %>
+    <div class="space-y-3">
+      <%= f.fields_for :proposal_alternates do |af| %>
+        <div class="grid grid-cols-12 gap-3 items-center">
+          <div class="col-span-8">
+            <p class="text-sm text-slate-800"><%= af.object.description %></p>
+          </div>
+          <div class="col-span-4">
+            <%= af.label :display_cost, t(".cost_label"),
+                class: "block text-xs font-medium text-slate-600 mb-1" %>
+            <%= af.number_field :display_cost, step: "0.01",
+                class: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="flex items-center gap-3 mt-8 pt-6 border-t border-slate-200">
+    <%= f.submit t("proposals.form.save_continue"),
+        class: "bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>
+  </div>
+<% end %>

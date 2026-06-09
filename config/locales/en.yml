@@ -157,6 +157,9 @@ en:
     edit:
       details_heading: "Details"
       status_heading: "Status"
+      proposal_heading: "Proposal"
+      create_proposal: "Create Proposal"
+      edit_proposal: "Edit Proposal"
       job_settings_heading: "Job Settings"
       job_costs_heading: "Job Costs"
       update_status: "Update Status"
@@ -192,6 +195,104 @@ en:
     materials_banner:
       message: "Add materials before pricing products — material costs will be zero until materials are set up."
       link: "Set up price book"
+
+  proposals:
+    create:
+      notice: "Proposal created."
+      already_exists: "A proposal already exists for this estimate."
+    back_to_estimate: "Back to estimate"
+    form:
+      save_continue: "Save and continue"
+      remove: "Remove"
+      errors:
+        one: "1 error prohibited this proposal from being saved:"
+        other: "%{count} errors prohibited this proposal from being saved:"
+    step_indicator:
+      aria_label: "Proposal wizard steps"
+      opening: "Opening"
+      specifications: "Specifications"
+      inclusions: "Inclusions"
+      clarifications: "Clarifications"
+      alternates: "Alternates"
+      exclusions: "Exclusions"
+      review: "Review"
+    steps:
+      show:
+        future_step_notice: "Please complete earlier steps before skipping ahead."
+      update:
+        notice: "Saved."
+        future_step_notice: "Please complete earlier steps before skipping ahead."
+      opening:
+        title: "Opening"
+        back_to_estimate: "Back to estimate"
+        contact_label: "Client contact"
+        contact_blank: "Select a contact..."
+        no_contacts: "This client has no contacts yet."
+        add_contact: "Add contact"
+        add_contact_modal:
+          title: "Add contact"
+          close: "Close"
+          first_name_label: "First name"
+          last_name_label: "Last name"
+          email_label: "Email"
+          phone_label: "Phone"
+          save: "Save contact"
+          cancel: "Cancel"
+        job_name_label: "Job name"
+        plan_date_label: "Plan date"
+        addendum_list_label: "Addenda"
+        total_amount_label: "Total amount"
+        mode_label: "Proposal type"
+        mode_commercial: "Commercial"
+        mode_residential: "Residential"
+        payment_terms_label: "Payment terms"
+        payment_terms_hint: "Used for residential proposals."
+      specifications:
+        title: "Specifications"
+        include_toggle_label: "Include specifications section"
+        add_item: "Add specification"
+        remove: "Remove"
+        number_placeholder: "064023"
+        title_placeholder: "Interior Architectural Woodwork"
+      inclusions:
+        title: "Specific Inclusions"
+        add_room: "Add room"
+        remove: "Remove"
+        empty_notice: "No rooms detected from the estimate. Add rooms below."
+        room_name_label: "Room name"
+        bullet_points_label: "Bullet points"
+        bullet_points_hint: "One item per line"
+        photos_label: "Photos"
+        photos_hint: "JPEG or PNG"
+      clarifications:
+        title: "Design Clarifications"
+        add_item: "Add clarification"
+        remove: "Remove"
+      alternates:
+        title: "Alternates"
+        no_alternates: "No alternates detected in this estimate."
+        cost_label: "Cost"
+      exclusions:
+        title: "Exclusions"
+        add_item: "Add exclusion"
+        remove: "Remove"
+      review:
+        title: "Review and Export"
+        opening_heading: "Opening"
+        residential_heading: "Summary"
+        contact: "Contact"
+        job_name: "Job name"
+        plan_date: "Plan date"
+        addenda: "Addenda"
+        total_amount: "Total amount"
+        payment_terms: "Payment terms"
+        photo_count:
+          one: "1 photo attached"
+          other: "%{count} photos attached"
+        download_pdf: "Download PDF"
+        send_email: "Send Email"
+        mark_as_sent: "Mark as Sent"
+        export_unavailable: "PDF export and email delivery are available in a later release."
 
   activerecord:
     attributes:

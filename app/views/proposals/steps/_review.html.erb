@@ -1,0 +1,109 @@
+<div class="space-y-8" data-review-step>
+  <%# Read-only assembled preview. PDF / email rendering are delivered in later
+      PRs; this is a textual preview only. %>
+
+  <% if proposal.commercial? %>
+    <section>
+      <h2 class="text-sm font-semibold text-slate-700 mb-2"><%= t(".opening_heading") %></h2>
+      <div class="text-sm text-slate-700 space-y-1 bg-slate-50 rounded-lg p-4">
+        <p><%= t(".contact") %>:
+          <strong><%= proposal.contact ? "#{proposal.contact.first_name} #{proposal.contact.last_name}" : t("common.not_provided") %></strong></p>
+        <p><%= t(".job_name") %>: <strong><%= proposal.job_name %></strong></p>
+        <p><%= t(".plan_date") %>: <strong><%= proposal.plan_date || t("common.not_provided") %></strong></p>
+        <p><%= t(".addenda") %>: <strong><%= proposal.addendum_list.presence || t("common.not_provided") %></strong></p>
+        <p><%= t(".total_amount") %>: <strong><%= number_to_currency(proposal.total_amount) %></strong></p>
+      </div>
+    </section>
+  <% else %>
+    <section>
+      <h2 class="text-sm font-semibold text-slate-700 mb-2"><%= t(".residential_heading") %></h2>
+      <div class="text-sm text-slate-700 space-y-1 bg-slate-50 rounded-lg p-4">
+        <p><%= t(".job_name") %>: <strong><%= proposal.job_name %></strong></p>
+        <p><%= t(".total_amount") %>: <strong><%= number_to_currency(proposal.total_amount) %></strong></p>
+        <p><%= t(".payment_terms") %>: <strong><%= proposal.payment_terms.presence || t("common.not_provided") %></strong></p>
+      </div>
+    </section>
+  <% end %>
+
+  <% if proposal.commercial? && proposal.include_specifications? && proposal.proposal_specifications.any? %>
+    <section>
+      <h2 class="text-sm font-semibold text-slate-700 mb-2"><%= t("proposals.steps.specifications.title") %></h2>
+      <ul class="text-sm text-slate-700 list-disc list-inside space-y-1">
+        <% proposal.proposal_specifications.each do |spec| %>
+          <li><%= spec.spec_number %> &ndash; <%= spec.spec_title %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <% if proposal.proposal_inclusions.any? %>
+    <section>
+      <h2 class="text-sm font-semibold text-slate-700 mb-2"><%= t("proposals.steps.inclusions.title") %></h2>
+      <% proposal.proposal_inclusions.each do |inc| %>
+        <div class="mb-3">
+          <p class="text-sm font-medium text-slate-800"><%= inc.room_name %></p>
+          <% if inc.bullet_points.present? %>
+            <p class="text-sm text-slate-600 whitespace-pre-line"><%= inc.bullet_points %></p>
+          <% end %>
+          <% if inc.photos.attached? %>
+            <p class="text-xs text-slate-400"><%= t(".photo_count", count: inc.photos.count) %></p>
+          <% end %>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+
+  <% if proposal.proposal_clarifications.any? %>
+    <section>
+      <h2 class="text-sm font-semibold text-slate-700 mb-2"><%= t("proposals.steps.clarifications.title") %></h2>
+      <ul class="text-sm text-slate-700 list-disc list-inside space-y-1">
+        <% proposal.proposal_clarifications.each do |c| %>
+          <li><%= c.body %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <% if proposal.proposal_alternates.any? %>
+    <section>
+      <h2 class="text-sm font-semibold text-slate-700 mb-2"><%= t("proposals.steps.alternates.title") %></h2>
+      <ul class="text-sm text-slate-700 space-y-1">
+        <% proposal.proposal_alternates.each do |alt| %>
+          <li class="flex justify-between">
+            <span><%= alt.description %></span>
+            <span><%= number_to_currency(alt.display_cost) %></span>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <% if proposal.proposal_exclusions.any? %>
+    <section>
+      <h2 class="text-sm font-semibold text-slate-700 mb-2"><%= t("proposals.steps.exclusions.title") %></h2>
+      <ul class="text-sm text-slate-700 list-disc list-inside space-y-1">
+        <% proposal.proposal_exclusions.each do |e| %>
+          <li><%= e.body %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <div class="pt-6 border-t border-slate-200">
+    <p class="text-xs text-slate-400 mb-3"><%= t(".export_unavailable") %></p>
+    <div class="flex items-center gap-3">
+      <button type="button" disabled
+          class="bg-slate-200 text-slate-400 px-5 py-2.5 rounded-lg text-sm font-semibold cursor-not-allowed">
+        <%= t(".download_pdf") %>
+      </button>
+      <button type="button" disabled
+          class="bg-slate-200 text-slate-400 px-5 py-2.5 rounded-lg text-sm font-semibold cursor-not-allowed">
+        <%= t(".send_email") %>
+      </button>
+      <button type="button" disabled
+          class="bg-slate-200 text-slate-400 px-5 py-2.5 rounded-lg text-sm font-semibold cursor-not-allowed">
+        <%= t(".mark_as_sent") %>
+      </button>
+    </div>
+  </div>
+</div>

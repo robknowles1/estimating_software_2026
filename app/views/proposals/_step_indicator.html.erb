@@ -1,0 +1,41 @@
+<%#
+  Step breadcrumb (R24, AC-28). Residential mode hides the Specifications step
+  entirely and renumbers the remaining steps 1-6. Completed steps (those before
+  current_step) are clickable; the current step is highlighted; future steps are
+  non-interactive.
+%>
+<% steps = Proposal::STEPS
+   steps = steps - %w[specifications] if @proposal.residential?
+   current_index = steps.index(@proposal.current_step) || 0 %>
+
+<nav aria-label="<%= t(".aria_label") %>" class="mb-8">
+  <ol class="flex flex-wrap items-center gap-2 text-xs font-medium">
+    <% steps.each_with_index do |step, i| %>
+      <% number = i + 1
+         is_current = step == @step
+         is_complete = i < current_index %>
+      <li class="flex items-center gap-2">
+        <% if is_current %>
+          <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-600 text-white">
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/20"><%= number %></span>
+            <%= t(".#{step}") %>
+          </span>
+        <% elsif is_complete %>
+          <%= link_to step_estimate_proposal_path(@estimate, step),
+              class: "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors" do %>
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-200"><%= number %></span>
+            <%= t(".#{step}") %>
+          <% end %>
+        <% else %>
+          <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400" aria-disabled="true">
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-200"><%= number %></span>
+            <%= t(".#{step}") %>
+          </span>
+        <% end %>
+        <% unless i == steps.length - 1 %>
+          <span class="text-slate-300" aria-hidden="true">&rsaquo;</span>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+</nav>
