@@ -34,14 +34,20 @@ module Proposals
     def set_estimate_and_proposal
       @estimate = Estimate.find(params[:estimate_id])
       @proposal = @estimate.proposal
-      redirect_to new_estimate_proposal_path(@estimate) and return if @proposal.nil?
+      # No proposal yet: send the user to the estimate page's POST "Create
+      # Proposal" entry point rather than to new (which no longer creates).
+      redirect_to edit_estimate_path(@estimate) and return if @proposal.nil?
 
       # A8: the review preview renders every association; eager-load them here to
-      # avoid the N+1 when on that step. Other steps build their own records.
+      # avoid the N+1 when on that step. proposal_specifications and each
+      # inclusion's attached photos (photos_attachments/blobs) are read by the
+      # preview too, so include them. Other steps build their own records.
       if params[:step] == "review"
         @proposal = Proposal
-                    .includes(:contact, :proposal_inclusions, :proposal_clarifications,
-                              :proposal_alternates, :proposal_exclusions)
+                    .includes(:contact, :proposal_clarifications,
+                              :proposal_alternates, :proposal_exclusions,
+                              :proposal_specifications,
+                              proposal_inclusions: { photos_attachments: :blob })
                     .find(@proposal.id)
       end
     end

@@ -1,8 +1,10 @@
 <%# Inline add-contact success (proposal wizard opening step). Rebuild the
     wizard's contact field with the new contact auto-selected, then re-render the
     modal closed and empty so it can be reopened to add another contact. When no
-    proposal/estimate context is present (defensive — should not happen from the
-    modal), fall back to a plain redirect-style refresh of the contact field. %>
+    valid estimate context is present (defensive — should not happen from the
+    modal; e.g. a missing or mismatched estimate_id), this template renders
+    nothing: the contact is still created (a degraded success) but the wizard's
+    select is not rebuilt. No redirect is emitted. %>
 <% if @estimate.present? %>
   <%= turbo_stream.replace "proposal_contact_field" do %>
     <%= render "proposals/steps/contact_field",

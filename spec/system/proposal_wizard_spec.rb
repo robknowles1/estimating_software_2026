@@ -24,16 +24,13 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
     expect(page).to have_current_path(estimates_path, wait: 5)
   end
 
-  # Starts the wizard from the estimate page. The "Create Proposal" entry point is
-  # asserted on the estimate page (AT1 / Test 1), then the wizard is started via a
-  # full-page visit to the same URL the link targets — the estimate edit page's
-  # first in-page link click is environmentally flaky on a reused browser session
-  # (a pre-existing Turbo behaviour affecting all edit-page links), so we navigate
-  # deterministically rather than depend on that click.
+  # Starts the wizard from the estimate page. Creation is POST-only: the
+  # "Create Proposal" entry point is a button_to form on the estimate page, so
+  # clicking it submits a real POST to create and redirects to the opening step.
   def start_wizard
     visit edit_estimate_path(estimate)
-    expect(page).to have_link("Create Proposal", href: new_estimate_proposal_path(estimate), wait: 5)
-    visit new_estimate_proposal_path(estimate)
+    expect(page).to have_button("Create Proposal", wait: 5)
+    click_button "Create Proposal"
     expect(page).to have_current_path(step_estimate_proposal_path(estimate, "opening"), wait: 5)
     expect(page).to have_field("proposal[job_name]", with: estimate.title, wait: 5)
   end
@@ -54,27 +51,18 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
     )
   end
 
-  # M2 / AT1 — exercise the REAL "Create Proposal" anchor click (its own fresh
-  # session, not the reused-session flow) so the entry point is genuinely tested.
-  #
-  # Investigation outcome: the link/flow is NOT defective. The "Create Proposal"
-  # anchor is a plain Turbo Drive GET to new_estimate_proposal_path; the `new`
-  # action delegates to `create`, builds the proposal, and 302-redirects to the
-  # opening step. A direct `visit` to that URL navigates and creates exactly one
-  # proposal, and this real `click_link` works reliably once the page has
-  # settled. The only failure mode is the well-known Chromedriver/Turbo timing
-  # quirk where Selenium dispatches the very first click on a freshly loaded page
-  # before Turbo Drive has attached its click handler, so the click is a no-op
-  # (no console error, correct href, no data-turbo-method). The short settle-wait
-  # below removes that flake; it is an environmental Selenium issue, not a bug.
-  it "creates the proposal when the real Create Proposal link is clicked" do
+  # M2 / AT1 — exercise the REAL "Create Proposal" button click so the entry
+  # point is genuinely tested. Creation is POST-only: the button_to renders a
+  # form that POSTs to create, which builds the proposal and 302-redirects to
+  # the opening step. A real click submits that form and creates exactly one
+  # proposal — no side effect on GET.
+  it "creates the proposal when the real Create Proposal button is clicked" do
     login
     visit edit_estimate_path(estimate)
-    # Wait for the page (and Turbo Drive's click handler) to attach before the click.
-    expect(page).to have_link("Create Proposal", href: new_estimate_proposal_path(estimate), wait: 5)
+    expect(page).to have_button("Create Proposal", wait: 5)
 
     expect {
-      click_link "Create Proposal"
+      click_button "Create Proposal"
       expect(page).to have_current_path(
         step_estimate_proposal_path(estimate, "opening"), wait: 5
       )
@@ -181,7 +169,9 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
     let(:bare_estimate) { create(:estimate, client: bare_client, title: "No-Contact Job") }
 
     def start_bare_wizard
-      visit new_estimate_proposal_path(bare_estimate)
+      visit edit_estimate_path(bare_estimate)
+      expect(page).to have_button("Create Proposal", wait: 5)
+      click_button "Create Proposal"
       expect(page).to have_current_path(step_estimate_proposal_path(bare_estimate, "opening"), wait: 5)
     end
 

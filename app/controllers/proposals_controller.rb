@@ -15,14 +15,25 @@ class ProposalsController < ApplicationController
                 notice: t("proposals.create.notice")
   end
 
-  # Creation is instantaneous, so there is no intermediate form: new delegates
-  # straight to create.
+  # Side-effect-free GET. Creation happens only via POST to create, so new
+  # carries no side effect: if a proposal already exists, resume it; otherwise
+  # send the user to the estimate page where the POST "Create Proposal" button
+  # lives. This is also the landing target StepsController uses when a proposal
+  # is missing, so the flow never dead-ends.
   def new
-    create
+    if @estimate.proposal.present?
+      redirect_to step_estimate_proposal_path(@estimate, @estimate.proposal.current_step)
+    else
+      redirect_to edit_estimate_path(@estimate)
+    end
   end
 
-  # Resumes the wizard at the proposal's current (earliest incomplete) step.
+  # Resumes the wizard at the proposal's current (earliest incomplete) step. If
+  # no proposal exists yet (E10), redirect to the estimate page's create entry
+  # point rather than 500 on nil.current_step.
   def show
+    redirect_to edit_estimate_path(@estimate) and return if @estimate.proposal.nil?
+
     redirect_to step_estimate_proposal_path(@estimate, @estimate.proposal.current_step)
   end
 

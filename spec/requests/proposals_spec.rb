@@ -49,15 +49,48 @@ RSpec.describe "Proposals", type: :request do
     end
   end
 
-  describe "GET /estimates/:estimate_id/proposal" do
-    before do
-      sign_in(user)
-      @proposal = Proposals::BuildService.new(estimate: estimate).call
+  describe "GET /estimates/:estimate_id/proposal/new" do
+    before { sign_in(user) }
+
+    it "does not create a proposal (side-effect-free GET) and redirects to the estimate page" do
+      expect {
+        get new_estimate_proposal_path(estimate)
+      }.not_to change(Proposal, :count)
+
+      expect(response).to redirect_to(edit_estimate_path(estimate))
     end
 
-    it "redirects to the proposal's current step" do
-      get estimate_proposal_path(estimate)
-      expect(response).to redirect_to(step_estimate_proposal_path(estimate, @proposal.current_step))
+    it "resumes an existing proposal without creating a duplicate" do
+      proposal = Proposals::BuildService.new(estimate: estimate).call
+
+      expect {
+        get new_estimate_proposal_path(estimate)
+      }.not_to change(Proposal, :count)
+
+      expect(response).to redirect_to(step_estimate_proposal_path(estimate, proposal.current_step))
+    end
+  end
+
+  describe "GET /estimates/:estimate_id/proposal" do
+    before { sign_in(user) }
+
+    context "when a proposal exists" do
+      it "redirects to the proposal's current step" do
+        proposal = Proposals::BuildService.new(estimate: estimate).call
+        get estimate_proposal_path(estimate)
+        expect(response).to redirect_to(step_estimate_proposal_path(estimate, proposal.current_step))
+      end
+    end
+
+    context "when no proposal exists" do
+      it "redirects to the estimate page without 500ing or creating anything" do
+        expect {
+          get estimate_proposal_path(estimate)
+        }.not_to change(Proposal, :count)
+
+        expect(response).to have_http_status(:redirect)
+        expect(response).to redirect_to(edit_estimate_path(estimate))
+      end
     end
   end
 

@@ -48,9 +48,10 @@
         <%= link_to t(".edit_proposal"), estimate_proposal_path(@estimate),
             class: "w-full inline-block text-center bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors" %>
       <% else %>
-        <%# GET link to the new action, which delegates to create (idempotent via
-            the one-per-estimate guard). A plain Turbo GET link navigates reliably. %>
-        <%= link_to t(".create_proposal"), new_estimate_proposal_path(@estimate),
+        <%# POST to create — side-effect on GET is not allowed. button_to renders
+            a form; mirror the Edit-Proposal button's Tailwind classes. The
+            one-per-estimate guard in create keeps this idempotent. %>
+        <%= button_to t(".create_proposal"), estimate_proposal_path(@estimate), method: :post,
             class: "w-full inline-block text-center bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors" %>
       <% end %>
     </div>
