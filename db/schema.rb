@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_02_211043) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_175036) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_211043) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "client_notes", force: :cascade do |t|
+    t.text "body", null: false
+    t.bigint "client_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_client_notes_on_client_id"
+  end
+
   create_table "clients", force: :cascade do |t|
     t.string "address"
     t.string "company_name", null: false
@@ -61,6 +69,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_211043) do
     t.string "last_name", null: false
     t.text "notes"
     t.string "phone"
+    t.string "role"
     t.string "title"
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_contacts_on_client_id"
@@ -315,6 +324,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_211043) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "client_notes", "clients"
   add_foreign_key "contacts", "clients"
   add_foreign_key "estimate_materials", "estimates", on_delete: :cascade
   add_foreign_key "estimate_materials", "materials"

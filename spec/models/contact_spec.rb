@@ -21,6 +21,25 @@ RSpec.describe Contact, type: :model do
     it { is_expected.to belong_to(:client) }
   end
 
+  describe "role" do
+    it "is valid with a role value" do
+      contact = build(:contact, role: "estimator")
+      expect(contact).to be_valid
+    end
+
+    it "is valid with a blank role" do
+      contact = build(:contact, role: "")
+      expect(contact).to be_valid
+    end
+
+    it "persists the role value" do
+      client  = create(:client)
+      contact = create(:contact, client: client, role: "project manager")
+
+      expect(contact.reload.role).to eq("project manager")
+    end
+  end
+
   describe "primary flag management" do
     it "clears is_primary on sibling contacts when a new contact is set to primary" do
       client  = create(:client)

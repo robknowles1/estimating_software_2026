@@ -31,6 +31,12 @@
       class: "w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
 </div>
 
+<div class="mt-5">
+  <%= f.label :role, t("contacts.role_label"), class: "block text-sm font-medium text-slate-700 mb-1.5" %>
+  <%= f.text_field :role,
+      class: "w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" %>
+</div>
+
 <div class="grid grid-cols-2 gap-5 mt-5">
   <div>
     <%= f.label :email, class: "block text-sm font-medium text-slate-700 mb-1.5" %>

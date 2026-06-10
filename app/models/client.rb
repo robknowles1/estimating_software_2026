@@ -1,6 +1,7 @@
 class Client < ApplicationRecord
   has_many :contacts, dependent: :destroy
   has_many :estimates, dependent: :restrict_with_error
+  has_many :client_notes, -> { order(created_at: :desc) }, dependent: :destroy
   has_one :primary_contact, -> { where(is_primary: true) }, class_name: "Contact"
 
   validates :company_name, presence: true

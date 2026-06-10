@@ -6,6 +6,18 @@ RSpec.describe "Clients", type: :request do
 
   before { sign_in(user) }
 
+  # Counts SQL queries issued during the block, ignoring SCHEMA/CACHE/TRANSACTION
+  # statements so the assertion reflects only real association loads.
+  def count_queries
+    count = 0
+    counter = ->(*, payload) do
+      count += 1 unless payload[:name].to_s =~ /SCHEMA|CACHE|TRANSACTION/ ||
+        payload[:sql] =~ /\A\s*(BEGIN|COMMIT|ROLLBACK|SAVEPOINT|RELEASE)/i
+    end
+    ActiveSupport::Notifications.subscribed(counter, "sql.active_record") { yield }
+    count
+  end
+
   describe "GET /clients" do
     it "returns sorted list of clients" do
       create(:client, company_name: "Zeta Works")
@@ -37,6 +49,39 @@ RSpec.describe "Clients", type: :request do
       get client_path(client)
       expect(response).to have_http_status(:ok)
       expect(CGI.unescape_html(response.body)).to include(client.company_name)
+    end
+
+    it "renders the estimates panel and notes timeline" do
+      client = create(:client)
+      estimate = create(:estimate, client: client, title: "Big Job")
+      create(:client_note, client: client, body: "Spoke with the GC today")
+
+      get client_path(client)
+
+      body = CGI.unescape_html(response.body)
+      expect(body).to include("Estimates")
+      expect(body).to include(estimate.estimate_number)
+      expect(body).to include("Big Job")
+      expect(body).to include("Activity / Notes")
+      expect(body).to include("Spoke with the GC today")
+    end
+
+    it "loads contacts, notes, and estimates without N+1 growth" do
+      client = create(:client)
+      create_list(:contact, 2, client: client)
+      create_list(:client_note, 2, client: client)
+      create_list(:estimate, 2, client: client)
+
+      baseline = count_queries { get client_path(client) }
+
+      create_list(:contact, 3, client: client)
+      create_list(:client_note, 3, client: client)
+      create_list(:estimate, 3, client: client)
+
+      grown = count_queries { get client_path(client) }
+
+      # Query count must not scale with the number of associated records.
+      expect(grown).to be <= baseline
     end
   end
 

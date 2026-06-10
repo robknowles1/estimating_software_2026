@@ -1,7 +1,7 @@
 # Spec: CRM Expansion on Clients
 
 **ID:** SPEC-027
-**Status:** ready
+**Status:** done
 **Priority:** medium
 **Created:** 2026-05-27
 **Author:** spec-agent
