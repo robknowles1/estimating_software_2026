@@ -29,7 +29,9 @@ Rails.application.routes.draw do
         get  "steps/:step", to: "steps#show",   as: :step
         patch "steps/:step", to: "steps#update"
       end
-      get :pdf, on: :member
+      get  :pdf,          on: :member
+      post :email,        on: :member
+      post :mark_as_sent, on: :member
     end
   end
   resources :clients do

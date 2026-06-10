@@ -141,4 +141,102 @@ RSpec.describe "Proposals", type: :request do
       end
     end
   end
+
+  describe "POST /estimates/:estimate_id/proposal/email" do
+    let!(:proposal) { Proposals::BuildService.new(estimate: estimate).call }
+
+    before { ActionMailer::Base.deliveries.clear }
+
+    context "when authenticated" do
+      before { sign_in(user) }
+
+      # AC-25 / AC-34 — a valid address sends one email, flips status to sent,
+      # and redirects to the review step with a notice.
+      it "sends the proposal email, marks it sent, and redirects with a notice" do
+        expect {
+          post email_estimate_proposal_path(estimate), params: { recipient_email: "client@example.com" }
+        }.to change { ActionMailer::Base.deliveries.size }.by(1)
+
+        expect(proposal.reload.status).to eq("sent")
+        expect(response).to redirect_to(step_estimate_proposal_path(estimate, "review"))
+        expect(flash[:notice]).to eq(
+          I18n.t("proposals.steps.review.email_notice", email: "client@example.com")
+        )
+      end
+
+      # AT15 / E9 / AC-26 — a blank address returns 422, sends nothing, and
+      # leaves the status unchanged.
+      it "returns 422 and sends nothing when the recipient is blank" do
+        expect {
+          post email_estimate_proposal_path(estimate), params: { recipient_email: "" }
+        }.not_to change { ActionMailer::Base.deliveries.size }
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(proposal.reload.status).to eq("draft")
+      end
+
+      # Header-injection guard — a CRLF/extra-recipient address is rejected with
+      # a 422 and no send.
+      it "returns 422 and sends nothing for a header-injection address" do
+        expect {
+          post email_estimate_proposal_path(estimate),
+               params: { recipient_email: "a@b.com\nBcc: evil@x.com" }
+        }.not_to change { ActionMailer::Base.deliveries.size }
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(proposal.reload.status).to eq("draft")
+      end
+
+      # A delivery failure re-renders the review step with an error flash (no 500).
+      it "re-renders the review step with an error when delivery fails" do
+        service = instance_double(Proposals::EmailDeliveryService)
+        allow(Proposals::EmailDeliveryService).to receive(:new).and_return(service)
+        allow(service).to receive(:call).and_return(
+          Proposals::EmailDeliveryService::Result.new(success: false, error: "boom")
+        )
+
+        post email_estimate_proposal_path(estimate), params: { recipient_email: "client@example.com" }
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(proposal.reload.status).to eq("draft")
+        expect(flash[:alert]).to eq(I18n.t("proposals.steps.review.email_error"))
+      end
+    end
+
+    context "when unauthenticated" do
+      it "redirects to login and sends nothing" do
+        expect {
+          post email_estimate_proposal_path(estimate), params: { recipient_email: "client@example.com" }
+        }.not_to change { ActionMailer::Base.deliveries.size }
+
+        expect(response).to redirect_to(new_session_path)
+      end
+    end
+  end
+
+  describe "POST /estimates/:estimate_id/proposal/mark_as_sent" do
+    let!(:proposal) { Proposals::BuildService.new(estimate: estimate).call }
+
+    context "when authenticated" do
+      before { sign_in(user) }
+
+      # AC-34 — Mark as Sent flips status to sent without sending an email.
+      it "marks the proposal sent and redirects with a notice" do
+        post mark_as_sent_estimate_proposal_path(estimate)
+
+        expect(proposal.reload.status).to eq("sent")
+        expect(response).to redirect_to(step_estimate_proposal_path(estimate, "review"))
+        expect(flash[:notice]).to eq(I18n.t("proposals.steps.review.mark_as_sent_notice"))
+      end
+    end
+
+    context "when unauthenticated" do
+      it "redirects to login and does not change status" do
+        post mark_as_sent_estimate_proposal_path(estimate)
+
+        expect(response).to redirect_to(new_session_path)
+        expect(proposal.reload.status).to eq("draft")
+      end
+    end
+  end
 end
