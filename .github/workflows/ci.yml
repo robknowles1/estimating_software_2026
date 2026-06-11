@@ -92,7 +92,7 @@ jobs:
           bundler-cache: true
 
       - name: Install libvips (Active Storage :vips variant processor)
-        run: sudo apt-get update && sudo apt-get install -y libvips42
+        run: sudo apt-get update && sudo apt-get install -y libvips
 
       - name: Build Tailwind CSS
         run: bin/rails tailwindcss:build
@@ -132,7 +132,7 @@ jobs:
           bundler-cache: true
 
       - name: Install libvips (Active Storage :vips variant processor)
-        run: sudo apt-get update && sudo apt-get install -y libvips42
+        run: sudo apt-get update && sudo apt-get install -y libvips
 
       - name: Build Tailwind CSS
         run: bin/rails tailwindcss:build

@@ -21,5 +21,11 @@ RSpec.describe ProposalHelper, type: :helper do
     it "omits the cents fraction when cents are zero" do
       expect(helper.amount_in_words(2_500.00)).to eq("Two Thousand Five Hundred Dollars")
     end
+
+    # Rounding-edge: a value like 1.999 must round to 2.00 (cents never == 100)
+    # rather than producing a phantom "100/100" fraction.
+    it "rounds a sub-cent input up without producing 100 cents" do
+      expect(helper.amount_in_words(1.999)).to eq("Two Dollars")
+    end
   end
 end

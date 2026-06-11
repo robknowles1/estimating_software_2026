@@ -37,9 +37,10 @@ module Proposals
     end
 
     def document
-      # The default AFM fonts cover the Latin-1 characters used in proposal copy
-      # (including the en dash and bullet); suppress the i18n warning since no
-      # UTF-8-beyond-Latin-1 text is rendered.
+      # The default AFM fonts use the WinAnsi (Windows-1252) encoding, which
+      # covers the characters used in proposal copy (including the en dash and
+      # bullet); suppress the i18n warning since no text beyond WinAnsi is
+      # rendered.
       Prawn::Fonts::AFM.hide_m17n_warning = true
       Prawn::Document.new(page_size: "LETTER", margin: 54).tap do |pdf|
         if proposal.residential?

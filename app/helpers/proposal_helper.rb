@@ -20,9 +20,12 @@ module ProposalHelper
   # nil is treated as 0 ("Zero Dollars") so a proposal whose total was never set
   # never breaks PDF generation.
   def amount_in_words(amount)
-    amount = amount || 0
-    dollars = amount.to_i
-    cents = ((amount.to_f - dollars).round(2) * 100).round
+    # Use BigDecimal math so cents are derived from a rounded decimal rather than
+    # a float subtraction; this keeps cents in 0..99 and avoids float artefacts
+    # (e.g. 1.999 rounding to a phantom 100 cents).
+    value = (amount || 0).to_d.round(2)
+    dollars = value.to_i
+    cents = ((value - dollars) * 100).round.to_i
 
     words = "#{title_case_words(dollars)} Dollars"
     words += " and #{cents.to_s.rjust(2, '0')}/100" if cents.positive?

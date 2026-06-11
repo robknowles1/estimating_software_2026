@@ -42,11 +42,9 @@ RSpec.describe Proposals::PdfRenderService do
       create(:proposal_specification, proposal: proposal)
       inclusion = create(:proposal_inclusion, proposal: proposal, room_name: "Kitchen",
                                               bullet_points: "New uppers\nNew lowers")
-      inclusion.photos.attach(
-        io: File.open(Rails.root.join("spec/fixtures/files/sample_photo.jpg")),
-        filename: "sample_photo.jpg",
-        content_type: "image/jpeg"
-      )
+      File.open(Rails.root.join("spec/fixtures/files/sample_photo.jpg"), "rb") do |f|
+        inclusion.photos.attach(io: f, filename: "sample_photo.jpg", content_type: "image/jpeg")
+      end
       create(:proposal_clarification, proposal: proposal, body: "Slab doors")
       create(:proposal_alternate, proposal: proposal, description: "ALT-1 Painted", display_cost: BigDecimal("500.00"))
       create(:proposal_exclusion, proposal: proposal, body: "Man doors")
@@ -128,11 +126,9 @@ RSpec.describe Proposals::PdfRenderService do
     end
 
     before do
-      inclusion.photos.attach(
-        io: File.open(Rails.root.join("spec/fixtures/files/sample_photo.jpg")),
-        filename: "sample_photo.jpg",
-        content_type: "image/jpeg"
-      )
+      File.open(Rails.root.join("spec/fixtures/files/sample_photo.jpg"), "rb") do |f|
+        inclusion.photos.attach(io: f, filename: "sample_photo.jpg", content_type: "image/jpeg")
+      end
     end
 
     it "embeds the attached JPEG as an image XObject in the PDF (R9)" do

@@ -19,7 +19,7 @@ module Company
 
   # @return [String] the multi-line letterhead address block.
   def self.address
-    Rails.application.credentials.dig(:company, :address) ||
+    Rails.application.credentials.dig(:company, :address).presence ||
       ENV["COMPANY_ADDRESS"].presence ||
       DEFAULT_ADDRESS
   end
