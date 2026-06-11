@@ -143,7 +143,11 @@ RSpec.describe "Proposals", type: :request do
   end
 
   describe "POST /estimates/:estimate_id/proposal/email" do
-    let!(:proposal) { Proposals::BuildService.new(estimate: estimate).call }
+    let!(:proposal) do
+      Proposals::BuildService.new(estimate: estimate).call.tap do |p|
+        p.update!(current_step: "review")
+      end
+    end
 
     before { ActionMailer::Base.deliveries.clear }
 
@@ -237,6 +241,26 @@ RSpec.describe "Proposals", type: :request do
       end
     end
 
+    context "when the proposal has not reached the review step" do
+      before { sign_in(user) }
+
+      # email is a review-step action (R15); a crafted POST against an incomplete
+      # proposal must not send. The guard mirrors the wizard's future-step
+      # behavior: redirect to the current step with the future-step notice, send
+      # nothing, leave the status unchanged.
+      it "redirects to the current step with the future-step notice and sends nothing" do
+        proposal.update!(current_step: "opening")
+
+        expect {
+          post email_estimate_proposal_path(estimate), params: { recipient_email: "client@example.com" }
+        }.not_to change { ActionMailer::Base.deliveries.size }
+
+        expect(response).to redirect_to(step_estimate_proposal_path(estimate, "opening"))
+        expect(flash[:notice]).to eq(I18n.t("proposals.steps.show.future_step_notice"))
+        expect(proposal.reload.status).to eq("draft")
+      end
+    end
+
     context "when unauthenticated" do
       it "redirects to login and sends nothing" do
         expect {
@@ -249,7 +273,11 @@ RSpec.describe "Proposals", type: :request do
   end
 
   describe "POST /estimates/:estimate_id/proposal/mark_as_sent" do
-    let!(:proposal) { Proposals::BuildService.new(estimate: estimate).call }
+    let!(:proposal) do
+      Proposals::BuildService.new(estimate: estimate).call.tap do |p|
+        p.update!(current_step: "review")
+      end
+    end
 
     context "when authenticated" do
       before { sign_in(user) }
@@ -275,6 +303,23 @@ RSpec.describe "Proposals", type: :request do
         # The action sets no success notice on this branch; any notice present is
         # the leftover sign-in flash, never the mark-as-sent success notice.
         expect(flash[:notice]).not_to eq(I18n.t("proposals.steps.review.mark_as_sent_notice"))
+      end
+    end
+
+    context "when the proposal has not reached the review step" do
+      before { sign_in(user) }
+
+      # mark_as_sent is a review-step action (R15); a crafted POST against an
+      # incomplete proposal must not flip the status. The guard redirects to the
+      # current step with the future-step notice and leaves the status unchanged.
+      it "redirects to the current step with the future-step notice and does not change status" do
+        proposal.update!(current_step: "opening")
+
+        post mark_as_sent_estimate_proposal_path(estimate)
+
+        expect(response).to redirect_to(step_estimate_proposal_path(estimate, "opening"))
+        expect(flash[:notice]).to eq(I18n.t("proposals.steps.show.future_step_notice"))
+        expect(proposal.reload.status).to eq("draft")
       end
     end
 

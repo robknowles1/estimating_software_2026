@@ -1,5 +1,6 @@
 class ProposalsController < ApplicationController
   before_action :set_estimate
+  before_action :guard_review_step, only: %i[email mark_as_sent]
 
   # Creates the proposal for the estimate (one per estimate). If one already
   # exists, redirects to its current step without creating a duplicate (R1, E10).
@@ -110,6 +111,25 @@ class ProposalsController < ApplicationController
 
   def set_estimate
     @estimate = Estimate.find(params[:estimate_id])
+  end
+
+  # email and mark_as_sent are review-step actions (R15): they live on step 7 of
+  # the wizard. Unlike Steps, which guards future steps via #guard_future_step,
+  # this controller has no such guard, so a crafted POST could otherwise send an
+  # email / mark-as-sent for an incomplete proposal. Mirror the wizard's
+  # future-step behavior: if the proposal has not reached the review step,
+  # redirect to its current step with the same future-step notice and halt — no
+  # email, no status change. This gates on the review STEP being reached
+  # (current_step), never on status (R25): a sent proposal sitting on review can
+  # still be re-emailed.
+  def guard_review_step
+    @proposal = @estimate.proposal
+    redirect_to edit_estimate_path(@estimate) and return if @proposal.nil?
+
+    return if @proposal.current_step == "review"
+
+    redirect_to step_estimate_proposal_path(@estimate, @proposal.current_step),
+                notice: t("proposals.steps.show.future_step_notice")
   end
 
   # Re-render the review step (with all associations eager-loaded as the preview
