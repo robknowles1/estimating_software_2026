@@ -48,6 +48,11 @@ RSpec.describe Proposals::EmailDeliveryService do
     end
 
     before do
+      # Stub the PDF render so the failure is triggered deterministically by the
+      # delivery step, not by any real PDF work.
+      allow_any_instance_of(Proposals::PdfRenderService)
+        .to receive(:call).and_return("%PDF-stub")
+
       mailer = double
       allow(ProposalMailer).to receive(:proposal_email).and_return(mailer)
       allow(mailer).to receive(:deliver_now).and_raise(StandardError, "smtp down")
