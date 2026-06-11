@@ -187,6 +187,27 @@ RSpec.describe "Proposals", type: :request do
         expect(proposal.reload.status).to eq("draft")
       end
 
+      # The email is already sent when the status update fails. We must not claim a
+      # clean success: redirect with an honest alert (email sent, status not
+      # updated) and 302, not a 500. The delivery still happened (count + 1).
+      it "redirects with an honest alert when the email sent but the status update fails" do
+        allow_any_instance_of(Proposal).to receive(:update).with(status: :sent).and_return(false)
+
+        expect {
+          post email_estimate_proposal_path(estimate), params: { recipient_email: "client@example.com" }
+        }.to change { ActionMailer::Base.deliveries.size }.by(1)
+
+        expect(response).to redirect_to(step_estimate_proposal_path(estimate, "review"))
+        expect(flash[:alert]).to eq(
+          I18n.t("proposals.steps.review.email_sent_status_error", email: "client@example.com")
+        )
+        # The action sets no success notice on this branch (it does not claim a
+        # clean success); the only notice present is the leftover sign-in flash.
+        expect(flash[:notice]).not_to eq(
+          I18n.t("proposals.steps.review.email_notice", email: "client@example.com")
+        )
+      end
+
       # A delivery failure re-renders the review step with an error flash (no 500).
       it "re-renders the review step with an error when delivery fails" do
         service = instance_double(Proposals::EmailDeliveryService)
@@ -227,6 +248,20 @@ RSpec.describe "Proposals", type: :request do
         expect(proposal.reload.status).to eq("sent")
         expect(response).to redirect_to(step_estimate_proposal_path(estimate, "review"))
         expect(flash[:notice]).to eq(I18n.t("proposals.steps.review.mark_as_sent_notice"))
+      end
+
+      # When the status update fails, redirect with an error alert (no false
+      # success notice, no 500).
+      it "redirects with an error alert when the status update fails" do
+        allow_any_instance_of(Proposal).to receive(:update).with(status: :sent).and_return(false)
+
+        post mark_as_sent_estimate_proposal_path(estimate)
+
+        expect(response).to redirect_to(step_estimate_proposal_path(estimate, "review"))
+        expect(flash[:alert]).to eq(I18n.t("proposals.steps.review.mark_as_sent_error"))
+        # The action sets no success notice on this branch; any notice present is
+        # the leftover sign-in flash, never the mark-as-sent success notice.
+        expect(flash[:notice]).not_to eq(I18n.t("proposals.steps.review.mark_as_sent_notice"))
       end
     end
 

@@ -39,14 +39,28 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
   # estimate edit page), so it never creates a duplicate proposal.
   def click_create_proposal(target_estimate)
     opening_path = step_estimate_proposal_path(target_estimate, "opening")
+    edit_path    = edit_estimate_path(target_estimate)
     click_button "Create Proposal"
-    return if page.has_current_path?(opening_path, wait: 3)
 
-    # The synthetic click was dropped before submitting the button_to form (the
-    # known Chromedriver/Turbo first-click quirk this file documents). Submit the
-    # form directly — same requestSubmit() fallback save_and_continue uses. It
-    # only runs when the POST never happened, so no duplicate proposal is created.
-    submit_form_for_button("Create Proposal")
+    # Give the click a full Capybara wait to land the POST + redirect — a merely
+    # slow (not dropped) request must be allowed to finish here, otherwise the
+    # fallback below races an in-flight submission.
+    return if page.has_current_path?(opening_path, wait: Capybara.default_max_wait_time)
+
+    # Only fall back when the click was genuinely dropped: we must still be on the
+    # estimate edit page (the POST never navigated us) AND no proposal exists yet.
+    # If either is false the request actually went through, so re-submitting would
+    # be the very double-fire we are trying to avoid — bail and let the assertion
+    # below report the real state.
+    if page.has_current_path?(edit_path, wait: 1) && Proposal.where(estimate_id: target_estimate.id).none?
+      # The synthetic click was dropped before submitting the button_to form (the
+      # known Chromedriver/Turbo first-click quirk this file documents). Submit the
+      # form directly — same requestSubmit() fallback save_and_continue uses. The
+      # controller's one-proposal-per-estimate guard also makes a duplicate POST
+      # idempotent, so this is safe even under a late-landing first click.
+      submit_form_for_button("Create Proposal")
+    end
+
     expect(page).to have_current_path(opening_path, wait: 5)
   end
 
@@ -139,14 +153,13 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
   # while a cached snapshot is on screen. Prevents interacting with stale preview
   # nodes during a navigation.
   def wait_for_turbo_settled
-    Timeout.timeout(Capybara.default_max_wait_time) do
-      sleep 0.05 until page.evaluate_script(
-        "!document.documentElement.hasAttribute('data-turbo-preview')"
-      )
-    end
-  rescue Timeout::Error
-    # Fall through — the subsequent settle assertions provide the real failure.
-    nil
+    # Capybara-native wait: block until the <html> element no longer carries the
+    # data-turbo-preview marker Turbo sets while a cached snapshot is on screen.
+    # have_no_css polls with Capybara's own waiting (no stdlib Timeout dependency)
+    # and never raises if the marker is already gone or never appears — matching
+    # the previous "fall through" intent so the subsequent settle assertions
+    # provide the real failure.
+    expect(page).to have_no_css("html[data-turbo-preview]", wait: Capybara.default_max_wait_time)
   end
 
   # Clicks "Save and continue" on the given step. Selenium occasionally drops the

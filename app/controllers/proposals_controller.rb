@@ -69,9 +69,21 @@ class ProposalsController < ApplicationController
     result = Proposals::EmailDeliveryService.new(proposal: @proposal, recipient_email: recipient).call
 
     if result.success
-      @proposal.update(status: :sent)
-      redirect_to step_estimate_proposal_path(@estimate, "review"),
-                  notice: t("proposals.steps.review.email_notice", email: recipient)
+      # The email is already sent at this point. If the status update fails we
+      # must not lose that fact: surface a flash that says the email went out but
+      # the status couldn't be updated (and log it) rather than claiming a clean
+      # success or pretending nothing happened.
+      if @proposal.update(status: :sent)
+        redirect_to step_estimate_proposal_path(@estimate, "review"),
+                    notice: t("proposals.steps.review.email_notice", email: recipient)
+      else
+        Rails.logger.error(
+          "[ProposalsController#email] email sent to #{recipient} but status update " \
+          "failed for proposal #{@proposal.id}: #{@proposal.errors.full_messages.join(', ')}"
+        )
+        redirect_to step_estimate_proposal_path(@estimate, "review"),
+                    alert: t("proposals.steps.review.email_sent_status_error", email: recipient)
+      end
     else
       render_review_with_email_error(t("proposals.steps.review.email_error"))
     end
@@ -85,9 +97,13 @@ class ProposalsController < ApplicationController
     @proposal = @estimate.proposal
     redirect_to edit_estimate_path(@estimate) and return if @proposal.nil?
 
-    @proposal.update(status: :sent)
-    redirect_to step_estimate_proposal_path(@estimate, "review"),
-                notice: t("proposals.steps.review.mark_as_sent_notice")
+    if @proposal.update(status: :sent)
+      redirect_to step_estimate_proposal_path(@estimate, "review"),
+                  notice: t("proposals.steps.review.mark_as_sent_notice")
+    else
+      redirect_to step_estimate_proposal_path(@estimate, "review"),
+                  alert: t("proposals.steps.review.mark_as_sent_error")
+    end
   end
 
   private

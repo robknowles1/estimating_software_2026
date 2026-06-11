@@ -296,6 +296,8 @@ en:
         email_error: "Failed to send the proposal email. Please check the address and try again."
         mark_as_sent: "Mark as Sent"
         mark_as_sent_notice: "Proposal marked as sent."
+        mark_as_sent_error: "Could not mark the proposal as sent. Please try again."
+        email_sent_status_error: "The proposal email to %{email} was sent, but the status could not be updated to sent. Please mark it as sent manually."
         pdf_error: "PDF generation failed. Please try again."
     mailer:
       proposal_email:
