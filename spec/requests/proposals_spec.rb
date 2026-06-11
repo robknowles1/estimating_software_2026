@@ -175,6 +175,19 @@ RSpec.describe "Proposals", type: :request do
         expect(proposal.reload.status).to eq("draft")
       end
 
+      # An invalid-but-non-blank address returns 422 and the typed value is
+      # preserved in the recipient field so the user can correct it in place
+      # (rather than the field resetting to the contact default).
+      it "returns 422 and preserves the typed recipient when the address is invalid" do
+        expect {
+          post email_estimate_proposal_path(estimate), params: { recipient_email: "not-an-email" }
+        }.not_to change { ActionMailer::Base.deliveries.size }
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(proposal.reload.status).to eq("draft")
+        expect(response.body).to include('value="not-an-email"')
+      end
+
       # Header-injection guard — a CRLF/extra-recipient address is rejected with
       # a 422 and no send.
       it "returns 422 and sends nothing for a header-injection address" do

@@ -20,14 +20,20 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
     visit new_session_path
     fill_in "Email", with: user.email
     fill_in "Password", with: "password123"
-    # Retry the click if the page has not navigated: Selenium occasionally drops
-    # the first synthetic click on a freshly loaded page (the Chromedriver/Turbo
-    # quirk this file documents). The retry only fires when we are still on the
-    # sign-in page, so the credentials are submitted exactly once.
     click_button "Sign In"
-    return if page.has_current_path?(estimates_path, wait: 3)
 
-    click_button "Sign In"
+    # Give the first click a full Capybara wait to land the POST + redirect — a
+    # merely slow (not dropped) sign-in must be allowed to finish, otherwise the
+    # fallback below races an in-flight request and double-submits the form.
+    return if page.has_current_path?(estimates_path, wait: Capybara.default_max_wait_time)
+
+    # Only re-click when the first click was genuinely dropped: we must still be
+    # on the sign-in page (the POST never navigated us). Selenium occasionally
+    # drops the first synthetic click on a freshly loaded page (the known
+    # Chromedriver/Turbo first-click quirk this file documents). If we are no
+    # longer on /session/new the request actually went through, so re-clicking
+    # would be the very double-fire we are avoiding.
+    click_button "Sign In" if page.has_current_path?(new_session_path, wait: 1)
     expect(page).to have_current_path(estimates_path, wait: 5)
   end
 

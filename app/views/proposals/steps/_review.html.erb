@@ -107,7 +107,9 @@
       <%= form.label :recipient_email, t(".email_label"),
             class: "block text-sm font-medium text-slate-700" %>
       <div class="flex items-center gap-3">
-        <%= form.email_field :recipient_email, value: proposal.contact&.email,
+        <%# Preserve the typed recipient on the 422 re-render so a bad address is
+            easy to correct; fall back to the contact email on the normal GET. %>
+        <%= form.email_field :recipient_email, value: params[:recipient_email].presence || proposal.contact&.email,
               class: "flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-amber-500" %>
         <%= form.submit t(".send_email"),
               class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>
