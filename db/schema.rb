@@ -47,7 +47,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_175036) do
     t.bigint "client_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["client_id"], name: "index_client_notes_on_client_id"
+    t.index ["client_id", "created_at"], name: "index_client_notes_on_client_id_and_created_at"
   end
 
   create_table "clients", force: :cascade do |t|
