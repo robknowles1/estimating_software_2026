@@ -2,11 +2,6 @@ require "prawn"
 require "prawn/table"
 
 module Proposals
-  # Renders a proposal to a PDF binary string using Prawn (R16). Branches on
-  # proposal.mode to produce the commercial (R17) or residential (R19) layout.
-  # Never writes to disk and never raises for a sparsely-populated proposal
-  # (missing contact, no inclusions/clarifications/alternates/photos): every
-  # section is rendered defensively.
   class PdfRenderService
     include ActionView::Helpers::NumberHelper
     include ProposalHelper
@@ -18,7 +13,6 @@ module Proposals
       @proposal = preload(proposal)
     end
 
-    # @return [String] the PDF as a binary string.
     def call
       document.render
     end
@@ -27,7 +21,6 @@ module Proposals
 
     attr_reader :proposal
 
-    # Eager-load every association the layouts read so the render is N+1 free.
     def preload(proposal)
       Proposal
         .includes(:contact, :proposal_clarifications, :proposal_alternates,
@@ -51,8 +44,6 @@ module Proposals
       end
     end
 
-    # ----- commercial layout (R17) -------------------------------------------
-
     def render_commercial(pdf)
       render_letterhead(pdf)
       render_date(pdf)
@@ -65,8 +56,6 @@ module Proposals
       render_exclusions(pdf)
     end
 
-    # ----- residential layout (R19) ------------------------------------------
-
     def render_residential(pdf)
       render_letterhead(pdf)
       render_date(pdf)
@@ -76,8 +65,6 @@ module Proposals
       render_alternates(pdf)
       render_payment_terms(pdf)
     end
-
-    # ----- shared sections ----------------------------------------------------
 
     def render_letterhead(pdf)
       pdf.text Company.address, leading: 2, color: BRAND_COLOR
@@ -95,8 +82,6 @@ module Proposals
       pdf.move_down 12
     end
 
-    # R17 opening paragraph: job name, plan date, addenda, and the total amount
-    # in both numeric and English-words form.
     def render_opening_paragraph(pdf)
       job_name = proposal.job_name.presence || "this project"
       plan_date = proposal.plan_date&.strftime("%B %-d, %Y") || "the referenced date"
@@ -143,10 +128,6 @@ module Proposals
       end
     end
 
-    # Embeds each room's photos via the :pdf resized variant (R9). Prawn embeds
-    # JPEG/PNG only; the upload validation enforces that. If a variant cannot be
-    # processed for any reason, that image is skipped rather than failing the
-    # whole PDF.
     def render_photos(pdf, inclusion)
       return unless inclusion.photos.attached?
 
@@ -155,10 +136,6 @@ module Proposals
       end
     end
 
-    # Skip a single un-embeddable image (per spec "skip that image gracefully")
-    # without aborting the whole PDF. Only image-processing and storage failures
-    # are rescued; programming errors (NoMethodError, ArgumentError, ...) are
-    # left to propagate so real bugs are not masked.
     def embed_photo(pdf, photo)
       variant = photo.variant(:pdf).processed
       io = StringIO.new(variant.download)
@@ -210,7 +187,7 @@ module Proposals
       words = amount_in_words(proposal.total_amount)
 
       paragraph = "Thank you for the opportunity to bid the #{job_name}. The " \
-                  "scope below covers all materials and labour required to " \
+                  "scope below covers all materials and labor required to " \
                   "complete the work as described. The total for the work is " \
                   "#{amount} (#{words})."
       pdf.text paragraph, leading: 2, align: :justify

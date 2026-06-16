@@ -37,10 +37,6 @@ class ProposalsController < ApplicationController
     redirect_to step_estimate_proposal_path(@estimate, @estimate.proposal.current_step)
   end
 
-  # Generates the proposal PDF on demand (R16) and serves it as a download. The
-  # filename interpolates the app-generated estimate_number (never user input).
-  # On any render failure (E8) the error is logged and the user is returned to
-  # the review step with an error flash; no partial PDF is served.
   def pdf
     @proposal = @estimate.proposal
     redirect_to edit_estimate_path(@estimate) and return if @proposal.nil?
