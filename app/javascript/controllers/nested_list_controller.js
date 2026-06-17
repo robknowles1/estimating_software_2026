@@ -11,7 +11,7 @@ export default class extends Controller {
 
   add(event) {
     event.preventDefault()
-    const uniqueId = (crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    const uniqueId = `${Date.now()}${Math.floor(Math.random() * 10000)}`
     const html = this.templateTarget.innerHTML.replace(/NEW_RECORD/g, uniqueId)
     this.containerTarget.insertAdjacentHTML("beforeend", html)
   }
