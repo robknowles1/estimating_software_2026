@@ -59,9 +59,9 @@ RSpec.describe Proposals::PdfRenderService do
       text = pdf_text(pdf)
       expect(text).to include("Dana")
       expect(text).to include("Acme HQ Millwork")
-      expect(text).to include("March 14, 2026")
+      expect(text).to include("3/14/2026")
       expect(text).to include("$123,000.00")
-      expect(text).to include("One Hundred Twenty-Three Thousand Dollars")
+      expect(text).to include("ONE HUNDRED TWENTY-THREE THOUSAND DOLLARS")
     end
   end
 

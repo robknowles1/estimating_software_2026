@@ -6,8 +6,9 @@ module Proposals
     include ActionView::Helpers::NumberHelper
     include ProposalHelper
 
-    BRAND_COLOR = "1F2937".freeze # slate-800
-    MUTED_COLOR = "6B7280".freeze # slate-500
+    BRAND_COLOR   = "1F2937".freeze # slate-800
+    MUTED_COLOR   = "6B7280".freeze # slate-500
+    ADDRESS_COLOR = "808080".freeze
 
     def initialize(proposal:)
       @proposal = preload(proposal)
@@ -35,7 +36,8 @@ module Proposals
       # bullet); suppress the i18n warning since no text beyond WinAnsi is
       # rendered.
       Prawn::Fonts::AFM.hide_m17n_warning = true
-      Prawn::Document.new(page_size: "LETTER", margin: 54).tap do |pdf|
+      margin = proposal.residential? ? 54 : 72
+      Prawn::Document.new(page_size: "LETTER", margin: margin).tap do |pdf|
         if proposal.residential?
           render_residential(pdf)
         else
@@ -54,6 +56,7 @@ module Proposals
       render_clarifications(pdf)
       render_alternates(pdf)
       render_exclusions(pdf)
+      render_closing(pdf)
     end
 
     def render_residential(pdf)
@@ -70,12 +73,12 @@ module Proposals
       logo_path = Rails.root.join("app/assets/images/trimart_logo.png")
       pdf.image logo_path, width: 120, position: :center
       pdf.move_down 6
-      pdf.text Company.address, size: 9, align: :center, color: MUTED_COLOR
+      pdf.text Company.address, size: 9, align: :center, color: ADDRESS_COLOR
       pdf.move_down 18
     end
 
     def render_date(pdf)
-      pdf.text Date.current.strftime("%B %-d, %Y"), color: MUTED_COLOR
+      pdf.text Date.current.strftime("%-m/%-d/%Y")
       pdf.move_down 14
     end
 
@@ -86,26 +89,32 @@ module Proposals
     end
 
     def render_opening_paragraph(pdf)
-      job_name = proposal.job_name.presence || "this project"
-      plan_date = proposal.plan_date&.strftime("%B %-d, %Y") || "the referenced date"
-      addenda = proposal.addendum_list.presence || "none"
-      amount = number_to_currency(proposal.total_amount || 0)
-      words = amount_in_words(proposal.total_amount)
+      job_name  = proposal.job_name.presence || "this project"
+      plan_date = proposal.plan_date&.strftime("%-m/%-d/%Y") || "the referenced date"
+      addenda   = proposal.addendum_list.presence || "none"
+      amount    = number_to_currency(proposal.total_amount || 0)
+      words     = amount_in_words(proposal.total_amount).upcase
 
-      paragraph = "Thank you for the opportunity to bid the #{job_name}. " \
-                  "This proposal is based on plans dated #{plan_date} and " \
-                  "addenda #{addenda}. The total for the items listed below " \
-                  "is #{amount} (#{words})."
-      pdf.text paragraph, leading: 2, align: :justify
+      pdf.formatted_text [
+        { text: "Thank you for the opportunity to bid the " },
+        { text: job_name, styles: [ :underline ] },
+        { text: ". This proposal is based on plans dated " },
+        { text: plan_date, styles: [ :underline ] },
+        { text: " and addenda " },
+        { text: addenda, styles: [ :underline ] },
+        { text: ". The total for the items listed below is " },
+        { text: "#{amount} (#{words})", styles: [ :bold, :underline ] },
+        { text: "." }
+      ], leading: 2
       pdf.move_down 16
     end
 
     def render_specifications(pdf)
       return if proposal.proposal_specifications.empty?
 
-      heading(pdf, "Specifications")
+      heading(pdf, "Specification Sections:")
       proposal.proposal_specifications.each do |spec|
-        pdf.text "#{spec.spec_number} – #{spec.spec_title}", leading: 2
+        pdf.text "• #{spec.spec_number} – #{spec.spec_title}", leading: 2
       end
       pdf.move_down 14
     end
@@ -113,9 +122,9 @@ module Proposals
     def render_inclusions(pdf, with_photos:)
       return if proposal.proposal_inclusions.empty?
 
-      heading(pdf, "Specific Inclusions")
+      heading(pdf, "Specific inclusions:")
       proposal.proposal_inclusions.each do |inclusion|
-        pdf.text "• #{inclusion.room_name}", style: :bold, leading: 2
+        pdf.text "• #{inclusion.room_name}", leading: 2
         render_bullet_points(pdf, inclusion.bullet_points)
         render_photos(pdf, inclusion) if with_photos
         pdf.move_down 10
@@ -127,7 +136,7 @@ module Proposals
       return if bullet_points.blank?
 
       bullet_points.to_s.split("\n").map(&:strip).reject(&:empty?).each do |line|
-        pdf.text "    - #{line}", indent_paragraphs: 20, leading: 2
+        pdf.text "o  #{line}", indent_paragraphs: 36, leading: 2
       end
     end
 
@@ -161,15 +170,10 @@ module Proposals
     def render_alternates(pdf)
       return if proposal.proposal_alternates.empty?
 
-      heading(pdf, "Alternates")
-      rows = proposal.proposal_alternates.map do |alternate|
-        [ alternate.description.to_s, number_to_currency(alternate.display_cost || 0) ]
-      end
-      pdf.table([ [ "Description", "Cost" ] ] + rows, width: pdf.bounds.width) do |table|
-        table.row(0).font_style = :bold
-        table.columns(1).align = :right
-        table.cells.padding = [ 4, 6 ]
-        table.cells.borders = [ :bottom ]
+      heading(pdf, "Alternates (not included in base bid):")
+      proposal.proposal_alternates.each do |alternate|
+        cost = number_to_currency(alternate.display_cost || 0)
+        pdf.text "• #{alternate.description} – #{cost}", leading: 2
       end
       pdf.move_down 14
     end
@@ -177,11 +181,23 @@ module Proposals
     def render_exclusions(pdf)
       return if proposal.proposal_exclusions.empty?
 
-      heading(pdf, "Exclusions")
+      heading(pdf, "Specific Exclusions:")
       proposal.proposal_exclusions.each do |exclusion|
         pdf.text "• #{exclusion.body}", leading: 2
       end
       pdf.move_down 14
+    end
+
+    def render_closing(pdf)
+      pdf.move_down 14
+      pdf.text "Please feel free to contact me with any questions you may have."
+      pdf.move_down 14
+      pdf.text "Sincerely,"
+      pdf.move_down 24
+      pdf.formatted_text [ { text: Company::CONTACT_NAME, styles: [ :bold ] } ], size: 13, color: "767171"
+      pdf.text Company::CONTACT_PHONE, size: 10
+      pdf.text Company::CONTACT_EMAIL, size: 10
+      pdf.text Company::CONTACT_WEBSITE, size: 10
     end
 
     def render_residential_narrative(pdf)
@@ -226,7 +242,7 @@ module Proposals
     end
 
     def heading(pdf, text)
-      pdf.text text, style: :bold, size: 13, color: BRAND_COLOR
+      pdf.formatted_text [ { text: text, styles: [ :bold, :underline ] } ], size: 11
       pdf.move_down 6
     end
   end
