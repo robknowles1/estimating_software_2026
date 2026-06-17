@@ -116,12 +116,13 @@ RSpec.describe Proposals::PdfRenderService do
     let(:proposal) { create(:proposal, mode: "commercial") }
     let(:inclusion) { create(:proposal_inclusion, proposal: proposal, room_name: "Kitchen") }
 
-    # True when any page in the rendered PDF references an image XObject. Prawn
-    # embeds a raster photo as a `/Subtype /Image` XObject, so its presence
-    # proves the JPEG was actually embedded (not just the skip path).
-    def embedded_image?(binary)
-      PDF::Reader.new(StringIO.new(binary)).pages.any? do |page|
-        page.xobjects.values.any? { |xobj| xobj.hash[:Subtype] == :Image }
+    # Returns the total count of image XObjects across all pages in the
+    # rendered PDF. Prawn embeds each raster image (logo or photo) as a
+    # `/Subtype /Image` XObject, so the count distinguishes "only the
+    # letterhead logo" (1) from "logo + attached photo" (> 1).
+    def image_xobject_count(binary)
+      PDF::Reader.new(StringIO.new(binary)).pages.sum do |page|
+        page.xobjects.values.count { |xobj| xobj.hash[:Subtype] == :Image }
       end
     end
 
@@ -134,12 +135,13 @@ RSpec.describe Proposals::PdfRenderService do
     it "embeds the attached JPEG as an image XObject in the PDF (R9)" do
       expect { pdf }.not_to raise_error
       expect(pdf).to start_with("%PDF")
-      expect(embedded_image?(pdf)).to be(true)
+      # Expect at least 2 image XObjects: the letterhead logo plus the attached photo.
+      expect(image_xobject_count(pdf)).to be >= 2
     end
 
     # Graceful-skip contract: when the :pdf variant cannot be processed for a
     # single photo, that image is skipped and the rest of the PDF still renders
-    # without raising and without an embedded image XObject.
+    # without raising. Only the letterhead logo (1 image XObject) remains.
     it "skips an un-processable photo and still renders the rest of the PDF" do
       failing_variant = instance_double(ActiveStorage::Variant)
       allow(failing_variant).to receive(:processed).and_raise(Vips::Error, "boom")
@@ -149,7 +151,8 @@ RSpec.describe Proposals::PdfRenderService do
       result = nil
       expect { result = pdf }.not_to raise_error
       expect(result).to start_with("%PDF")
-      expect(embedded_image?(result)).to be(false)
+      # Only the letterhead logo is embedded; the failed photo contributes no XObject.
+      expect(image_xobject_count(result)).to eq(1)
     end
   end
 end

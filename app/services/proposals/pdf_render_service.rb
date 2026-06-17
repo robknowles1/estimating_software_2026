@@ -67,6 +67,9 @@ module Proposals
     end
 
     def render_letterhead(pdf)
+      logo_path = Rails.root.join("app/assets/images/trimart_logo.png")
+      pdf.image logo_path, width: 120
+      pdf.move_down 8
       pdf.text Company.address, leading: 2, color: BRAND_COLOR
       pdf.move_down 18
     end
@@ -112,7 +115,7 @@ module Proposals
 
       heading(pdf, "Specific Inclusions")
       proposal.proposal_inclusions.each do |inclusion|
-        pdf.text inclusion.room_name.to_s, style: :bold
+        pdf.text "• #{inclusion.room_name}", style: :bold, leading: 2
         render_bullet_points(pdf, inclusion.bullet_points)
         render_photos(pdf, inclusion) if with_photos
         pdf.move_down 10
@@ -124,7 +127,7 @@ module Proposals
       return if bullet_points.blank?
 
       bullet_points.to_s.split("\n").map(&:strip).reject(&:empty?).each do |line|
-        pdf.text "• #{line}", indent_paragraphs: 10, leading: 2
+        pdf.text "    - #{line}", indent_paragraphs: 20, leading: 2
       end
     end
 
@@ -140,7 +143,7 @@ module Proposals
       variant = photo.variant(:pdf).processed
       io = StringIO.new(variant.download)
       pdf.move_down 4
-      pdf.image io, fit: [ 360, 240 ]
+      pdf.image io, fit: [ 360, 240 ], position: :center
     rescue Vips::Error, ImageProcessing::Error, ActiveStorage::Error => e
       Rails.logger.warn("[PdfRenderService] skipped photo #{photo.id}: #{e.class}: #{e.message}")
     end
