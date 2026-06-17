@@ -91,6 +91,9 @@ jobs:
         with:
           bundler-cache: true
 
+      - name: Install libvips (Active Storage :vips variant processor)
+        run: sudo apt-get update && sudo apt-get install -y libvips
+
       - name: Build Tailwind CSS
         run: bin/rails tailwindcss:build
 
@@ -100,7 +103,7 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/estimating_software_2026_test
         run: |
           bin/rails db:create db:schema:load
-          bundle exec rspec spec/models spec/requests
+          bundle exec rspec spec/models spec/requests spec/services spec/helpers
 
   system-test:
     runs-on: ubuntu-latest
@@ -127,6 +130,9 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
+
+      - name: Install libvips (Active Storage :vips variant processor)
+        run: sudo apt-get update && sudo apt-get install -y libvips
 
       - name: Build Tailwind CSS
         run: bin/rails tailwindcss:build

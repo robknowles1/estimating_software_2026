@@ -1,6 +1,4 @@
 module ApplicationHelper
-  include Pagy::Frontend
-
   def line_item_category_class(category)
     case category
     when "material"  then "bg-blue-100 text-blue-700"

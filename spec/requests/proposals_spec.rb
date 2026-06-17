@@ -102,4 +102,43 @@ RSpec.describe "Proposals", type: :request do
       expect(response).to redirect_to(new_session_path)
     end
   end
+
+  describe "GET /estimates/:estimate_id/proposal/pdf" do
+    before { Proposals::BuildService.new(estimate: estimate).call }
+
+    context "when authenticated" do
+      before { sign_in(user) }
+
+      # AT13 — the response is application/pdf with a body starting with %PDF.
+      it "serves the PDF as a download" do
+        get pdf_estimate_proposal_path(estimate)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.media_type).to eq("application/pdf")
+        expect(response.body).to start_with("%PDF")
+        expect(response.headers["Content-Disposition"]).to include("attachment")
+        expect(response.headers["Content-Disposition"]).to include("proposal-#{estimate.estimate_number}.pdf")
+      end
+
+      # E8 — a render failure redirects to the review step with an error flash and
+      # serves no partial PDF.
+      it "redirects to the review step with an error flash when rendering fails" do
+        service = instance_double(Proposals::PdfRenderService)
+        allow(Proposals::PdfRenderService).to receive(:new).and_return(service)
+        allow(service).to receive(:call).and_raise(StandardError, "boom")
+
+        get pdf_estimate_proposal_path(estimate)
+
+        expect(response).to redirect_to(step_estimate_proposal_path(estimate, "review"))
+        expect(flash[:alert]).to eq(I18n.t("proposals.steps.review.pdf_error"))
+      end
+    end
+
+    context "when unauthenticated" do
+      it "redirects to the login page" do
+        get pdf_estimate_proposal_path(estimate)
+        expect(response).to redirect_to(new_session_path)
+      end
+    end
+  end
 end

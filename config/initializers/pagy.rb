@@ -1,6 +1,4 @@
 # frozen_string_literal: true
 
-require "pagy/extras/overflow"
-
-Pagy::DEFAULT[:limit]    = 20
-Pagy::DEFAULT[:overflow] = :exception
+Pagy::OPTIONS[:limit] = 20
+Pagy::OPTIONS[:raise_range_error] = true

@@ -1,0 +1,177 @@
+require "rails_helper"
+require "pdf-reader"
+
+RSpec.describe Proposals::PdfRenderService do
+  subject(:pdf) { described_class.new(proposal: proposal).call }
+
+  # Extracts all text from the rendered PDF binary (AT14).
+  def pdf_text(binary)
+    PDF::Reader.new(StringIO.new(binary)).pages.map(&:text).join("\n")
+  end
+
+  describe "binary output" do
+    let(:proposal) { create(:proposal) }
+
+    it "returns a non-empty string" do
+      expect(pdf).to be_a(String)
+      expect(pdf).not_to be_empty
+    end
+
+    it "begins with the PDF header" do
+      expect(pdf).to start_with("%PDF")
+    end
+  end
+
+  describe "commercial mode, fully populated" do
+    let(:client)  { create(:client) }
+    let(:contact) { create(:contact, client: client, first_name: "Dana", last_name: "Reed") }
+    let(:estimate) { create(:estimate, client: client) }
+    let(:proposal) do
+      create(:proposal,
+             estimate: estimate,
+             contact: contact,
+             mode: "commercial",
+             job_name: "Acme HQ Millwork",
+             plan_date: Date.new(2026, 3, 14),
+             addendum_list: "1, 2",
+             total_amount: BigDecimal("123000.00"),
+             include_specifications: true)
+    end
+
+    before do
+      create(:proposal_specification, proposal: proposal)
+      inclusion = create(:proposal_inclusion, proposal: proposal, room_name: "Kitchen",
+                                              bullet_points: "New uppers\nNew lowers")
+      File.open(Rails.root.join("spec/fixtures/files/sample_photo.jpg"), "rb") do |f|
+        inclusion.photos.attach(io: f, filename: "sample_photo.jpg", content_type: "image/jpeg")
+      end
+      create(:proposal_clarification, proposal: proposal, body: "Slab doors")
+      create(:proposal_alternate, proposal: proposal, description: "ALT-1 Painted", display_cost: BigDecimal("500.00"))
+      create(:proposal_exclusion, proposal: proposal, body: "Man doors")
+    end
+
+    it "does not raise" do
+      expect { pdf }.not_to raise_error
+    end
+
+    # AT14 — content coverage via text extraction.
+    it "contains the contact first name, job name, plan date, and total in numeric and word forms" do
+      text = pdf_text(pdf)
+      expect(text).to include("Dana")
+      expect(text).to include("Acme HQ Millwork")
+      expect(text).to include("3/14/2026")
+      expect(text).to include("$123,000.00")
+      expect(text).to include("ONE HUNDRED TWENTY-THREE THOUSAND DOLLARS")
+    end
+  end
+
+  describe "residential mode, fully populated" do
+    let(:proposal) do
+      create(:proposal,
+             mode: "residential",
+             job_name: "Smith Kitchen",
+             total_amount: BigDecimal("48000.00"),
+             payment_terms: "50% deposit, balance on completion")
+    end
+
+    before do
+      create(:proposal_inclusion, proposal: proposal, room_name: "Kitchen", bullet_points: "New cabinets")
+      create(:proposal_alternate, proposal: proposal, description: "ALT-1 Quartz", display_cost: BigDecimal("2000.00"))
+    end
+
+    it "does not raise" do
+      expect { pdf }.not_to raise_error
+    end
+
+    it "includes the payment terms" do
+      expect(pdf_text(pdf)).to include("50% deposit")
+    end
+  end
+
+  describe "sparse proposals" do
+    it "does not raise with no inclusions" do
+      proposal = create(:proposal)
+      expect { described_class.new(proposal: proposal).call }.not_to raise_error
+    end
+
+    it "does not raise with no clarifications" do
+      proposal = create(:proposal)
+      proposal.proposal_clarifications.destroy_all
+      expect { described_class.new(proposal: proposal).call }.not_to raise_error
+    end
+
+    it "does not raise with no alternates" do
+      proposal = create(:proposal)
+      expect(proposal.proposal_alternates).to be_empty
+      expect { described_class.new(proposal: proposal).call }.not_to raise_error
+    end
+
+    it "does not raise with a nil contact (salutation guarded)" do
+      proposal = create(:proposal, contact: nil)
+      expect { described_class.new(proposal: proposal).call }.not_to raise_error
+    end
+
+    # Logo-missing guard: when the logo file is absent, render_letterhead must
+    # not raise Errno::ENOENT and must still emit the company address text.
+    # PDF::Reader normalises whitespace on extraction, so we check for a
+    # distinctive substring rather than the full address string verbatim.
+    it "renders successfully and includes the address when the logo file is absent" do
+      logo_path = Rails.root.join("app/assets/images/trimart_logo.png")
+      allow(File).to receive(:exist?).and_call_original
+      allow(File).to receive(:exist?).with(logo_path).and_return(false)
+
+      proposal = create(:proposal)
+      result = nil
+      expect { result = described_class.new(proposal: proposal).call }.not_to raise_error
+      expect(result).to start_with("%PDF")
+      # Check for a unique substring of Company.address that PDF::Reader will
+      # preserve (street address is a stable anchor, unaffected by whitespace
+      # collapsing around the pipe separators).
+      expect(pdf_text(result)).to include("601 Boro Street")
+    end
+  end
+
+  describe "photo embedding" do
+    let(:proposal) { create(:proposal, mode: "commercial") }
+    let(:inclusion) { create(:proposal_inclusion, proposal: proposal, room_name: "Kitchen") }
+
+    # Returns the total count of image XObjects across all pages in the
+    # rendered PDF. Prawn embeds each raster image (logo or photo) as a
+    # `/Subtype /Image` XObject, so the count distinguishes "only the
+    # letterhead logo" (1) from "logo + attached photo" (> 1).
+    def image_xobject_count(binary)
+      PDF::Reader.new(StringIO.new(binary)).pages.sum do |page|
+        page.xobjects.values.count { |xobj| xobj.hash[:Subtype] == :Image }
+      end
+    end
+
+    before do
+      File.open(Rails.root.join("spec/fixtures/files/sample_photo.jpg"), "rb") do |f|
+        inclusion.photos.attach(io: f, filename: "sample_photo.jpg", content_type: "image/jpeg")
+      end
+    end
+
+    it "embeds the attached JPEG as an image XObject in the PDF (R9)" do
+      expect { pdf }.not_to raise_error
+      expect(pdf).to start_with("%PDF")
+      # Expect at least 2 image XObjects: the letterhead logo plus the attached photo.
+      expect(image_xobject_count(pdf)).to be >= 2
+    end
+
+    # Graceful-skip contract: when the :pdf variant cannot be processed for a
+    # single photo, that image is skipped and the rest of the PDF still renders
+    # without raising. Only the letterhead logo (1 image XObject) remains.
+    it "skips an un-processable photo and still renders the rest of the PDF" do
+      failing_variant = instance_double(ActiveStorage::Variant)
+      allow(failing_variant).to receive(:processed).and_raise(Vips::Error, "boom")
+      allow_any_instance_of(ActiveStorage::Attachment)
+        .to receive(:variant).with(:pdf).and_return(failing_variant)
+
+      result = nil
+      expect { result = pdf }.not_to raise_error
+      expect(result).to start_with("%PDF")
+      # Only the letterhead logo is embedded; the failed photo contributes no XObject.
+      expect(image_xobject_count(result)).to eq(1)
+    end
+  end
+end

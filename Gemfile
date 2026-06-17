@@ -34,10 +34,10 @@ gem "prawn"
 gem "prawn-table"
 
 # Convert numbers to English words for proposal amounts
-gem "humanize", "~> 2.0"
+gem "humanize", "~> 3.0"
 
 # Pagination
-gem "pagy", "~> 9.0"
+gem "pagy", "~> 43.5"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
@@ -58,6 +58,9 @@ gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 2.0"
+# libvips binding for the :vips Active Storage variant processor (Rails default).
+# Requires the libvips system library (provisioned in the Dockerfile and CI).
+gem "ruby-vips"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -88,4 +91,7 @@ group :test do
   gem "selenium-webdriver"
   gem "shoulda-matchers"
   gem "database_cleaner-active_record"
+
+  # Extract text from generated PDFs to assert on proposal PDF content (AT14)
+  gem "pdf-reader"
 end
