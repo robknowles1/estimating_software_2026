@@ -169,7 +169,7 @@ plans dated [plan date] and addenda [addendum list]. The total for the items
 listed below is $[amount] ([AMOUNT IN WORDS]).
 ```
 
-R18: The amount in words (R17) is generated in Ruby using a helper (`ProposalHelper#amount_in_words`) that converts the numeric total to English words. Implement using the `humanize` gem (`gem 'humanize', '~> 2.0'`). Add to Gemfile. The helper calls `amount.to_i.humanize.capitalize` for the dollar portion and formats cents as `/100`. This helper is tested independently.
+R18: The amount in words (R17) is generated in Ruby using a helper (`ProposalHelper#amount_in_words`) that converts the numeric total to English words. Implement using the `humanize` gem (`gem 'humanize', '~> 3.0'`). Add to Gemfile. The helper calls `amount.to_i.humanize.capitalize` for the dollar portion and formats cents as `/100`. This helper is tested independently.
 
 R19: The residential PDF replaces the specification section with a narrative description of materials and labour, presents a room-by-room pricing table drawn from inclusions, and appends a payment terms section. Payment terms text is free-form and entered on the residential version of the opening step (additional field).
 
@@ -436,7 +436,7 @@ Migration: Add FK `proposal_specifications.proposal_id → proposals` with `on_d
 
 Add `gem "prawn"` and `gem "prawn-table"` to the `Gemfile`. No binary runtime is required (pure Ruby). Note this as a new dependency in the implementation PR.
 
-Add `gem "humanize", "~> 2.0"` to the `Gemfile` for the `amount_in_words` helper (R18).
+Add `gem "humanize", "~> 3.0"` to the `Gemfile` for the `amount_in_words` helper (R18).
 
 #### ActiveStorage install — required migration task (PR 1 / data layer)
 
@@ -896,3 +896,4 @@ Covers: R21, AC-31
 | 2026-06-04 | PR #50 review fixes to `Proposals::BuildService`: (1) alternate `display_cost` now `fetch`es `line_item_results[line_item.id]` and fails fast (`KeyError` → rollback) instead of defaulting to 0; (2) room inclusions strip whitespace and skip blank/whitespace-only rooms, deduping on the stripped value | Services, BuildService steps 4–5 | Copilot review: silent $0 alternate could hide a bug on a client-facing bid; whitespace-only/padded rooms (common in CSV imports) caused invalid `ProposalInclusion` rollbacks and duplicate inclusions |
 | 2026-06-09 | PR 4: PdfRenderService (Prawn) + amount_in_words helper + pdf action/route; Download PDF enabled on review step; email/mark-as-sent still deferred to PR 5 | R16, R17, R18, R19, OQ-A, OQ-B, AC-22, AC-23, AC-24, AT13, AT14 | PDF generation layer; OQ-A/OQ-B resolved provisionally (text-only letterhead, configurable `Company.address`) |
 | 2026-06-08 | PR #56 follow-up: inline add-contact modal on opening step — replaces the dead-end round-trip to the contacts page. Always-visible "+ Add contact" button, Turbo Frame/Stream quick-add (first/last/email/phone), new contact auto-selected on success, errors shown in-modal (422), contact still required to advance. R5 and E1 expanded | R5, E1 | Product-owner manual testing: a client with no contacts could only add one via a tiny link to the separate contacts page, which redirected to the client page and dumped the estimator out of the wizard |
+| 2026-06-17 | Upgraded humanize gem constraint from ~> 2.0 to ~> 3.0 (API-compatible; 3.x is the current release) | R18 |

@@ -110,6 +110,25 @@ RSpec.describe Proposals::PdfRenderService do
       proposal = create(:proposal, contact: nil)
       expect { described_class.new(proposal: proposal).call }.not_to raise_error
     end
+
+    # Logo-missing guard: when the logo file is absent, render_letterhead must
+    # not raise Errno::ENOENT and must still emit the company address text.
+    # PDF::Reader normalises whitespace on extraction, so we check for a
+    # distinctive substring rather than the full address string verbatim.
+    it "renders successfully and includes the address when the logo file is absent" do
+      logo_path = Rails.root.join("app/assets/images/trimart_logo.png")
+      allow(File).to receive(:exist?).and_call_original
+      allow(File).to receive(:exist?).with(logo_path).and_return(false)
+
+      proposal = create(:proposal)
+      result = nil
+      expect { result = described_class.new(proposal: proposal).call }.not_to raise_error
+      expect(result).to start_with("%PDF")
+      # Check for a unique substring of Company.address that PDF::Reader will
+      # preserve (street address is a stable anchor, unaffected by whitespace
+      # collapsing around the pipe separators).
+      expect(pdf_text(result)).to include("601 Boro Street")
+    end
   end
 
   describe "photo embedding" do

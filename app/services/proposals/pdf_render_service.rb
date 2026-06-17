@@ -71,8 +71,10 @@ module Proposals
 
     def render_letterhead(pdf)
       logo_path = Rails.root.join("app/assets/images/trimart_logo.png")
-      pdf.image logo_path, width: 120, position: :center
-      pdf.move_down 6
+      if File.exist?(logo_path)
+        pdf.image logo_path, width: 120, position: :center
+        pdf.move_down 6
+      end
       pdf.text Company.address, size: 9, align: :center, color: ADDRESS_COLOR
       pdf.move_down 18
     end

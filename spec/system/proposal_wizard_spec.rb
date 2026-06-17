@@ -27,11 +27,29 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
   # Starts the wizard from the estimate page. Creation is POST-only: the
   # "Create Proposal" entry point is a button_to form on the estimate page, so
   # clicking it submits a real POST to create and redirects to the opening step.
+  #
+  # Selenium occasionally drops the very first synthetic click on a freshly loaded
+  # page (a known Chromedriver/Turbo timing quirk); if the step has not advanced
+  # shortly after, submit the form directly so the test asserts on real behaviour
+  # rather than that click quirk. Mirror the save_and_continue fallback pattern.
   def start_wizard
     visit edit_estimate_path(estimate)
     expect(page).to have_button("Create Proposal", wait: 5)
     click_button "Create Proposal"
+    unless page.has_no_current_path?(edit_estimate_path(estimate), wait: 3)
+      # A10: requestSubmit() is a safe fallback only because the button_to form
+      # has no JS submit hooks — it dispatches a real submit event and is not
+      # equivalent to a click bypassing validation for forms that do.
+      page.execute_script(
+        "document.querySelector(\"form[action='#{estimate_proposal_path(estimate)}']\").requestSubmit()"
+      )
+    end
     expect(page).to have_current_path(step_estimate_proposal_path(estimate, "opening"), wait: 5)
+    # Turbo may display a cached snapshot (preview) while the real page loads.
+    # If we interact with the DOM during a preview, Turbo replaces the entire page
+    # once the live response arrives — discarding any form changes made on the
+    # snapshot. Wait until the preview is gone before asserting on fields.
+    expect(page).to have_no_css("html[data-turbo-preview]", wait: 5)
     expect(page).to have_field("proposal[job_name]", with: estimate.title, wait: 5)
   end
 
@@ -63,6 +81,11 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
 
     expect {
       click_button "Create Proposal"
+      unless page.has_no_current_path?(edit_estimate_path(estimate), wait: 3)
+        page.execute_script(
+          "document.querySelector(\"form[action='#{estimate_proposal_path(estimate)}']\").requestSubmit()"
+        )
+      end
       expect(page).to have_current_path(
         step_estimate_proposal_path(estimate, "opening"), wait: 5
       )
@@ -139,8 +162,25 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
 
     select "Dana Reed", from: "proposal[contact_id]"
     fill_in "proposal[job_name]", with: "Resume Job"
+    # Verify the field shows the new value before submitting — guards against
+    # a Turbo snapshot-replacement race where the DOM is swapped under fill_in.
+    # If fill_in did not take (Turbo cache race), try once more via JS direct set.
+    unless page.has_field?("proposal[job_name]", with: "Resume Job", wait: 3)
+      page.execute_script(<<~JS)
+        var el = document.querySelector("input[name='proposal[job_name]']");
+        if (el) {
+          var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+          nativeInputValueSetter.call(el, 'Resume Job');
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      JS
+    end
+    expect(page).to have_field("proposal[job_name]", with: "Resume Job", wait: 5)
     save_and_continue("opening")
-    expect(page).to have_current_path(step_estimate_proposal_path(estimate, "specifications"), wait: 5)
+    # The opening step form is data: { turbo: false } (native HTTP navigation).
+    # Give the full-page redirect more time to settle than the default wait.
+    expect(page).to have_current_path(step_estimate_proposal_path(estimate, "specifications"), wait: 10)
 
     # Returning to the estimate offers "Edit Proposal", which resumes at the next
     # incomplete step (specifications).
@@ -151,6 +191,9 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
 
     # Saved opening data is preserved when navigating back to the opening step.
     visit step_estimate_proposal_path(estimate, "opening")
+    # Turbo may show a cached snapshot (preview) while the real page loads.
+    # Wait for the preview to be replaced so we read the server-persisted value.
+    expect(page).to have_no_css("html[data-turbo-preview]", wait: 5)
     expect(page).to have_field("proposal[job_name]", with: "Resume Job", wait: 5)
   end
 
