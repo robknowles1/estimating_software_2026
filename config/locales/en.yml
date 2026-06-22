@@ -491,18 +491,32 @@ en:
       title: "Edit Client"
       subtitle: "Update details for %{name}."
     show:
-      notes_heading: "Notes"
+      general_notes_label: "General Notes"
       contacts_heading: "Contacts"
       add_contact: "Add Contact"
       no_contacts: "No contacts yet."
       primary_badge: "Primary"
       name_header: "Name"
+      role_header: "Role"
+      notes_timeline_heading: "Activity / Notes"
+      add_note_placeholder: "Type a note..."
+      add_note_button: "Add note"
+      no_notes: "No notes yet."
+      confirm_delete_note: "Delete this note?"
+      estimates_heading: "Estimates"
+      no_estimates: "No estimates have been bid to this client yet."
       confirm_delete: "Are you sure you want to delete %{name}? This cannot be undone."
     form:
       cancel: "Cancel"
       errors:
         one: "1 error prohibited this client from being saved:"
         other: "%{count} errors prohibited this client from being saved:"
+
+  client_notes:
+    create:
+      notice: "Note added."
+    destroy:
+      notice: "Note deleted."
 
   materials:
     create:
@@ -633,6 +647,7 @@ en:
         other: "%{count} errors prohibited this set from being saved:"
 
   contacts:
+    role_label: "Role"
     create:
       notice: "Contact was successfully added."
     update:

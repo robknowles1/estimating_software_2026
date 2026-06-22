@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Contacts", type: :request do
-  let(:user)   { create(:user) }
+  let(:user) { create(:user) }
   let(:client) { create(:client) }
 
   before { sign_in(user) }
@@ -107,6 +107,17 @@ RSpec.describe "Contacts", type: :request do
     end
   end
 
+  describe "POST /clients/:client_id/contacts with a role" do
+    it "persists the role value" do
+      post client_contacts_path(client), params: {
+        contact: { first_name: "Jane", last_name: "Doe", role: "estimator" }
+      }
+
+      expect(response).to redirect_to(client_path(client))
+      expect(Contact.last.role).to eq("estimator")
+    end
+  end
+
   describe "PATCH /clients/:client_id/contacts/:id" do
     it "updates contact and redirects to client" do
       contact = create(:contact, client: client, first_name: "Old")
@@ -117,6 +128,17 @@ RSpec.describe "Contacts", type: :request do
 
       expect(response).to redirect_to(client_path(client))
       expect(contact.reload.first_name).to eq("Updated")
+    end
+
+    it "succeeds when clearing a previously-set role (role is optional)" do
+      contact = create(:contact, client: client, role: "estimator")
+
+      patch client_contact_path(client, contact), params: {
+        contact: { first_name: contact.first_name, last_name: contact.last_name, role: "" }
+      }
+
+      expect(response).to redirect_to(client_path(client))
+      expect(contact.reload.role).to be_blank
     end
   end
 

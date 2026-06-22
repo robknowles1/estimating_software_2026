@@ -22,6 +22,29 @@
         915
       ],
       "note": "False positive. The `role` column on estimate_materials is a domain concept (marks a material's functional purpose within an estimate, e.g. 'locks') — it is not a user privilege or access-control field. The permitted value is constrained at two layers: (1) the controller sanitizes the value via presence_in(EstimateMaterial::ROLES) before update, coercing anything outside the allowlist to nil, and (2) the model validates :role with inclusion: { in: ROLES }, allow_nil: true. An attacker cannot escalate privileges by submitting this field. The `short_code` column is a plain domain string read from a form select populated from the material catalog; it resolves to a catalog material and carries no privilege or access-control meaning."
+    },
+    {
+      "warning_type": "Mass Assignment",
+      "warning_code": 105,
+      "fingerprint": "ce1a15c42b3d515755c83f0591eba2e3616570a3360c7b3972827bb6e34fb2ac",
+      "check_name": "PermitAttributes",
+      "message": "Potentially dangerous key allowed for mass assignment",
+      "file": "app/controllers/contacts_controller.rb",
+      "line": 71,
+      "link": "https://brakemanscanner.org/docs/warning_types/mass_assignment/",
+      "code": "params.require(:contact).permit(:first_name, :last_name, :title, :email, :phone, :is_primary, :notes, :role)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "ContactsController",
+        "method": "contact_params"
+      },
+      "user_input": ":role",
+      "confidence": "Medium",
+      "cwe_id": [
+        915
+      ],
+      "note": "False positive (SPEC-027). The `role` column on contacts is a free-form domain label describing how a GC contact is engaged (e.g. 'estimator', 'project manager') — it is not a user privilege or access-control field. SPEC-027 rules R1/R2 explicitly require permitting it as an optional, unvalidated string. The Contact model carries no authorization logic; this `role` has no bearing on application access control."
     }
   ]
 }

@@ -185,8 +185,8 @@ Spec files live in `docs/specs/`. Architecture Decision Records live in `docs/ar
 | SPEC-023 | Estimate Date Fields | 📋 ready |
 | SPEC-024 | Materials Library Search & Pagination | 📋 ready |
 | SPEC-025 | Room Tracking on CSV Import | 📋 ready |
-| SPEC-026 | Proposal / Bid Letter Wizard | 📋 ready |
-| SPEC-027 | CRM Expansion on Clients | 📋 ready |
+| SPEC-026 | Proposal / Bid Letter Wizard | ✅ done |
+| SPEC-027 | CRM Expansion on Clients | ✅ done |
 | SPEC-028 | Asana Material Price Sync | 📋 draft |
 | SPEC-029 | Product Presets Auto-Population | 🔄 in progress |
 
