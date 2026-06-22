@@ -154,14 +154,15 @@ RSpec.describe "Proposals", type: :request do
     context "when authenticated" do
       before { sign_in(user) }
 
-      # AC-25 / AC-34 — a valid address sends one email, flips status to sent,
-      # and redirects to the review step with a notice.
+      # AC-25 / AC-34 — a valid address sends one email, flips proposal and
+      # estimate status to sent, and redirects to the review step with a notice.
       it "sends the proposal email, marks it sent, and redirects with a notice" do
         expect {
           post email_estimate_proposal_path(estimate), params: { recipient_email: "client@example.com" }
         }.to change { ActionMailer::Base.deliveries.size }.by(1)
 
         expect(proposal.reload.status).to eq("sent")
+        expect(estimate.reload.status).to eq("sent")
         expect(response).to redirect_to(step_estimate_proposal_path(estimate, "review"))
         expect(flash[:notice]).to eq(
           I18n.t("proposals.steps.review.email_notice", email: "client@example.com")
@@ -282,12 +283,14 @@ RSpec.describe "Proposals", type: :request do
     context "when authenticated" do
       before { sign_in(user) }
 
-      # AC-34 — Mark as Sent flips status to sent without sending an email.
-      it "marks the proposal sent and redirects with a notice" do
+      # AC-34 — Mark as Sent flips proposal and estimate status to sent, then
+      # returns the user to the estimate page.
+      it "marks the proposal sent and redirects to the estimate" do
         post mark_as_sent_estimate_proposal_path(estimate)
 
         expect(proposal.reload.status).to eq("sent")
-        expect(response).to redirect_to(step_estimate_proposal_path(estimate, "review"))
+        expect(estimate.reload.status).to eq("sent")
+        expect(response).to redirect_to(edit_estimate_path(estimate))
         expect(flash[:notice]).to eq(I18n.t("proposals.steps.review.mark_as_sent_notice"))
       end
 

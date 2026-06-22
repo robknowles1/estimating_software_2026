@@ -72,6 +72,7 @@ class ProposalsController < ApplicationController
       # the status couldn't be updated (and log it) rather than claiming a clean
       # success or pretending nothing happened.
       if @proposal.update(status: :sent)
+        @estimate.update(status: :sent)
         redirect_to step_estimate_proposal_path(@estimate, "review"),
                     notice: t("proposals.steps.review.email_notice", email: recipient)
       else
@@ -93,7 +94,8 @@ class ProposalsController < ApplicationController
   # email (R15 / R25 / AC-34). Status never gates editing.
   def mark_as_sent
     if @proposal.update(status: :sent)
-      redirect_to step_estimate_proposal_path(@estimate, "review"),
+      @estimate.update(status: :sent)
+      redirect_to edit_estimate_path(@estimate),
                   notice: t("proposals.steps.review.mark_as_sent_notice")
     else
       redirect_to step_estimate_proposal_path(@estimate, "review"),
