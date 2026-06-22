@@ -50,7 +50,9 @@ RSpec.describe "Client CRM", type: :system do
       visit edit_client_contact_path(client, contact)
 
       fill_in "Role", with: "estimator"
-      click_button "Update Contact"
+      # Use requestSubmit() to avoid the Chrome 148 headless hit-test bug where
+      # a synthetic click on the submit input is sometimes swallowed.
+      page.execute_script("document.querySelector(\"input[type='submit'][value='Update Contact']\").form.requestSubmit();")
 
       expect(page).to have_current_path(client_path(client), wait: 5)
       within("table tbody") do
