@@ -63,9 +63,6 @@ class ProposalsController < ApplicationController
   # ArgumentError from the service and is rendered as a 422 with no email sent
   # (E9 / AT15 / AC-26).
   def email
-    @proposal = @estimate.proposal
-    redirect_to edit_estimate_path(@estimate) and return if @proposal.nil?
-
     recipient = params[:recipient_email]
     result = Proposals::EmailDeliveryService.new(proposal: @proposal, recipient_email: recipient).call
 
@@ -95,9 +92,6 @@ class ProposalsController < ApplicationController
   # Records that the proposal was delivered by other means without sending an
   # email (R15 / R25 / AC-34). Status never gates editing.
   def mark_as_sent
-    @proposal = @estimate.proposal
-    redirect_to edit_estimate_path(@estimate) and return if @proposal.nil?
-
     if @proposal.update(status: :sent)
       redirect_to step_estimate_proposal_path(@estimate, "review"),
                   notice: t("proposals.steps.review.mark_as_sent_notice")
