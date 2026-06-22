@@ -21,7 +21,105 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
     fill_in "Email", with: user.email
     fill_in "Password", with: "password123"
     click_button "Sign In"
+
+    # Give the first click a full Capybara wait to land the POST + redirect — a
+    # merely slow (not dropped) sign-in must be allowed to finish, otherwise the
+    # fallback below races an in-flight request and double-submits the form.
+    return if page.has_current_path?(estimates_path, wait: Capybara.default_max_wait_time)
+
+    # Only re-click when the first click was genuinely dropped: we must still be
+    # on the sign-in page (the POST never navigated us). Selenium occasionally
+    # drops the first synthetic click on a freshly loaded page (the known
+    # Chromedriver/Turbo first-click quirk this file documents). If we are no
+    # longer on /session/new the request actually went through, so re-clicking
+    # would be the very double-fire we are avoiding.
+    click_button "Sign In" if page.has_current_path?(new_session_path, wait: 1)
     expect(page).to have_current_path(estimates_path, wait: 5)
+  end
+
+  # Clicks the "Create Proposal" button_to form, retrying the click if the wizard
+  # has not advanced shortly after. Selenium occasionally drops the very first
+  # synthetic click on a freshly loaded page (the known Chromedriver/Turbo timing
+  # quirk this file documents), which leaves us stranded on the estimate page. The
+  # retry is safe: it only fires when the POST never happened (we are still on the
+  # estimate edit page), so it never creates a duplicate proposal.
+  def click_create_proposal(target_estimate)
+    opening_path = step_estimate_proposal_path(target_estimate, "opening")
+    edit_path    = edit_estimate_path(target_estimate)
+    click_button "Create Proposal"
+
+    # Give the click a full Capybara wait to land the POST + redirect — a merely
+    # slow (not dropped) request must be allowed to finish here, otherwise the
+    # fallback below races an in-flight submission.
+    return if page.has_current_path?(opening_path, wait: Capybara.default_max_wait_time)
+
+    # Only fall back when the click was genuinely dropped: we must still be on the
+    # estimate edit page (the POST never navigated us) AND no proposal exists yet.
+    # If either is false the request actually went through, so re-submitting would
+    # be the very double-fire we are trying to avoid — bail and let the assertion
+    # below report the real state.
+    if page.has_current_path?(edit_path, wait: 1) && Proposal.where(estimate_id: target_estimate.id).none?
+      # The synthetic click was dropped before submitting the button_to form (the
+      # known Chromedriver/Turbo first-click quirk this file documents). Submit the
+      # form directly — same requestSubmit() fallback save_and_continue uses. The
+      # controller's one-proposal-per-estimate guard also makes a duplicate POST
+      # idempotent, so this is safe even under a late-landing first click.
+      submit_form_for_button("Create Proposal")
+    end
+
+    expect(page).to have_current_path(opening_path, wait: 5)
+  end
+
+  # Submits the form owning the button with the given visible label/value via a
+  # real requestSubmit() — the fallback used when a synthetic click is dropped on
+  # a freshly loaded page (the Chromedriver/Turbo first-click quirk this file
+  # documents). These forms have no JS submit hooks beyond Turbo, so this
+  # dispatches an equivalent submit event.
+  def submit_form_for_button(label)
+    page.execute_script(<<~JS, label)
+      var label = arguments[0];
+      var btn = Array.from(document.querySelectorAll("input[type='submit'], button"))
+        .find(function (el) { return (el.value || el.textContent).trim() === label; });
+      if (btn) { btn.closest("form").requestSubmit(); }
+    JS
+  end
+
+  # Fills a pre-populated field and confirms the typed value is committed in the
+  # DOM, re-filling if it reverts. These fields render with a server-side default
+  # (job_name → estimate title, recipient_email → contact email). Reaching the
+  # page goes through a Turbo Drive navigation that paints a cached preview
+  # snapshot before swapping in the fresh page; a fill against the preview node is
+  # discarded by the swap, leaving the default in place. We wait for the preview
+  # to clear and for a single settled input, then re-fill until the field holds
+  # the value, so the subsequent submit carries the typed value not the default.
+  def fill_field_until_committed(name, value)
+    selector = "input[name='#{name}']"
+    5.times do
+      wait_for_turbo_settled
+      # Settle to a single input first: a Turbo Drive navigation can briefly leave
+      # a cached snapshot's duplicate field alongside the fresh one.
+      expect(page).to have_selector(selector, count: 1, wait: 5)
+      fill_in name, with: value
+      return if page.has_field?(name, with: value, wait: 2)
+
+      # The field still holds its server-side default. On a freshly navigated page
+      # a clear+type can land on a transient stale node (replaced by Turbo before
+      # it commits), so the live field keeps its default. Set the live field's
+      # value directly and fire input/change so it matches a real edit. These
+      # forms have no JS submit hooks beyond Turbo and submit via requestSubmit,
+      # which reads .value, so the set value is exactly what is submitted.
+      page.execute_script(<<~JS, name, value)
+        var name = arguments[0], value = arguments[1];
+        var el = document.querySelector("input[name='" + name + "']");
+        if (el) {
+          el.value = value;
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      JS
+      return if page.has_field?(name, with: value, wait: 2)
+    end
+    expect(page).to have_field(name, with: value, wait: 5)
   end
 
   # Starts the wizard from the estimate page. Creation is POST-only: the
@@ -35,22 +133,39 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
   def start_wizard
     visit edit_estimate_path(estimate)
     expect(page).to have_button("Create Proposal", wait: 5)
-    click_button "Create Proposal"
-    unless page.has_no_current_path?(edit_estimate_path(estimate), wait: 3)
-      # A10: requestSubmit() is a safe fallback only because the button_to form
-      # has no JS submit hooks — it dispatches a real submit event and is not
-      # equivalent to a click bypassing validation for forms that do.
-      page.execute_script(
-        "document.querySelector(\"form[action='#{estimate_proposal_path(estimate)}']\").requestSubmit()"
-      )
-    end
-    expect(page).to have_current_path(step_estimate_proposal_path(estimate, "opening"), wait: 5)
-    # Turbo may display a cached snapshot (preview) while the real page loads.
-    # If we interact with the DOM during a preview, Turbo replaces the entire page
-    # once the live response arrives — discarding any form changes made on the
-    # snapshot. Wait until the preview is gone before asserting on fields.
-    expect(page).to have_no_css("html[data-turbo-preview]", wait: 5)
+    click_create_proposal(estimate)
+    # The navigation to the opening step lands via Turbo Drive, which paints a
+    # cached preview snapshot before the fresh page. Interacting during that
+    # preview targets stale nodes whose values Turbo then discards. Wait for the
+    # preview to clear and the form to settle to a single input before any field
+    # interaction.
+    wait_for_turbo_settled
+    expect(page).to have_selector("input[name='proposal[job_name]']", count: 1, wait: 5)
     expect(page).to have_field("proposal[job_name]", with: estimate.title, wait: 5)
+  end
+
+  # Navigates to the review step and waits for the Turbo Drive navigation to
+  # settle (preview cleared, expected URL) before any interaction.
+  def visit_review_fresh
+    visit step_estimate_proposal_path(estimate, "review")
+    wait_for_turbo_settled
+    expect(page).to have_current_path(
+      step_estimate_proposal_path(estimate, "review"), wait: 5
+    )
+  end
+
+  # Blocks until Turbo Drive has finished swapping in the real page — i.e. the
+  # <html> element no longer carries the data-turbo-preview marker Turbo sets
+  # while a cached snapshot is on screen. Prevents interacting with stale preview
+  # nodes during a navigation.
+  def wait_for_turbo_settled
+    # Capybara-native wait: block until the <html> element no longer carries the
+    # data-turbo-preview marker Turbo sets while a cached snapshot is on screen.
+    # have_no_css polls with Capybara's own waiting (no stdlib Timeout dependency)
+    # and never raises if the marker is already gone or never appears — matching
+    # the previous "fall through" intent so the subsequent settle assertions
+    # provide the real failure.
+    expect(page).to have_no_css("html[data-turbo-preview]", wait: Capybara.default_max_wait_time)
   end
 
   # Clicks "Save and continue" on the given step. Selenium occasionally drops the
@@ -79,16 +194,10 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
     visit edit_estimate_path(estimate)
     expect(page).to have_button("Create Proposal", wait: 5)
 
+    # click_create_proposal retries the click only when no navigation happened
+    # (the dropped-first-click quirk), so at most one POST ever creates a proposal.
     expect {
-      click_button "Create Proposal"
-      unless page.has_no_current_path?(edit_estimate_path(estimate), wait: 3)
-        page.execute_script(
-          "document.querySelector(\"form[action='#{estimate_proposal_path(estimate)}']\").requestSubmit()"
-        )
-      end
-      expect(page).to have_current_path(
-        step_estimate_proposal_path(estimate, "opening"), wait: 5
-      )
+      click_create_proposal(estimate)
     }.to change(Proposal, :count).by(1)
 
     expect(Proposal.count).to eq(1)
@@ -130,16 +239,83 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
     expect(page).to have_current_path(step_estimate_proposal_path(estimate, "exclusions"), wait: 5)
     save_and_continue("exclusions")
 
-    # Review step — preview content + an enabled Download PDF link. (Email and
-    # Mark as Sent remain disabled until PR 5.) A real headless-Chrome file
-    # download assertion is flaky, so we assert the link is present and points at
-    # the pdf route; the request spec covers the actual PDF bytes.
+    # Review step — preview content + all three live actions (Download PDF,
+    # Send Email, Mark as Sent). A real headless-Chrome file download assertion
+    # is flaky, so we assert the Download link is present and points at the pdf
+    # route; the request spec covers the actual PDF bytes.
     expect(page).to have_current_path(step_estimate_proposal_path(estimate, "review"), wait: 5)
     expect(page).to have_text("Review and Export")
     expect(page).to have_text("Dana Reed")
     expect(page).to have_link("Download PDF", href: pdf_estimate_proposal_path(estimate))
-    expect(page).to have_button("Send Email", disabled: true)
-    expect(page).to have_text("Email delivery and Mark as Sent")
+    expect(page).to have_button("Send Email")
+    expect(page).to have_button("Mark as Sent")
+  end
+
+  # Submits a review-step action form (Send Email / Mark as Sent) and waits for
+  # the success notice. Both buttons POST and 302-redirect back to the review
+  # step, which re-renders the page; the redirect must settle (notice visible +
+  # current path back at review) before the notice text and any DB read are
+  # trusted.
+  #
+  # The submit is driven by requestSubmit() rather than a synthetic click. These
+  # actions are NOT idempotent — Send Email dispatches a real email and the
+  # redirect re-renders the recipient field back to its default — so the
+  # click-then-retry pattern used for the idempotent step forms is unsafe here: a
+  # dropped-then-late first click could double-submit (two emails / a submit with
+  # stale defaults). requestSubmit() avoids the first-click-drop quirk entirely
+  # and fires exactly once, with whatever field values are currently in the form.
+  # These forms have no JS submit hooks beyond Turbo, so this dispatches an
+  # equivalent submit event.
+  def submit_review_action(label, notice)
+    submit_form_for_button(label)
+    expect(page).to have_current_path(
+      step_estimate_proposal_path(estimate, "review"), wait: 5
+    )
+    expect(page).to have_text(notice, wait: 5)
+  end
+
+  # Test 6 — Send Email from the review step flips the proposal to sent.
+  # ActionMailer uses the test adapter (deliveries collected in-memory), so we
+  # assert on the success flash + persisted status rather than real SMTP.
+  it "sends the proposal email from the review step and marks it sent" do
+    proposal = Proposals::BuildService.new(estimate: estimate).call
+    proposal.update!(current_step: "review", contact: contact)
+    ActionMailer::Base.deliveries.clear
+
+    login
+    visit_review_fresh
+
+    expect(page).to have_field("recipient_email", with: contact.email, wait: 5)
+    # Fill the recipient and confirm the typed value sticks (re-filling if it
+    # reverts to the contact-email default), so the POST carries the typed address
+    # rather than that default — which the success-notice assertion checks by name.
+    fill_field_until_committed("recipient_email", "client@example.com")
+
+    # submit_review_action fires the form exactly once via requestSubmit(), so the
+    # typed recipient is sent and the delivery count changes by exactly 1.
+    expect {
+      submit_review_action("Send Email", "Proposal sent to client@example.com")
+    }.to change { ActionMailer::Base.deliveries.size }.by(1)
+
+    # Read the DB only after the redirect + notice confirm the request finished.
+    expect(proposal.reload.status).to eq("sent")
+  end
+
+  # Test 7 — Mark as Sent records delivery without sending an email.
+  it "marks the proposal sent without sending an email" do
+    proposal = Proposals::BuildService.new(estimate: estimate).call
+    proposal.update!(current_step: "review")
+    ActionMailer::Base.deliveries.clear
+
+    login
+    visit_review_fresh
+
+    expect {
+      submit_review_action("Mark as Sent", "Proposal marked as sent.")
+    }.not_to change { ActionMailer::Base.deliveries.size }
+
+    # Read the DB only after the redirect + notice confirm the request finished.
+    expect(proposal.reload.status).to eq("sent")
   end
 
   # Test 2 — residential mode skips specifications.
@@ -161,22 +337,13 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
     start_wizard
 
     select "Dana Reed", from: "proposal[contact_id]"
-    fill_in "proposal[job_name]", with: "Resume Job"
-    # Verify the field shows the new value before submitting — guards against
-    # a Turbo snapshot-replacement race where the DOM is swapped under fill_in.
-    # If fill_in did not take (Turbo cache race), try once more via JS direct set.
-    unless page.has_field?("proposal[job_name]", with: "Resume Job", wait: 3)
-      page.execute_script(<<~JS)
-        var el = document.querySelector("input[name='proposal[job_name]']");
-        if (el) {
-          var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-          nativeInputValueSetter.call(el, 'Resume Job');
-          el.dispatchEvent(new Event('input', { bubbles: true }));
-          el.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      JS
-    end
-    expect(page).to have_field("proposal[job_name]", with: "Resume Job", wait: 5)
+    # Fill the job name and confirm it actually stuck before submitting. The
+    # opening form is rendered after a full navigation and the field defaults to
+    # the estimate title; a late paint/restore can briefly replace the field and
+    # drop a just-typed value. Re-fill until the typed value is committed so the
+    # save persists "Resume Job" rather than the default (which the preservation
+    # assertion at the end of this example depends on).
+    fill_field_until_committed("proposal[job_name]", "Resume Job")
     save_and_continue("opening")
     # The opening step form is data: { turbo: false } (native HTTP navigation).
     # Give the full-page redirect more time to settle than the default wait.
@@ -218,8 +385,7 @@ RSpec.describe "Proposal wizard (SPEC-026)", type: :system do
     def start_bare_wizard
       visit edit_estimate_path(bare_estimate)
       expect(page).to have_button("Create Proposal", wait: 5)
-      click_button "Create Proposal"
-      expect(page).to have_current_path(step_estimate_proposal_path(bare_estimate, "opening"), wait: 5)
+      click_create_proposal(bare_estimate)
     end
 
     # Clicks "+ Add contact" until the modal is actually open (first field visible),

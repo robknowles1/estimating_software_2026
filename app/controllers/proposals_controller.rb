@@ -1,5 +1,6 @@
 class ProposalsController < ApplicationController
   before_action :set_estimate
+  before_action :guard_review_step, only: %i[email mark_as_sent]
 
   # Creates the proposal for the estimate (one per estimate). If one already
   # exists, redirects to its current step without creating a duplicate (R1, E10).
@@ -52,9 +53,92 @@ class ProposalsController < ApplicationController
                 alert: t("proposals.steps.review.pdf_error")
   end
 
+  # Emails the proposal PDF to a recipient (R15 / AC-25). The recipient address
+  # comes straight from params and is passed only to EmailDeliveryService, which
+  # validates it (format + header-injection guard) before any mailer work.
+  #
+  # On success the status moves to sent (R25 / AC-34) and we redirect to the
+  # review step with a notice. A delivery failure re-renders the review step with
+  # an error flash (no 500). A blank/invalid/injection address raises
+  # ArgumentError from the service and is rendered as a 422 with no email sent
+  # (E9 / AT15 / AC-26).
+  def email
+    recipient = params[:recipient_email]
+    result = Proposals::EmailDeliveryService.new(proposal: @proposal, recipient_email: recipient).call
+
+    if result.success
+      # The email is already sent at this point. If the status update fails we
+      # must not lose that fact: surface a flash that says the email went out but
+      # the status couldn't be updated (and log it) rather than claiming a clean
+      # success or pretending nothing happened.
+      if @proposal.update(status: :sent)
+        @estimate.update(status: :sent)
+        redirect_to step_estimate_proposal_path(@estimate, "review"),
+                    notice: t("proposals.steps.review.email_notice", email: recipient)
+      else
+        Rails.logger.error(
+          "[ProposalsController#email] email sent to #{recipient} but status update " \
+          "failed for proposal #{@proposal.id}: #{@proposal.errors.full_messages.join(', ')}"
+        )
+        redirect_to step_estimate_proposal_path(@estimate, "review"),
+                    alert: t("proposals.steps.review.email_sent_status_error", email: recipient)
+      end
+    else
+      render_review_with_email_error(t("proposals.steps.review.email_error"))
+    end
+  rescue ArgumentError
+    render_review_with_email_error(t("proposals.steps.review.email_error"))
+  end
+
+  # Records that the proposal was delivered by other means without sending an
+  # email (R15 / R25 / AC-34). Status never gates editing.
+  def mark_as_sent
+    if @proposal.update(status: :sent)
+      @estimate.update(status: :sent)
+      redirect_to edit_estimate_path(@estimate),
+                  notice: t("proposals.steps.review.mark_as_sent_notice")
+    else
+      redirect_to step_estimate_proposal_path(@estimate, "review"),
+                  alert: t("proposals.steps.review.mark_as_sent_error")
+    end
+  end
+
   private
 
   def set_estimate
     @estimate = Estimate.find(params[:estimate_id])
+  end
+
+  # email and mark_as_sent are review-step actions (R15): they live on step 7 of
+  # the wizard. Unlike Steps, which guards future steps via #guard_future_step,
+  # this controller has no such guard, so a crafted POST could otherwise send an
+  # email / mark-as-sent for an incomplete proposal. Mirror the wizard's
+  # future-step behavior: if the proposal has not reached the review step,
+  # redirect to its current step with the same future-step notice and halt — no
+  # email, no status change. This gates on the review STEP being reached
+  # (current_step), never on status (R25): a sent proposal sitting on review can
+  # still be re-emailed.
+  def guard_review_step
+    @proposal = @estimate.proposal
+    redirect_to edit_estimate_path(@estimate) and return if @proposal.nil?
+
+    return if @proposal.current_step == "review"
+
+    redirect_to step_estimate_proposal_path(@estimate, @proposal.current_step),
+                notice: t("proposals.steps.show.future_step_notice")
+  end
+
+  # Re-render the review step (with all associations eager-loaded as the preview
+  # reads them) and a 422 so a blank/invalid address surfaces inline on the
+  # review form — AT15 requires the 422 status.
+  def render_review_with_email_error(message)
+    @proposal = Proposal
+                .includes(:contact, :proposal_clarifications, :proposal_alternates,
+                          :proposal_exclusions, :proposal_specifications,
+                          proposal_inclusions: { photos_attachments: :blob })
+                .find(@proposal.id)
+    @step = "review"
+    flash.now[:alert] = message
+    render "proposals/steps/review", status: :unprocessable_content
   end
 end

@@ -141,4 +141,198 @@ RSpec.describe "Proposals", type: :request do
       end
     end
   end
+
+  describe "POST /estimates/:estimate_id/proposal/email" do
+    let!(:proposal) do
+      Proposals::BuildService.new(estimate: estimate).call.tap do |p|
+        p.update!(current_step: "review")
+      end
+    end
+
+    before { ActionMailer::Base.deliveries.clear }
+
+    context "when authenticated" do
+      before { sign_in(user) }
+
+      # AC-25 / AC-34 — a valid address sends one email, flips proposal and
+      # estimate status to sent, and redirects to the review step with a notice.
+      it "sends the proposal email, marks it sent, and redirects with a notice" do
+        expect {
+          post email_estimate_proposal_path(estimate), params: { recipient_email: "client@example.com" }
+        }.to change { ActionMailer::Base.deliveries.size }.by(1)
+
+        expect(proposal.reload.status).to eq("sent")
+        expect(estimate.reload.status).to eq("sent")
+        expect(response).to redirect_to(step_estimate_proposal_path(estimate, "review"))
+        expect(flash[:notice]).to eq(
+          I18n.t("proposals.steps.review.email_notice", email: "client@example.com")
+        )
+      end
+
+      # AT15 / E9 / AC-26 — a blank address returns 422, sends nothing, and
+      # leaves the status unchanged.
+      it "returns 422 and sends nothing when the recipient is blank" do
+        expect {
+          post email_estimate_proposal_path(estimate), params: { recipient_email: "" }
+        }.not_to change { ActionMailer::Base.deliveries.size }
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(proposal.reload.status).to eq("draft")
+      end
+
+      # An invalid-but-non-blank address returns 422 and the typed value is
+      # preserved in the recipient field so the user can correct it in place
+      # (rather than the field resetting to the contact default).
+      it "returns 422 and preserves the typed recipient when the address is invalid" do
+        expect {
+          post email_estimate_proposal_path(estimate), params: { recipient_email: "not-an-email" }
+        }.not_to change { ActionMailer::Base.deliveries.size }
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(proposal.reload.status).to eq("draft")
+        expect(response.body).to include('value="not-an-email"')
+      end
+
+      # Header-injection guard — a CRLF/extra-recipient address is rejected with
+      # a 422 and no send.
+      it "returns 422 and sends nothing for a header-injection address" do
+        expect {
+          post email_estimate_proposal_path(estimate),
+               params: { recipient_email: "a@b.com\nBcc: evil@x.com" }
+        }.not_to change { ActionMailer::Base.deliveries.size }
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(proposal.reload.status).to eq("draft")
+      end
+
+      # The email is already sent when the status update fails. We must not claim a
+      # clean success: redirect with an honest alert (email sent, status not
+      # updated) and 302, not a 500. The delivery still happened (count + 1).
+      it "redirects with an honest alert when the email sent but the status update fails" do
+        allow_any_instance_of(Proposal).to receive(:update).with(status: :sent).and_return(false)
+
+        expect {
+          post email_estimate_proposal_path(estimate), params: { recipient_email: "client@example.com" }
+        }.to change { ActionMailer::Base.deliveries.size }.by(1)
+
+        expect(response).to redirect_to(step_estimate_proposal_path(estimate, "review"))
+        expect(flash[:alert]).to eq(
+          I18n.t("proposals.steps.review.email_sent_status_error", email: "client@example.com")
+        )
+        # The action sets no success notice on this branch (it does not claim a
+        # clean success); the only notice present is the leftover sign-in flash.
+        expect(flash[:notice]).not_to eq(
+          I18n.t("proposals.steps.review.email_notice", email: "client@example.com")
+        )
+      end
+
+      # A delivery failure re-renders the review step with an error flash (no 500).
+      it "re-renders the review step with an error when delivery fails" do
+        service = instance_double(Proposals::EmailDeliveryService)
+        allow(Proposals::EmailDeliveryService).to receive(:new).and_return(service)
+        allow(service).to receive(:call).and_return(
+          Proposals::EmailDeliveryService::Result.new(success: false, error: "boom")
+        )
+
+        post email_estimate_proposal_path(estimate), params: { recipient_email: "client@example.com" }
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(proposal.reload.status).to eq("draft")
+        expect(flash[:alert]).to eq(I18n.t("proposals.steps.review.email_error"))
+      end
+    end
+
+    context "when the proposal has not reached the review step" do
+      before { sign_in(user) }
+
+      # email is a review-step action (R15); a crafted POST against an incomplete
+      # proposal must not send. The guard mirrors the wizard's future-step
+      # behavior: redirect to the current step with the future-step notice, send
+      # nothing, leave the status unchanged.
+      it "redirects to the current step with the future-step notice and sends nothing" do
+        proposal.update!(current_step: "opening")
+
+        expect {
+          post email_estimate_proposal_path(estimate), params: { recipient_email: "client@example.com" }
+        }.not_to change { ActionMailer::Base.deliveries.size }
+
+        expect(response).to redirect_to(step_estimate_proposal_path(estimate, "opening"))
+        expect(flash[:notice]).to eq(I18n.t("proposals.steps.show.future_step_notice"))
+        expect(proposal.reload.status).to eq("draft")
+      end
+    end
+
+    context "when unauthenticated" do
+      it "redirects to login and sends nothing" do
+        expect {
+          post email_estimate_proposal_path(estimate), params: { recipient_email: "client@example.com" }
+        }.not_to change { ActionMailer::Base.deliveries.size }
+
+        expect(response).to redirect_to(new_session_path)
+      end
+    end
+  end
+
+  describe "POST /estimates/:estimate_id/proposal/mark_as_sent" do
+    let!(:proposal) do
+      Proposals::BuildService.new(estimate: estimate).call.tap do |p|
+        p.update!(current_step: "review")
+      end
+    end
+
+    context "when authenticated" do
+      before { sign_in(user) }
+
+      # AC-34 — Mark as Sent flips proposal and estimate status to sent, then
+      # returns the user to the estimate page.
+      it "marks the proposal sent and redirects to the estimate" do
+        post mark_as_sent_estimate_proposal_path(estimate)
+
+        expect(proposal.reload.status).to eq("sent")
+        expect(estimate.reload.status).to eq("sent")
+        expect(response).to redirect_to(edit_estimate_path(estimate))
+        expect(flash[:notice]).to eq(I18n.t("proposals.steps.review.mark_as_sent_notice"))
+      end
+
+      # When the status update fails, redirect with an error alert (no false
+      # success notice, no 500).
+      it "redirects with an error alert when the status update fails" do
+        allow_any_instance_of(Proposal).to receive(:update).with(status: :sent).and_return(false)
+
+        post mark_as_sent_estimate_proposal_path(estimate)
+
+        expect(response).to redirect_to(step_estimate_proposal_path(estimate, "review"))
+        expect(flash[:alert]).to eq(I18n.t("proposals.steps.review.mark_as_sent_error"))
+        # The action sets no success notice on this branch; any notice present is
+        # the leftover sign-in flash, never the mark-as-sent success notice.
+        expect(flash[:notice]).not_to eq(I18n.t("proposals.steps.review.mark_as_sent_notice"))
+      end
+    end
+
+    context "when the proposal has not reached the review step" do
+      before { sign_in(user) }
+
+      # mark_as_sent is a review-step action (R15); a crafted POST against an
+      # incomplete proposal must not flip the status. The guard redirects to the
+      # current step with the future-step notice and leaves the status unchanged.
+      it "redirects to the current step with the future-step notice and does not change status" do
+        proposal.update!(current_step: "opening")
+
+        post mark_as_sent_estimate_proposal_path(estimate)
+
+        expect(response).to redirect_to(step_estimate_proposal_path(estimate, "opening"))
+        expect(flash[:notice]).to eq(I18n.t("proposals.steps.show.future_step_notice"))
+        expect(proposal.reload.status).to eq("draft")
+      end
+    end
+
+    context "when unauthenticated" do
+      it "redirects to login and does not change status" do
+        post mark_as_sent_estimate_proposal_path(estimate)
+
+        expect(response).to redirect_to(new_session_path)
+        expect(proposal.reload.status).to eq("draft")
+      end
+    end
+  end
 end

@@ -89,19 +89,31 @@
     </section>
   <% end %>
 
-  <div class="pt-6 border-t border-slate-200">
-    <p class="text-xs text-slate-400 mb-3"><%= t(".export_unavailable") %></p>
+  <div class="pt-6 border-t border-slate-200 space-y-6">
     <div class="flex items-center gap-3">
       <%= link_to t(".download_pdf"), pdf_estimate_proposal_path(estimate),
             class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors" %>
-      <button type="button" disabled
-          class="bg-slate-200 text-slate-400 px-5 py-2.5 rounded-lg text-sm font-semibold cursor-not-allowed">
-        <%= t(".send_email") %>
-      </button>
-      <button type="button" disabled
-          class="bg-slate-200 text-slate-400 px-5 py-2.5 rounded-lg text-sm font-semibold cursor-not-allowed">
-        <%= t(".mark_as_sent") %>
-      </button>
+
+      <%= button_to t(".mark_as_sent"), mark_as_sent_estimate_proposal_path(estimate),
+            method: :post,
+            class: "bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors" %>
     </div>
+
+    <%= form_with url: email_estimate_proposal_path(estimate), method: :post,
+          class: "space-y-2 max-w-md" do |form| %>
+      <%# Email delivery errors surface via the page-level flash partial
+          (layouts/_flashes.html.erb). Rendering them inline here too would
+          duplicate the alert, so the error is shown only once, page-level. %>
+      <%= form.label :recipient_email, t(".email_label"),
+            class: "block text-sm font-medium text-slate-700" %>
+      <div class="flex items-center gap-3">
+        <%# Preserve the typed recipient on the 422 re-render so a bad address is
+            easy to correct; fall back to the contact email on the normal GET. %>
+        <%= form.email_field :recipient_email, value: params[:recipient_email].presence || proposal.contact&.email,
+              class: "flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-amber-500" %>
+        <%= form.submit t(".send_email"),
+              class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer" %>
+      </div>
+    <% end %>
   </div>
 </div>

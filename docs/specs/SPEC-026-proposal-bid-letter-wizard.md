@@ -1,7 +1,7 @@
 # Spec: Proposal / Bid Letter Wizard
 
 **ID:** SPEC-026
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Created:** 2026-05-27
 **Author:** spec-agent
@@ -896,4 +896,5 @@ Covers: R21, AC-31
 | 2026-06-04 | PR #50 review fixes to `Proposals::BuildService`: (1) alternate `display_cost` now `fetch`es `line_item_results[line_item.id]` and fails fast (`KeyError` → rollback) instead of defaulting to 0; (2) room inclusions strip whitespace and skip blank/whitespace-only rooms, deduping on the stripped value | Services, BuildService steps 4–5 | Copilot review: silent $0 alternate could hide a bug on a client-facing bid; whitespace-only/padded rooms (common in CSV imports) caused invalid `ProposalInclusion` rollbacks and duplicate inclusions |
 | 2026-06-09 | PR 4: PdfRenderService (Prawn) + amount_in_words helper + pdf action/route; Download PDF enabled on review step; email/mark-as-sent still deferred to PR 5 | R16, R17, R18, R19, OQ-A, OQ-B, AC-22, AC-23, AC-24, AT13, AT14 | PDF generation layer; OQ-A/OQ-B resolved provisionally (text-only letterhead, configurable `Company.address`) |
 | 2026-06-08 | PR #56 follow-up: inline add-contact modal on opening step — replaces the dead-end round-trip to the contacts page. Always-visible "+ Add contact" button, Turbo Frame/Stream quick-add (first/last/email/phone), new contact auto-selected on success, errors shown in-modal (422), contact still required to advance. R5 and E1 expanded | R5, E1 | Product-owner manual testing: a client with no contacts could only add one via a tiny link to the separate contacts page, which redirected to the client page and dumped the estimator out of the wizard |
+| 2026-06-09 | PR 5: `ProposalMailer` + `Proposals::EmailDeliveryService` + `ProposalsController#email`/`#mark_as_sent` actions and routes; review-step Send Email + Mark as Sent enabled (disabled buttons removed, `export_unavailable` key removed); status → `sent` on send/mark; recipient validated (format + header-injection guard) before any mailer/PDF work. **PRODUCTION SMTP delivery config is NOT included** — ActionMailer delivery settings are environment/devops config (dev/test use the default/`:test` adapters). Follow-up: wire real SMTP (and confirm the `from`/`COMPANY_EMAIL` sending address) before sending proposals to real clients. | R15, R25, AC-25, AC-26, AC-34, E9, AT15, EmailDeliveryService, ProposalMailer | Last PR of SPEC-026: makes the review step's Send Email and Mark as Sent actions functional |
 | 2026-06-17 | Upgraded humanize gem constraint from ~> 2.0 to ~> 3.0 (API-compatible; 3.x is the current release) | R18 |

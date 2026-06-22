@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
-  resource  :session,  only: [ :new, :create, :destroy ]
-  resources :users,    only: [ :index, :new, :create, :edit, :update ]
+  resource :session, only: [ :new, :create, :destroy ]
+  resources :users, only: [ :index, :new, :create, :edit, :update ]
   resources :products
   resources :materials
   resources :material_sets do
@@ -26,10 +26,12 @@ Rails.application.routes.draw do
     end
     resource :proposal, only: [ :new, :create, :show ] do
       scope module: :proposals do
-        get  "steps/:step", to: "steps#show",   as: :step
+        get "steps/:step", to: "steps#show", as: :step
         patch "steps/:step", to: "steps#update"
       end
       get :pdf, on: :member
+      post :email, on: :member
+      post :mark_as_sent, on: :member
     end
   end
   resources :clients do
