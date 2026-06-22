@@ -7,9 +7,9 @@ class ClientNotesController < ApplicationController
     if @client_note.save
       redirect_to client_path(@client), notice: t(".notice")
     else
-      @contacts     = @client.contacts.alphabetical
+      @contacts = @client.contacts.alphabetical
       @client_notes = @client.client_notes
-      @estimates    = @client.estimates.order(updated_at: :desc)
+      @estimates = @client.estimates.order(updated_at: :desc)
       render "clients/show", status: :unprocessable_content
     end
   end

@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Contacts", type: :request do
-  let(:user)   { create(:user) }
+  let(:user) { create(:user) }
   let(:client) { create(:client) }
 
   before { sign_in(user) }

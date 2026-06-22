@@ -5,8 +5,8 @@ RSpec.describe Contact, type: :model do
     it "returns contacts ordered by first name then last name" do
       client = create(:client)
       charlie = create(:contact, client: client, first_name: "Charlie", last_name: "Adams")
-      alice   = create(:contact, client: client, first_name: "Alice",   last_name: "Zimmer")
-      bob     = create(:contact, client: client, first_name: "Bob",     last_name: "Adams")
+      alice = create(:contact, client: client, first_name: "Alice", last_name: "Zimmer")
+      bob = create(:contact, client: client, first_name: "Bob", last_name: "Adams")
 
       expect(client.contacts.alphabetical.to_a).to eq([ alice, bob, charlie ])
     end
@@ -33,7 +33,7 @@ RSpec.describe Contact, type: :model do
     end
 
     it "persists the role value" do
-      client  = create(:client)
+      client = create(:client)
       contact = create(:contact, client: client, role: "project manager")
 
       expect(contact.reload.role).to eq("project manager")
@@ -42,9 +42,9 @@ RSpec.describe Contact, type: :model do
 
   describe "primary flag management" do
     it "clears is_primary on sibling contacts when a new contact is set to primary" do
-      client  = create(:client)
-      first   = create(:contact, client: client, is_primary: true)
-      second  = create(:contact, client: client, is_primary: false)
+      client = create(:client)
+      first = create(:contact, client: client, is_primary: true)
+      second = create(:contact, client: client, is_primary: false)
 
       second.update!(is_primary: true)
 
@@ -64,9 +64,9 @@ RSpec.describe Contact, type: :model do
     end
 
     it "allows a non-primary contact to be saved without clearing siblings" do
-      client   = create(:client)
-      primary  = create(:contact, client: client, is_primary: true)
-      sibling  = create(:contact, client: client, is_primary: false)
+      client = create(:client)
+      primary = create(:contact, client: client, is_primary: true)
+      sibling = create(:contact, client: client, is_primary: false)
 
       sibling.update!(first_name: "Updated")
 
