@@ -619,16 +619,14 @@ RSpec.describe EstimateTotalsCalculator do
         expect(result.cogs_breakdown["400_install"]).to be >= install_labor
       end
 
-      it "includes install_travel, per_diem, hotel, airfare, pm_travel, and equipment costs" do
+      it "includes install_travel, per_diem, hotel, and airfare costs" do
         estimate.update!(
           install_travel_qty: BigDecimal("1"),
           installer_crew_size: 2,
           per_diem_qty: BigDecimal("2"),
           per_diem_rate: BigDecimal("65.00"),
           hotel_qty: BigDecimal("1"),
-          airfare_qty: BigDecimal("1"),
-          miles_to_jobsite: BigDecimal("0"),
-          equipment_cost: BigDecimal("0")
+          airfare_qty: BigDecimal("1")
         )
         result = described_class.new(preloaded_estimate).call
 
@@ -642,9 +640,20 @@ RSpec.describe EstimateTotalsCalculator do
         airfare        = BigDecimal("1") * BigDecimal("2") * airfare_rate
         install_labor  = BigDecimal("3.0") * BigDecimal("23.00")
 
-        # pm_travel and equipment are zero because miles_to_jobsite and equipment_cost are zero
         expected = install_labor + install_travel + per_diem + hotel + airfare
         expect(result.cogs_breakdown["400_install"]).to eq(expected)
+      end
+
+      it "includes non-zero pm_travel and equipment in 400_install" do
+        pm_travel_rate = Rails.application.config.burden_constants[:pm_travel_rate]
+        estimate.update!(miles_to_jobsite: BigDecimal("50"), equipment_cost: BigDecimal("250.00"))
+        result = described_class.new(preloaded_estimate).call
+
+        install_labor = BigDecimal("3.0") * BigDecimal("23.00")
+        man_days      = BigDecimal("3.0") / BigDecimal("8")
+        pm_travel     = man_days * BigDecimal("50") * pm_travel_rate * BigDecimal("2")
+
+        expect(result.cogs_breakdown["400_install"]).to eq(install_labor + pm_travel + BigDecimal("250.00"))
       end
     end
 
