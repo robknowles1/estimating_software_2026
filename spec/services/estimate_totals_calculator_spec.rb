@@ -436,6 +436,58 @@ RSpec.describe EstimateTotalsCalculator do
         expect(result.job_level_costs[:airfare]).to eq(expected)
       end
     end
+
+    describe "pm_travel_cost" do
+      it "computes pm_travel = man_days_install * miles_to_jobsite * pm_travel_rate * round_trip_factor" do
+        pm_travel_rate = Rails.application.config.burden_constants[:pm_travel_rate]
+        # 8 install hrs / 8 = 1 man-day; 1 * 50 miles * $1.60 * 2 = $160.00
+        create(:line_item, estimate: estimate, install_hrs: BigDecimal("8.0"), quantity: BigDecimal("1"))
+        estimate.update!(miles_to_jobsite: BigDecimal("50"))
+        result = described_class.new(preloaded_estimate).call
+        expected = BigDecimal("1") * BigDecimal("50") * pm_travel_rate * BigDecimal("2")
+        expect(result.job_level_costs[:pm_travel]).to eq(expected)
+        expect(result.job_level_costs[:pm_travel]).to eq(BigDecimal("160.00"))
+      end
+
+      it "is zero when miles_to_jobsite is nil" do
+        create(:line_item, estimate: estimate, install_hrs: BigDecimal("8.0"), quantity: BigDecimal("1"))
+        estimate.update_columns(miles_to_jobsite: nil)
+        result = described_class.new(preloaded_estimate).call
+        expect(result.job_level_costs[:pm_travel]).to eq(BigDecimal("0"))
+      end
+
+      it "is zero when miles_to_jobsite is zero" do
+        create(:line_item, estimate: estimate, install_hrs: BigDecimal("8.0"), quantity: BigDecimal("1"))
+        estimate.update!(miles_to_jobsite: BigDecimal("0"))
+        result = described_class.new(preloaded_estimate).call
+        expect(result.job_level_costs[:pm_travel]).to eq(BigDecimal("0"))
+      end
+
+      it "is zero when there are no install hours (man_days_install is zero)" do
+        estimate.update!(miles_to_jobsite: BigDecimal("100"))
+        result = described_class.new(preloaded_estimate).call
+        expect(result.job_level_costs[:pm_travel]).to eq(BigDecimal("0"))
+      end
+    end
+
+    describe "equipment job-level cost" do
+      it "equals estimate.equipment_cost" do
+        estimate.update!(equipment_cost: BigDecimal("750.00"))
+        result = described_class.new(preloaded_estimate).call
+        expect(result.job_level_costs[:equipment]).to eq(BigDecimal("750.00"))
+      end
+
+      it "is zero when equipment_cost is nil" do
+        estimate.update_columns(equipment_cost: nil)
+        result = described_class.new(preloaded_estimate).call
+        expect(result.job_level_costs[:equipment]).to eq(BigDecimal("0"))
+      end
+
+      it "is zero when equipment_cost is zero" do
+        result = calculator.call
+        expect(result.job_level_costs[:equipment]).to eq(BigDecimal("0"))
+      end
+    end
   end
 
   describe "#call burdened_total" do
@@ -474,6 +526,26 @@ RSpec.describe EstimateTotalsCalculator do
     it "uses BigDecimal arithmetic throughout" do
       result = calculator.call
       expect(result.burdened_total).to be_a(BigDecimal)
+    end
+
+    it "includes pm_travel in burdened_total" do
+      create(:line_item, estimate: estimate, install_hrs: BigDecimal("8.0"), quantity: BigDecimal("1"))
+      estimate.update!(miles_to_jobsite: BigDecimal("50"))
+      result = described_class.new(preloaded_estimate).call
+      pm_travel_rate = Rails.application.config.burden_constants[:pm_travel_rate]
+      # 1 man-day * 50 miles * $1.60 * 2 = $160.00
+      pm_travel = BigDecimal("1") * BigDecimal("50") * pm_travel_rate * BigDecimal("2")
+      expected = (result.grand_non_burdened_total * result.burden_multiplier) + result.job_level_costs.values.sum
+      expect(result.burdened_total).to eq(expected)
+      expect(result.job_level_costs[:pm_travel]).to eq(pm_travel)
+    end
+
+    it "includes equipment in burdened_total" do
+      estimate.update!(equipment_cost: BigDecimal("500.00"))
+      result = described_class.new(preloaded_estimate).call
+      expected = (result.grand_non_burdened_total * result.burden_multiplier) + result.job_level_costs.values.sum
+      expect(result.burdened_total).to eq(expected)
+      expect(result.job_level_costs[:equipment]).to eq(BigDecimal("500.00"))
     end
   end
 
@@ -547,14 +619,16 @@ RSpec.describe EstimateTotalsCalculator do
         expect(result.cogs_breakdown["400_install"]).to be >= install_labor
       end
 
-      it "includes install_travel, per_diem, hotel, and airfare costs" do
+      it "includes install_travel, per_diem, hotel, airfare, pm_travel, and equipment costs" do
         estimate.update!(
           install_travel_qty: BigDecimal("1"),
           installer_crew_size: 2,
           per_diem_qty: BigDecimal("2"),
           per_diem_rate: BigDecimal("65.00"),
           hotel_qty: BigDecimal("1"),
-          airfare_qty: BigDecimal("1")
+          airfare_qty: BigDecimal("1"),
+          miles_to_jobsite: BigDecimal("0"),
+          equipment_cost: BigDecimal("0")
         )
         result = described_class.new(preloaded_estimate).call
 
@@ -568,6 +642,7 @@ RSpec.describe EstimateTotalsCalculator do
         airfare        = BigDecimal("1") * BigDecimal("2") * airfare_rate
         install_labor  = BigDecimal("3.0") * BigDecimal("23.00")
 
+        # pm_travel and equipment are zero because miles_to_jobsite and equipment_cost are zero
         expected = install_labor + install_travel + per_diem + hotel + airfare
         expect(result.cogs_breakdown["400_install"]).to eq(expected)
       end
@@ -607,17 +682,21 @@ RSpec.describe EstimateTotalsCalculator do
           installer_crew_size:     2,
           per_diem_qty:            BigDecimal("3"),
           per_diem_rate:           BigDecimal("65.00"),
-          delivery_qty:            BigDecimal("0")
+          delivery_qty:            BigDecimal("0"),
+          miles_to_jobsite:        BigDecimal("0"),
+          equipment_cost:          BigDecimal("0")
         )
         result = described_class.new(preloaded_estimate).call
 
-        cogs_sum      = result.cogs_breakdown.values.sum
-        engineering   = result.cogs_breakdown["200_engineering"]
-        # Job costs that appear in COGS 400 (install_travel, per_diem, hotel, airfare — NOT delivery)
+        cogs_sum = result.cogs_breakdown.values.sum
+        engineering = result.cogs_breakdown["200_engineering"]
+        # Job costs in COGS 400: install_travel, per_diem, hotel, airfare, pm_travel, equipment — NOT delivery
         cogs_job_costs = result.job_level_costs[:install_travel] +
                          result.job_level_costs[:per_diem] +
                          result.job_level_costs[:hotel] +
-                         result.job_level_costs[:airfare]
+                         result.job_level_costs[:airfare] +
+                         result.job_level_costs[:pm_travel] +
+                         result.job_level_costs[:equipment]
 
         # Positive assertion: COGS sum = grand_non_burdened_total + engineering + cogs_job_costs + countertop
         # Engineering (200) is derived from grand_non_burdened_total and added separately to COGS.
@@ -759,7 +838,9 @@ RSpec.describe EstimateTotalsCalculator do
         hotel_qty:          nil,
         airfare_qty:        nil,
         countertop_quote:   nil,
-        on_site_time_hrs:   nil
+        on_site_time_hrs:   nil,
+        miles_to_jobsite:   nil,
+        equipment_cost:     nil
       )
       reloaded = Estimate.includes(:line_items).find(estimate.id)
       expect { described_class.new(reloaded).call }.not_to raise_error
@@ -774,7 +855,9 @@ RSpec.describe EstimateTotalsCalculator do
         per_diem_rate:      nil,
         hotel_qty:          nil,
         airfare_qty:        nil,
-        countertop_quote:   nil
+        countertop_quote:   nil,
+        miles_to_jobsite:   nil,
+        equipment_cost:     nil
       )
       reloaded = Estimate.includes(:line_items).find(estimate.id)
       result = described_class.new(reloaded).call
@@ -783,6 +866,8 @@ RSpec.describe EstimateTotalsCalculator do
       expect(result.job_level_costs[:per_diem]).to eq(BigDecimal("0"))
       expect(result.job_level_costs[:hotel]).to eq(BigDecimal("0"))
       expect(result.job_level_costs[:airfare]).to eq(BigDecimal("0"))
+      expect(result.job_level_costs[:pm_travel]).to eq(BigDecimal("0"))
+      expect(result.job_level_costs[:equipment]).to eq(BigDecimal("0"))
       expect(result.cogs_breakdown["600_countertops"]).to eq(BigDecimal("0"))
     end
   end

@@ -74,13 +74,13 @@ class EstimateTotalsCalculator
       grand_non_burdened_total += non_burdened_total
     end
 
-    job_level_costs = calculate_job_level_costs
+    labor_hours_summary = calculate_labor_hours_summary(line_item_results)
+    man_days_install = labor_hours_summary["install"] / BigDecimal("8")
+
+    job_level_costs = calculate_job_level_costs(man_days_install)
     job_level_costs_sum = job_level_costs.values.sum
 
     burdened_total = (grand_non_burdened_total * burden_multiplier) + job_level_costs_sum
-
-    labor_hours_summary = calculate_labor_hours_summary(line_item_results)
-    man_days_install = labor_hours_summary["install"] / BigDecimal("8")
 
     cogs_breakdown = calculate_cogs_breakdown(
       line_item_results,
@@ -109,26 +109,31 @@ class EstimateTotalsCalculator
       (BigDecimal("1") + pm_pct   / BigDecimal("100"))
   end
 
-  def calculate_job_level_costs
-    constants          = Rails.application.config.burden_constants
-    mileage_rate       = constants[:mileage_rate]       || BigDecimal("0")
-    round_trip_factor  = BigDecimal(constants[:round_trip_factor].to_s)
-    hotel_rate         = constants[:hotel_rate]         || BigDecimal("0")
-    airfare_rate       = constants[:airfare_rate]       || BigDecimal("0")
-    crew               = @estimate.installer_crew_size.to_d
+  def calculate_job_level_costs(man_days_install)
+    constants = Rails.application.config.burden_constants
+    mileage_rate = constants[:mileage_rate] || BigDecimal("0")
+    round_trip_factor = BigDecimal(constants[:round_trip_factor].to_s)
+    pm_travel_rate = constants[:pm_travel_rate] || BigDecimal("0")
+    hotel_rate = constants[:hotel_rate] || BigDecimal("0")
+    airfare_rate = constants[:airfare_rate] || BigDecimal("0")
+    crew = @estimate.installer_crew_size.to_d
 
     install_travel_cost = (@estimate.install_travel_qty || 0).to_d * crew * mileage_rate * round_trip_factor
-    delivery_cost       = (@estimate.delivery_qty || 0).to_d * (@estimate.delivery_rate || 0).to_d
-    per_diem_cost       = (@estimate.per_diem_qty || 0).to_d * (@estimate.per_diem_rate || 0).to_d * crew
-    hotel_cost          = (@estimate.hotel_qty || 0).to_d * crew * hotel_rate
-    airfare_cost        = (@estimate.airfare_qty || 0).to_d * crew * airfare_rate
+    delivery_cost = (@estimate.delivery_qty || 0).to_d * (@estimate.delivery_rate || 0).to_d
+    per_diem_cost = (@estimate.per_diem_qty || 0).to_d * (@estimate.per_diem_rate || 0).to_d * crew
+    hotel_cost = (@estimate.hotel_qty || 0).to_d * crew * hotel_rate
+    airfare_cost = (@estimate.airfare_qty || 0).to_d * crew * airfare_rate
+    pm_travel_cost = man_days_install * (@estimate.miles_to_jobsite || 0).to_d * pm_travel_rate * round_trip_factor
+    equipment_cost = (@estimate.equipment_cost || 0).to_d
 
     {
       install_travel: install_travel_cost,
-      delivery:       delivery_cost,
-      per_diem:       per_diem_cost,
-      hotel:          hotel_cost,
-      airfare:        airfare_cost
+      delivery: delivery_cost,
+      per_diem: per_diem_cost,
+      hotel: hotel_cost,
+      airfare: airfare_cost,
+      pm_travel: pm_travel_cost,
+      equipment: equipment_cost
     }
   end
 
@@ -161,13 +166,15 @@ class EstimateTotalsCalculator
       SHOP_LABOR_CATEGORIES.sum(BigDecimal("0")) { |cat| r[:labor_subtotals][cat] || BigDecimal("0") }
     end
 
-    # 400 Install: install labor subtotals + install_travel + per_diem + hotel + airfare
+    # 400 Install: install labor subtotals + install_travel + per_diem + hotel + airfare + pm_travel + equipment
     install_labor = line_item_results.values.sum(BigDecimal("0")) { |r| r[:labor_subtotals]["install"] || BigDecimal("0") }
     install_total = install_labor +
                     job_level_costs[:install_travel] +
                     job_level_costs[:per_diem] +
                     job_level_costs[:hotel] +
-                    job_level_costs[:airfare]
+                    job_level_costs[:airfare] +
+                    job_level_costs[:pm_travel] +
+                    job_level_costs[:equipment]
 
     # 600 Countertops: countertop_quote
     countertop = (@estimate.countertop_quote || 0).to_d
