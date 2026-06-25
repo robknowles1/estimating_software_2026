@@ -61,7 +61,7 @@ class EstimatesController < ApplicationController
         @totals   = EstimateTotalsCalculator.new(@estimate).call
         flash.now[:notice] = t(".notice")
         render turbo_stream: [
-          turbo_stream.replace("flash", partial: "layouts/flashes"),
+          turbo_stream.update("flash", partial: "layouts/flashes"),
           turbo_stream.replace(
             "estimate_#{@estimate.id}_totals",
             partial: "line_items/estimate_totals",

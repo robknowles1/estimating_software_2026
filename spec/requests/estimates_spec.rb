@@ -230,6 +230,9 @@ RSpec.describe "Estimates", type: :request do
       expect(response.body).to include("estimate_#{estimate.id}_totals")
       # The burdened total (with no line items, just burden multiplier) should appear as $0.00
       expect(response.body).to include("Final Burdened Total")
+      # Flash notice must use turbo_stream.update so the id="flash" wrapper is preserved across saves
+      expect(response.body).to match(/action="update"[^>]*target="flash"/)
+      expect(response.body).to include("successfully updated")
     end
 
     it "recalculates material cost_with_tax when tax_rate is updated" do

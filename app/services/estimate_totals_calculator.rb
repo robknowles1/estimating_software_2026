@@ -124,7 +124,7 @@ class EstimateTotalsCalculator
     hotel_cost = (@estimate.hotel_qty || 0).to_d * crew * hotel_rate
     airfare_cost = (@estimate.airfare_qty || 0).to_d * crew * airfare_rate
     pm_travel_cost = man_days_install * (@estimate.miles_to_jobsite || 0).to_d * pm_travel_rate * round_trip_factor
-    equipment_cost = (@estimate.equipment_cost || 0).to_d
+    equipment_job_cost = (@estimate.equipment_cost || 0).to_d
 
     {
       install_travel: install_travel_cost,
@@ -133,7 +133,7 @@ class EstimateTotalsCalculator
       hotel: hotel_cost,
       airfare: airfare_cost,
       pm_travel: pm_travel_cost,
-      equipment: equipment_cost
+      equipment: equipment_job_cost
     }
   end
 
