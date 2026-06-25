@@ -59,11 +59,15 @@ class EstimatesController < ApplicationController
       if params[:panel_update] == "totals"
         @estimate = Estimate.includes(:client, :estimate_materials, line_items: :product).find(@estimate.id)
         @totals   = EstimateTotalsCalculator.new(@estimate).call
-        render turbo_stream: turbo_stream.replace(
-          "estimate_#{@estimate.id}_totals",
-          partial: "line_items/estimate_totals",
-          locals: { estimate: @estimate, totals: @totals }
-        )
+        flash.now[:notice] = t(".notice")
+        render turbo_stream: [
+          turbo_stream.replace("flash", partial: "layouts/flashes"),
+          turbo_stream.replace(
+            "estimate_#{@estimate.id}_totals",
+            partial: "line_items/estimate_totals",
+            locals: { estimate: @estimate, totals: @totals }
+          )
+        ]
       else
         redirect_to edit_estimate_path(@estimate), notice: t(".notice")
       end
