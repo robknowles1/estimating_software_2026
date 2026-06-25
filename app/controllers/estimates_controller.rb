@@ -59,11 +59,15 @@ class EstimatesController < ApplicationController
       if params[:panel_update] == "totals"
         @estimate = Estimate.includes(:client, :estimate_materials, line_items: :product).find(@estimate.id)
         @totals   = EstimateTotalsCalculator.new(@estimate).call
-        render turbo_stream: turbo_stream.replace(
-          "estimate_#{@estimate.id}_totals",
-          partial: "line_items/estimate_totals",
-          locals: { estimate: @estimate, totals: @totals }
-        )
+        flash.now[:notice] = t(".notice")
+        render turbo_stream: [
+          turbo_stream.update("flash", partial: "layouts/flashes"),
+          turbo_stream.replace(
+            "estimate_#{@estimate.id}_totals",
+            partial: "line_items/estimate_totals",
+            locals: { estimate: @estimate, totals: @totals }
+          )
+        ]
       else
         redirect_to edit_estimate_path(@estimate), notice: t(".notice")
       end
@@ -92,7 +96,8 @@ class EstimatesController < ApplicationController
       :miles_to_jobsite, :installer_crew_size, :delivery_crew_size, :on_site_time_hrs,
       :profit_overhead_percent, :pm_supervision_percent, :tax_rate, :tax_exempt,
       :install_travel_qty, :delivery_qty, :delivery_rate,
-      :per_diem_qty, :per_diem_rate, :hotel_qty, :airfare_qty, :countertop_quote
+      :per_diem_qty, :per_diem_rate, :hotel_qty, :airfare_qty, :countertop_quote,
+      :equipment_cost
     )
   end
 end

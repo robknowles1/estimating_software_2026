@@ -76,6 +76,10 @@
               <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.job_level_costs[:install_travel]) %></td>
             </tr>
             <tr>
+              <td class="py-0.5 text-slate-600"><%= t(".job_cost_pm_travel") %></td>
+              <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.job_level_costs[:pm_travel]) %></td>
+            </tr>
+            <tr>
               <td class="py-0.5 text-slate-600"><%= t(".job_cost_delivery") %></td>
               <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.job_level_costs[:delivery]) %></td>
             </tr>
@@ -90,6 +94,10 @@
             <tr>
               <td class="py-0.5 text-slate-600"><%= t(".job_cost_airfare") %></td>
               <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.job_level_costs[:airfare]) %></td>
+            </tr>
+            <tr>
+              <td class="py-0.5 text-slate-600"><%= t(".job_cost_equipment") %></td>
+              <td class="py-0.5 text-right font-medium text-slate-800"><%= number_to_currency(totals.job_level_costs[:equipment]) %></td>
             </tr>
           </tbody>
         </table>
