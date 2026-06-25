@@ -92,7 +92,8 @@ class EstimatesController < ApplicationController
       :miles_to_jobsite, :installer_crew_size, :delivery_crew_size, :on_site_time_hrs,
       :profit_overhead_percent, :pm_supervision_percent, :tax_rate, :tax_exempt,
       :install_travel_qty, :delivery_qty, :delivery_rate,
-      :per_diem_qty, :per_diem_rate, :hotel_qty, :airfare_qty, :countertop_quote
+      :per_diem_qty, :per_diem_rate, :hotel_qty, :airfare_qty, :countertop_quote,
+      :equipment_cost
     )
   end
 end

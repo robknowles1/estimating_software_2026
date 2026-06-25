@@ -184,6 +184,7 @@ en:
       hotel_qty: "Hotel Nights"
       airfare_qty: "Airfare Tickets"
       countertop_quote: "Countertop Quote ($)"
+      equipment_cost: "Equipment Cost ($)"
     form:
       client: "Client"
       select_client: "Select a client..."
