@@ -53,40 +53,11 @@ The test suite uses RSpec with FactoryBot, Shoulda Matchers, and DatabaseCleaner
 
 ## Deployment
 
-The application is deployed as a Docker container using [Kamal 2](https://kamal-deploy.org). Container images are pushed to GitHub Container Registry (`ghcr.io`).
+There is currently no hosted environment. The staging Droplet (`64.23.238.38`) was decommissioned on 2026-11-02, and CI no longer deploys on merge to `main`. `config/deploy.yml` remains the unconfigured Kamal 2 placeholder.
 
-See **[docs/deployment/digital_ocean.md](docs/deployment/digital_ocean.md)** for the full runbook, including first-time Droplet bootstrap, required GitHub secrets, and troubleshooting.
+A final `pg_dumpall` of the staging Postgres (all databases) is archived in Cloudflare R2 at `r2:syndicate-backups/archive/estimating-software-staging-droplet-2026-11-02/estimating-software-staging-pg_dumpall-2026-11-02.sql.gz`.
 
-### Automatic deploys
-
-Every merge to `main` triggers the `deploy_staging` job in `.github/workflows/ci.yml` (after all CI checks pass), which builds a new image and deploys it to the staging Droplet at `64.23.238.38:3000`.
-
-### Manual deploy (staging)
-
-```bash
-export RAILS_MASTER_KEY=$(cat config/master.key)
-export KAMAL_REGISTRY_PASSWORD=<github-pat-with-write-packages>
-export ESTIMATING_SOFTWARE_2026_DATABASE_PASSWORD=<db-password>
-export SEED_ADMIN_PASSWORD=<admin-password>
-
-# First time only — bootstraps Docker + Postgres on the Droplet
-bin/kamal setup -d staging
-
-# Subsequent deploys
-bin/kamal deploy -d staging
-```
-
-### Required secrets
-
-| Secret | Purpose |
-|--------|---------|
-| `RAILS_MASTER_KEY` | Decrypts `config/credentials.yml.enc` |
-| `KAMAL_REGISTRY_PASSWORD` | GitHub PAT with `write:packages` scope — authenticates to `ghcr.io` |
-| `ESTIMATING_SOFTWARE_2026_DATABASE_PASSWORD` | Postgres password for the app user |
-| `SEED_ADMIN_PASSWORD` | Initial admin account password on first deploy |
-| `DEPLOY_SSH_PRIVATE_KEY` | Private key for SSH access to the Droplet (set in GitHub Actions secrets) |
-
-Set these under **Settings → Secrets and variables → Actions** in the GitHub repo.
+[docs/deployment/digital_ocean.md](docs/deployment/digital_ocean.md) is kept as a historical record of the staging setup.
 
 ## Architecture
 

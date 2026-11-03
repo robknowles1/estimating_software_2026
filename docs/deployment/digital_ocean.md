@@ -1,5 +1,7 @@
 # Digital Ocean Deployment Runbook
 
+> **Status: historical.** Both Droplets (`64.23.238.38` staging and `147.182.199.74` Syndicate) were decommissioned on 2026-11-02. Nothing in this runbook describes a live environment; the `deploy_staging` CI job, `config/deploy.staging.yml` and `.kamal/secrets.staging` it refers to have been removed. The final staging database dump is archived in R2 (see the README Deployment section).
+
 Deployment uses **Kamal 2** (bundled with Rails 8.1). All environments run on Digital Ocean Droplets.
 
 ---

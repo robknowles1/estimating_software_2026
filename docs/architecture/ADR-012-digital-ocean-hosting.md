@@ -1,7 +1,8 @@
 # ADR-012: Digital Ocean Hosting with Kamal 2
 
 **Date:** 2026-04-25  
-**Status:** Accepted
+**Status:** deprecated  
+**Deprecated:** 2026-11-02 — staging Droplet decommissioned and the `deploy_staging` CI job removed; no hosted environment exists.
 
 ---
 
